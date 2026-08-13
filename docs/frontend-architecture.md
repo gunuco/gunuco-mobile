@@ -280,7 +280,7 @@ Suggested later phase order remains master-aligned, with additions:
 | Entry | `/` redirects to `/(tabs)` |
 | Design gallery | Moved to `/design-system` (dev validation) |
 
-Do **not** start Phase 4 (Search / Categories catalogue) until requested.
+Do **not** start Phase 5 (Product Details) until requested.
 
 ---
 
@@ -298,15 +298,39 @@ Do **not** start Phase 4 (Search / Categories catalogue) until requested.
 | Lists | Horizontal `@shopify/flash-list` (v2; no `estimatedItemSize`) for banners, categories, offers, products |
 | Images | `GImage` / `expo-image` memory-disk cache |
 | Memoization | `ProductCard`, `CategoryCard`, section carousels memoized |
-| Navigation stubs | Search / Categories tabs; product detail, offers detail, notifications, address picker, add-to-cart deferred |
+| Navigation | Category → `/category/[id]`; Product → `/product/[id]` (PDP shell from Phase 4); offers/notifications/address/add-to-cart still deferred |
 | Pagination | Not applicable — Home is a single aggregated payload |
 | Guest | Home loads without auth (token attached only when present) |
 
 ### Divergence from earlier analysis
 
 1. No inventing “recently viewed / buy again” sections despite UX inspiration — sections come only from `GET customer/home`.
-2. Product / offer / notification presses are intentional no-ops until those feature routes exist (Phase 4+).
-3. FlashList v2 dropped `estimatedItemSize`; sizing relies on bounded parent heights + item layout.
+2. FlashList v2 dropped `estimatedItemSize`; sizing relies on bounded parent heights + item layout.
+
+---
+
+## 21. Phase 4 As-Built (Categories + Search)
+
+| Area | Decision |
+|---|---|
+| Categories tab | `app/(tabs)/categories.tsx` — active main categories from `GET /categories` |
+| Main category | `app/category/[id]/index.tsx` — subcategory grid; leaf categories auto-`replace` to products |
+| Product listing | `app/category/[id]/products.tsx` — filters, sort, pagination, pull-to-refresh |
+| Search tab | `app/(tabs)/search.tsx` — debounced `GET /products/search` (350ms, min 2 chars) |
+| Product route | `app/product/[id].tsx` — navigation shell only (no full PDP) |
+| APIs | `categoryApi` (`getCategories`, `getCategoryProducts`), `productApi.searchProducts` |
+| Shared chrome | `CatalogToolbar`, `SortSheet`, `FilterSheet`, `ProductGridList`, `GChip` |
+| Filter source | Backend `availableFilters` / subcategory list from category tree; price min/max as paise query params |
+| Sort source | Backend `availableSorts` when present; else approved defaults Popular / Price↑↓ / Newest |
+| Pagination | RTK Query page merge via `serializeQueryArgs` + `merge` (no invented infinite helpers) |
+| Hard-coding avoided | No fixed Cakes-only tree; inactive mains (Coffee/Pizza/Burgers) stay hidden unless API marks active |
+| Recent searches | Not implemented — not required by approved UX docs |
+
+### Divergence from earlier analysis
+
+1. Option filter keys are passed through from backend filter group ids (not cake-specific query param names).
+2. Add/Wishlist actions hidden on listing cards until Cart/Wishlist phases.
+3. Categories response normalizer accepts `{ categories }`, `{ data }`, or bare array to tolerate backend envelope variance without inventing endpoints.
 
 ---
 

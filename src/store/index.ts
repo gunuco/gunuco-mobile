@@ -19,3 +19,10 @@ export {
   useLazyGetMeQuery,
 } from './api/authApi';
 export { useGetHomeQuery, useLazyGetHomeQuery } from './api/homeApi';
+export {
+  useGetCategoriesQuery,
+  useLazyGetCategoriesQuery,
+  useGetCategoryProductsQuery,
+  useLazyGetCategoryProductsQuery,
+} from './api/categoryApi';
+export { useSearchProductsQuery, useLazySearchProductsQuery } from './api/productApi';

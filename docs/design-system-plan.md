@@ -222,4 +222,21 @@ Layout pattern matches §9 item 1–2 (sticky context + category strip + offers 
 
 ---
 
+## 13. Phase 4 Catalogue Composition (as built)
+
+Categories + Search reuse the shared design system — **no catalogue-specific token set**.
+
+| Piece | Implementation |
+|---|---|
+| Chips | New primitive `GChip` (inventory item) for sort/filter/selected indicators |
+| Toolbar | `CatalogToolbar` — sort + filter entry, result count, clearable active chips |
+| Sheets | `SortSheet` / `FilterSheet` on Phase 1 `BottomSheet` (shared by Category listing + Search) |
+| Grid | `ProductGridList` — FlashList `numColumns={2}` + memo `ProductCard` |
+| Skeletons | `ProductListSkeleton` |
+| Search field | Existing `SearchBar` with clear + keyboard-aware screen shell |
+
+Filter/sort option labels come from API when provided; sort fallback labels match approved product decisions only.
+
+---
+
 *End of design system plan.*

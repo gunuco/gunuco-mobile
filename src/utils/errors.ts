@@ -25,6 +25,12 @@ export function getErrorMessage(
 
     if (typeof error.data === 'object' && error.data !== null) {
       const body = error.data as ApiErrorBody;
+      if (typeof body.code === 'string') {
+        const mapped = mapBusinessErrorCode(body.code);
+        if (mapped) {
+          return mapped;
+        }
+      }
       if (typeof body.message === 'string' && body.message.trim().length > 0) {
         return body.message;
       }
@@ -32,6 +38,14 @@ export function getErrorMessage(
 
     if (error.status === 401) {
       return 'Your session has expired. Please sign in again.';
+    }
+
+    if (error.status === 404) {
+      return 'We could not find what you were looking for.';
+    }
+
+    if (typeof error.status === 'number' && error.status >= 500) {
+      return 'Our servers are having trouble right now. Please try again.';
     }
 
     return fallback;
@@ -42,4 +56,21 @@ export function getErrorMessage(
   }
 
   return fallback;
+}
+
+function mapBusinessErrorCode(code: string): string | undefined {
+  switch (code) {
+    case 'CATEGORY_UNAVAILABLE':
+    case 'CATEGORY_INACTIVE':
+    case 'CATEGORY_NOT_FOUND':
+      return 'This category is not available right now.';
+    case 'PRODUCT_UNAVAILABLE':
+    case 'PRODUCT_INACTIVE':
+    case 'PRODUCT_NOT_FOUND':
+      return 'This product is not available right now.';
+    case 'SEARCH_INVALID':
+      return 'Please enter a valid search.';
+    default:
+      return undefined;
+  }
 }

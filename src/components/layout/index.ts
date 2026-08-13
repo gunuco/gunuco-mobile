@@ -12,3 +12,4 @@ export { HomeHeader } from './HomeHeader';
 export type { HomeHeaderProps } from './HomeHeader';
 
 export { HomeSkeleton } from './HomeSkeleton';
+export { ProductListSkeleton } from './ProductListSkeleton';

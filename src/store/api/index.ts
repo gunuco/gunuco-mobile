@@ -1,6 +1,7 @@
 /**
  * API module shells. Auth endpoints live in authApi.ts.
  * Home endpoints live in homeApi.ts.
+ * Catalogue: categoryApi.ts + productApi.ts (search).
  */
 
 import { baseApi } from './baseApi';
@@ -18,15 +19,16 @@ export {
 export { homeApi } from './homeApi';
 export { useGetHomeQuery, useLazyGetHomeQuery } from './homeApi';
 
-export const productApi = baseApi.injectEndpoints({
-  endpoints: () => ({}),
-  overrideExisting: false,
-});
+export { categoryApi } from './categoryApi';
+export {
+  useGetCategoriesQuery,
+  useLazyGetCategoriesQuery,
+  useGetCategoryProductsQuery,
+  useLazyGetCategoryProductsQuery,
+} from './categoryApi';
 
-export const categoryApi = baseApi.injectEndpoints({
-  endpoints: () => ({}),
-  overrideExisting: false,
-});
+export { productApi } from './productApi';
+export { useSearchProductsQuery, useLazySearchProductsQuery } from './productApi';
 
 export const cartApi = baseApi.injectEndpoints({
   endpoints: () => ({}),

@@ -20,3 +20,17 @@ export type {
 } from './auth';
 
 export type { HomeBanner, HomeOffer, HomeDeliveryContext, HomeResponse } from './home';
+
+export type {
+  ProductSort,
+  CategoryNode,
+  CategoriesResponse,
+  CatalogFilterOption,
+  CatalogFilterGroup,
+  CatalogSortOption,
+  ProductListResponse,
+  CategoryProductsArgs,
+  SearchProductsArgs,
+  CatalogSelectionState,
+} from './catalog';
+export { DEFAULT_PRODUCT_SORT, DEFAULT_SORT_OPTIONS } from './catalog';

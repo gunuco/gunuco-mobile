@@ -5,6 +5,7 @@ import { useTheme } from '@/src/providers';
 import { useGetHomeQuery } from '@/src/store';
 import { getErrorMessage } from '@/src/utils/errors';
 import type { CategorySummary, HomeBanner, HomeOffer, ProductSummary } from '@/src/types';
+import { categoryHref, productHref } from '@/src/utils/navigation';
 import {
   CategorySection,
   EmptyState,
@@ -76,16 +77,18 @@ export default function HomeTabScreen() {
   }, [router]);
 
   const onCategoryPress = useCallback(
-    (_category: CategorySummary) => {
-      // Category browse product listing arrives in a later phase.
-      router.push('/(tabs)/categories');
+    (category: CategorySummary) => {
+      router.push(categoryHref(category.id));
     },
     [router],
   );
 
-  const onProductPress = useCallback((_product: ProductSummary) => {
-    // Product detail route arrives in a later phase.
-  }, []);
+  const onProductPress = useCallback(
+    (product: ProductSummary) => {
+      router.push(productHref(product.id));
+    },
+    [router],
+  );
 
   const onAddPress = useCallback((_product: ProductSummary) => {
     // Cart mutations arrive in a later phase.
@@ -93,11 +96,12 @@ export default function HomeTabScreen() {
 
   const onBannerPress = useCallback(
     (banner: HomeBanner) => {
-      if (banner.linkType === 'category') {
-        router.push('/(tabs)/categories');
+      if (banner.linkType === 'category' && banner.linkId) {
+        router.push(categoryHref(banner.linkId));
         return;
       }
-      if (banner.linkType === 'product') {
+      if (banner.linkType === 'product' && banner.linkId) {
+        router.push(productHref(banner.linkId));
         return;
       }
       // Offer / URL deep links arrive with their feature phases.

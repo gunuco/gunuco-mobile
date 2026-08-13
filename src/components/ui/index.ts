@@ -45,3 +45,6 @@ export type { BottomSheetProps } from './BottomSheet';
 
 export { OtpInput } from './OtpInput';
 export type { OtpInputProps } from './OtpInput';
+
+export { GChip } from './GChip';
+export type { GChipProps } from './GChip';
