@@ -1,6 +1,6 @@
 /**
  * API module shells. Auth endpoints live in authApi.ts.
- * Other domains remain empty until contracts are confirmed.
+ * Home endpoints live in homeApi.ts.
  */
 
 import { baseApi } from './baseApi';
@@ -14,6 +14,9 @@ export {
   useGetMeQuery,
   useLazyGetMeQuery,
 } from './authApi';
+
+export { homeApi } from './homeApi';
+export { useGetHomeQuery, useLazyGetHomeQuery } from './homeApi';
 
 export const productApi = baseApi.injectEndpoints({
   endpoints: () => ({}),

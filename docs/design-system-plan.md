@@ -196,11 +196,29 @@ Phase 1 ships a lightweight `BottomSheet` built on React Native `Modal` (no `@go
 
 ### Gallery
 
-`app/index.tsx` is the Phase 1 design-system gallery for validating primitives, composites, and business cards before feature screens.
+`app/design-system.tsx` (route `/design-system`) is the Phase 1 design-system gallery for validating primitives, composites, and business cards before feature screens. App entry `/` redirects to tabs.
 
 ### Web note
 
 RN Web may warn that `shadow*` props are deprecated in favor of `boxShadow`. Native iOS/Android continue to use the tokenized shadow/elevation API; revisit web-specific shadow mapping if web becomes a primary target (customer app is Android + iOS).
+
+---
+
+## 12. Phase 3 Home Composition (as built)
+
+Home reuses the shared design system — **no Home-specific tokens or primitives**.
+
+| Piece | Implementation |
+|---|---|
+| Sticky context + search | `HomeHeader` (layout) + shared `SearchBar` |
+| Banners | `HomeBannerCarousel` + `GImage` |
+| Category shortcuts | `CategorySection` → memoized `CategoryCard` |
+| Offers | `OfferSection` → `OfferCard` |
+| Product rows | `ProductCarousel` → memoized `ProductCard` / `PriceDisplay` / `RatingView` |
+| Loading | `HomeSkeleton` + section-level `Skeleton` |
+| Empty / error | shared `EmptyState` / `ErrorState` |
+
+Layout pattern matches §9 item 1–2 (sticky context + category strip + offers + carousels). Cart badge on tabs remains a later cart-phase concern.
 
 ---
 

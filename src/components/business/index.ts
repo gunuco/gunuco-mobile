@@ -21,3 +21,18 @@ export type { CartItemProps } from './CartItem';
 
 export { OrderCard } from './OrderCard';
 export type { OrderCardProps } from './OrderCard';
+
+export { HomeBannerCarousel } from './HomeBannerCarousel';
+export type { HomeBannerCarouselProps } from './HomeBannerCarousel';
+
+export { OfferCard } from './OfferCard';
+export type { OfferCardProps } from './OfferCard';
+
+export { OfferSection } from './OfferSection';
+export type { OfferSectionProps } from './OfferSection';
+
+export { CategorySection } from './CategorySection';
+export type { CategorySectionProps } from './CategorySection';
+
+export { ProductCarousel } from './ProductCarousel';
+export type { ProductCarouselProps } from './ProductCarousel';

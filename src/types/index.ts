@@ -18,3 +18,5 @@ export type {
   RefreshTokenResponse,
   ApiErrorBody,
 } from './auth';
+
+export type { HomeBanner, HomeOffer, HomeDeliveryContext, HomeResponse } from './home';

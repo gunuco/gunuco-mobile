@@ -1,0 +1,88 @@
+import React, { memo } from 'react';
+import { Dimensions, Pressable, View } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
+import { useTheme } from '@/src/providers';
+import type { HomeBanner } from '@/src/types';
+import { GImage } from '../ui/GImage';
+import { GText } from '../ui/GText';
+import { Skeleton } from '../ui/Skeleton';
+
+export type HomeBannerCarouselProps = {
+  banners: HomeBanner[];
+  loading?: boolean;
+  onBannerPress?: (banner: HomeBanner) => void;
+};
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+
+function HomeBannerCarouselComponent({ banners, loading, onBannerPress }: HomeBannerCarouselProps) {
+  const theme = useTheme();
+  const bannerWidth = SCREEN_WIDTH - theme.spacing.lg * 2;
+  const bannerHeight = Math.round(bannerWidth * 0.42);
+
+  if (loading) {
+    return (
+      <View style={{ paddingHorizontal: theme.spacing.lg }}>
+        <Skeleton width={bannerWidth} height={bannerHeight} borderRadius={theme.radius.xl} />
+      </View>
+    );
+  }
+
+  if (!banners.length) {
+    return null;
+  }
+
+  return (
+    <View style={{ height: bannerHeight }}>
+      <FlashList
+        data={banners}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={{ paddingHorizontal: theme.spacing.lg }}
+        ItemSeparatorComponent={() => <View style={{ width: theme.spacing.md }} />}
+        renderItem={({ item }) => (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={item.title ?? 'Promotional banner'}
+            onPress={() => onBannerPress?.(item)}
+            style={{ width: bannerWidth }}
+          >
+            <View
+              style={{
+                width: bannerWidth,
+                height: bannerHeight,
+                borderRadius: theme.radius.xl,
+                overflow: 'hidden',
+              }}
+            >
+              <GImage
+                uri={item.imageUrl}
+                width={bannerWidth}
+                height={bannerHeight}
+                borderRadius={theme.radius.xl}
+                accessibilityLabel={item.title ?? 'Banner'}
+              />
+              {item.title ? (
+                <View
+                  style={{
+                    position: 'absolute',
+                    left: theme.spacing.md,
+                    bottom: theme.spacing.md,
+                    right: theme.spacing.md,
+                  }}
+                >
+                  <GText variant="titleSm" color="inverse" numberOfLines={2}>
+                    {item.title}
+                  </GText>
+                </View>
+              ) : null}
+            </View>
+          </Pressable>
+        )}
+      />
+    </View>
+  );
+}
+
+export const HomeBannerCarousel = memo(HomeBannerCarouselComponent);

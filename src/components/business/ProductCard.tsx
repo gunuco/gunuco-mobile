@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Pressable, View } from 'react-native';
 import { useTheme } from '@/src/providers';
 import type { ProductSummary } from '@/src/types';
@@ -26,7 +26,7 @@ export type ProductCardProps = {
   wishlisted?: boolean;
 };
 
-export function ProductCard({
+function ProductCardComponent({
   product,
   variant = 'grid',
   showRating = true,
@@ -139,3 +139,5 @@ export function ProductCard({
     </Pressable>
   );
 }
+
+export const ProductCard = memo(ProductCardComponent);

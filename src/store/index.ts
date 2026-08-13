@@ -18,3 +18,4 @@ export {
   useGetMeQuery,
   useLazyGetMeQuery,
 } from './api/authApi';
+export { useGetHomeQuery, useLazyGetHomeQuery } from './api/homeApi';

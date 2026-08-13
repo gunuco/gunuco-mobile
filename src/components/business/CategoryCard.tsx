@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Pressable } from 'react-native';
 import { useTheme } from '@/src/providers';
 import type { CategorySummary } from '@/src/types';
@@ -11,7 +11,7 @@ export type CategoryCardProps = {
   onPress?: () => void;
 };
 
-export function CategoryCard({ category, onPress }: CategoryCardProps) {
+function CategoryCardComponent({ category, onPress }: CategoryCardProps) {
   const theme = useTheme();
 
   return (
@@ -36,3 +36,5 @@ export function CategoryCard({ category, onPress }: CategoryCardProps) {
     </Pressable>
   );
 }
+
+export const CategoryCard = memo(CategoryCardComponent);

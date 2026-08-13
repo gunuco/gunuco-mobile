@@ -7,3 +7,8 @@ export type { SectionProps } from './Section';
 export { SessionExpiredModal } from './SessionExpiredModal';
 export { BootstrapScreen } from './BootstrapScreen';
 export { FeaturePlaceholder } from './FeaturePlaceholder';
+
+export { HomeHeader } from './HomeHeader';
+export type { HomeHeaderProps } from './HomeHeader';
+
+export { HomeSkeleton } from './HomeSkeleton';

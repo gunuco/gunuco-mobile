@@ -280,7 +280,33 @@ Suggested later phase order remains master-aligned, with additions:
 | Entry | `/` redirects to `/(tabs)` |
 | Design gallery | Moved to `/design-system` (dev validation) |
 
-Do **not** start Phase 3 (Home) until requested.
+Do **not** start Phase 4 (Search / Categories catalogue) until requested.
+
+---
+
+## 20. Phase 3 As-Built (Home Experience)
+
+| Area | Decision |
+|---|---|
+| Screen | `app/(tabs)/index.tsx` — full Home (replaces Phase 2 placeholder) |
+| API | `homeApi.getHome` → `GET /customer/home` via `useGetHomeQuery` |
+| Types | `src/types/home.ts` — banners, mainCategories, subcategories, featured, bestSellers, offers, recommended, deliveryContext, unreadNotificationCount |
+| Header | `HomeHeader` — brand + location label, notification bell (+ unread badge), SearchBar entry → Search tab |
+| Sections (API-driven only) | Banners → Shop by category → Explore (subcategories) → Offers → Featured → Best sellers → Recommended |
+| Not built | Recently viewed / Buy again — **not** in Home API contract; deferred until backend provides them |
+| States | Initial skeleton (`HomeSkeleton`), error + retry, empty + retry, pull-to-refresh |
+| Lists | Horizontal `@shopify/flash-list` (v2; no `estimatedItemSize`) for banners, categories, offers, products |
+| Images | `GImage` / `expo-image` memory-disk cache |
+| Memoization | `ProductCard`, `CategoryCard`, section carousels memoized |
+| Navigation stubs | Search / Categories tabs; product detail, offers detail, notifications, address picker, add-to-cart deferred |
+| Pagination | Not applicable — Home is a single aggregated payload |
+| Guest | Home loads without auth (token attached only when present) |
+
+### Divergence from earlier analysis
+
+1. No inventing “recently viewed / buy again” sections despite UX inspiration — sections come only from `GET customer/home`.
+2. Product / offer / notification presses are intentional no-ops until those feature routes exist (Phase 4+).
+3. FlashList v2 dropped `estimatedItemSize`; sizing relies on bounded parent heights + item layout.
 
 ---
 
