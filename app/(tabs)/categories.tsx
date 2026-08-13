@@ -3,16 +3,15 @@ import { View } from 'react-native';
 import { Header, FeaturePlaceholder } from '@/src/components';
 import { useTheme } from '@/src/providers';
 
-/** Home feature arrives in Phase 3 — shell only. */
-export default function HomeTabScreen() {
+export default function CategoriesTabScreen() {
   const theme = useTheme();
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.bg.canvas }}>
-      <Header title="GUNUCO" />
+      <Header title="Categories" />
       <FeaturePlaceholder
-        title="Home"
-        description="Product discovery lands in Phase 3. You can browse as a guest or sign in from Profile."
+        title="Categories"
+        description="Category browsing will be implemented in a later phase."
       />
     </View>
   );

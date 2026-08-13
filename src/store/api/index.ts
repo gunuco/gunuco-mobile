@@ -1,15 +1,19 @@
 /**
- * Placeholder API module shells.
- * Inject real endpoints only after backend contract confirmation.
+ * API module shells. Auth endpoints live in authApi.ts.
+ * Other domains remain empty until contracts are confirmed.
  */
 
 import { baseApi } from './baseApi';
 
-// These empty injectors reserve module boundaries without inventing URLs.
-export const authApi = baseApi.injectEndpoints({
-  endpoints: () => ({}),
-  overrideExisting: false,
-});
+export { authApi } from './authApi';
+export {
+  useRequestOtpMutation,
+  useVerifyOtpMutation,
+  useRefreshTokenMutation,
+  useLogoutMutation,
+  useGetMeQuery,
+  useLazyGetMeQuery,
+} from './authApi';
 
 export const productApi = baseApi.injectEndpoints({
   endpoints: () => ({}),

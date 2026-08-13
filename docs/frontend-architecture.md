@@ -264,4 +264,24 @@ Suggested later phase order remains master-aligned, with additions:
 
 ---
 
+## 19. Phase 2 As-Built (Authentication + Shell)
+
+| Area | Decision |
+|---|---|
+| Auth method | Phone + OTP only (no password) |
+| Endpoints | `/auth/otp/request`, `/auth/otp/verify`, `/auth/token/refresh`, `/auth/logout`, `/customers/me` |
+| Tokens | Access + refresh in SecureStore only |
+| Guest browsing | Tabs accessible without login |
+| Auth UI | `/(auth)/phone`, `/(auth)/otp` (modal presentation) |
+| Tabs | Home / Search / Categories / Cart / Profile (feature placeholders except Profile session actions) |
+| Session restore | Cold start refresh → `customers/me` |
+| 401 handling | Single-flight refresh mutex; failure → `markSessionExpired` modal |
+| Logout | Calls logout API then clears SecureStore + RTK cache |
+| Entry | `/` redirects to `/(tabs)` |
+| Design gallery | Moved to `/design-system` (dev validation) |
+
+Do **not** start Phase 3 (Home) until requested.
+
+---
+
 *End of frontend architecture.*

@@ -1,9 +1,11 @@
-import 'react-native-gesture-handler';
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { AppProviders, useTheme } from '@/src/providers';
+import { useSessionBootstrap } from '@/src/hooks';
+import { BootstrapScreen } from '@/src/components/layout/BootstrapScreen';
+import { SessionExpiredModal } from '@/src/components/layout/SessionExpiredModal';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -11,10 +13,11 @@ SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 function RootNavigator() {
   const theme = useTheme();
+  const { isBootstrapping } = useSessionBootstrap();
 
-  useEffect(() => {
-    SplashScreen.hideAsync().catch(() => undefined);
-  }, []);
+  if (isBootstrapping) {
+    return <BootstrapScreen />;
+  }
 
   return (
     <>
@@ -27,9 +30,17 @@ function RootNavigator() {
       >
         <Stack.Screen name="index" />
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="(auth)" />
+        <Stack.Screen
+          name="(auth)"
+          options={{
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen name="design-system" />
         <Stack.Screen name="+not-found" />
       </Stack>
+      <SessionExpiredModal />
     </>
   );
 }

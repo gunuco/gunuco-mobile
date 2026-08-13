@@ -7,6 +7,7 @@ type AuthState = {
   customerId: string | null;
   phone: string | null;
   name: string | null;
+  sessionExpiredVisible: boolean;
 };
 
 const initialState: AuthState = {
@@ -14,6 +15,7 @@ const initialState: AuthState = {
   customerId: null,
   phone: null,
   name: null,
+  sessionExpiredVisible: false,
 };
 
 const authSlice = createSlice({
@@ -28,6 +30,7 @@ const authSlice = createSlice({
       state.customerId = action.payload.customerId;
       state.phone = action.payload.phone;
       state.name = action.payload.name ?? null;
+      state.sessionExpiredVisible = false;
     },
     setUnauthenticated(state) {
       state.status = 'unauthenticated';
@@ -38,8 +41,24 @@ const authSlice = createSlice({
     setAuthUnknown(state) {
       state.status = 'unknown';
     },
+    markSessionExpired(state) {
+      state.status = 'unauthenticated';
+      state.customerId = null;
+      state.phone = null;
+      state.name = null;
+      state.sessionExpiredVisible = true;
+    },
+    dismissSessionExpired(state) {
+      state.sessionExpiredVisible = false;
+    },
   },
 });
 
-export const { setAuthenticated, setUnauthenticated, setAuthUnknown } = authSlice.actions;
+export const {
+  setAuthenticated,
+  setUnauthenticated,
+  setAuthUnknown,
+  markSessionExpired,
+  dismissSessionExpired,
+} = authSlice.actions;
 export const authReducer = authSlice.reducer;

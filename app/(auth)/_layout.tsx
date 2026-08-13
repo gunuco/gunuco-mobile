@@ -1,13 +1,19 @@
 import { Stack } from 'expo-router';
+import { useTheme } from '@/src/providers';
 
-/**
- * Auth stack shell for Phase 2 (Phone OTP).
- * No feature screens yet.
- */
 export default function AuthLayout() {
+  const theme = useTheme();
+
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" />
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: theme.colors.bg.canvas },
+        animation: 'slide_from_right',
+      }}
+    >
+      <Stack.Screen name="phone" />
+      <Stack.Screen name="otp" />
     </Stack>
   );
 }

@@ -42,3 +42,6 @@ export type { GModalProps } from './GModal';
 
 export { BottomSheet } from './BottomSheet';
 export type { BottomSheetProps } from './BottomSheet';
+
+export { OtpInput } from './OtpInput';
+export type { OtpInputProps } from './OtpInput';
