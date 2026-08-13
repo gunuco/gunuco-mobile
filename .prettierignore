@@ -1,0 +1,15 @@
+node_modules
+.expo
+dist
+web-build
+coverage
+*.log
+.DS_Store
+ios
+android
+docs
+GUNUCO_PLAN
+CURSOR_MASTER_INSTRUCTIONS.md
+GUNUCO_PRODUCT_DECISIONS.md
+*.md
+package-lock.json
