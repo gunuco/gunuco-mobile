@@ -112,28 +112,35 @@ Cart → Proceed to Checkout
        → POST /cart/revalidate
        → if invalid: show changes, stay Checkout
        → if valid: POST /checkout (idempotency UUID reused on retry)
-       → navigate to /payment with checkout id only
-       → Razorpay is Phase 9
+       → navigate to /payment with checkout id
+       → Razorpay + backend verify is Phase 9 (Payment screen)
 ```
 
 Production house is **backend-assigned**; customer does not pick it. Google Maps used for address pin/validation.
 
 ---
 
-## 6. Payment (Razorpay — Phase 9)
+## 6. Payment (Razorpay — Phase 9 implemented)
 
 ```text
 POST /checkout success
-  → /payment boundary (Phase 8: no SDK)
-  → Phase 9: Initiate Razorpay (amount in paise)
-  → Customer pays via UPI / Card / Net Banking
-  → Gateway return → Payment Processing
-  → Backend payment verification
-  → Success → Order Confirmed
-  → Failure → Payment Failed (retry / support)
+  → set in-memory payment session (amount paise, fulfilment labels, optional Razorpay order/key)
+  → /payment?checkoutId=
+  → Pay Now
+  → If checkout already returned razorpayOrderId + amount: reuse it
+  → Else POST /payments/razorpay/initiate { checkoutId, idempotencyKey }
+  → Open react-native-razorpay (hosted UPI / card / net banking UI)
+  → Razorpay success is an attempt only
+  → POST /payments/razorpay/confirm (signature forwarded; backend verifies)
+  → Backend verified → Order Confirmation + invalidate Cart + GET /cart
+  → Razorpay fail → Payment failed + Try Again (no new checkout)
+  → User closes Razorpay → Payment cancelled
+  → Network/uncertain after pay → UNKNOWN (retry confirm only; no status GET)
 ```
 
-No advance/balance split for catalogue orders. Do not confirm order from client-only Razorpay success.
+No advance/balance split for catalogue orders. Do not confirm order from client-only Razorpay success. No Order History / Order Detail / tracking from this flow.
+
+Public Razorpay key: `EXPO_PUBLIC_RAZORPAY_KEY_ID`. Razorpay secret stays on the backend. Native development/production build required (not Expo Go).
 
 ---
 

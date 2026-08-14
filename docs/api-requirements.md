@@ -25,7 +25,7 @@
 | Addresses | `addressApi` | Saved book |
 | Fulfilment / Slots | `fulfilmentApi` | Serviceability, ASAP/slots, pickup info. Implemented in Phase 8. |
 | Orders | `orderApi` | List tabs, detail, cancel, reorder |
-| Payments | `paymentApi` | Razorpay initiate + status |
+| Payments | `paymentApi` | Razorpay initiate + confirm. **Phase 9 implemented.** No payment-status GET is documented. |
 | Coupons / Offers | `offerApi` | Codes + auto offers |
 | Store Credit | `storeCreditApi` | Balance + ledger + apply |
 | Tracking | `trackingApi` | Live rider |
@@ -204,11 +204,12 @@ Ledger maintained by backend (refunds, compensation, promos, admin).
 
 | Method | Logical | Notes |
 |---|---|---|
-| POST | `checkout` | **Phase 8 implemented.** Idempotency UUID (`Idempotency-Key` header and body `idempotencyKey` — **[CONFIRM]** which the backend requires). Body also sends fulfilment, asap, addressId?, slotId?, coupon?, storeCredit? `{ max: true }`. Exact request/response field names **[CONFIRM]**. Creates payment intent / order draft. Does **not** open Razorpay. |
-| POST | `payments/razorpay/initiate` | Phase 9 — **not called**. |
-| POST | `payments/razorpay/confirm` or webhook-driven | Client may poll `payments/{id}` / `orders/{id}` | Backend verifies signature |
-| GET | `orders` | `statusGroup=active|past|cancelled` |
-| GET | `orders/{id}` | Full detail + timeline |
+| POST | `checkout` | **Phase 8 implemented.** Idempotency UUID (`Idempotency-Key` header and body `idempotencyKey` — **[CONFIRM]** which the backend requires). Body also sends fulfilment, asap, addressId?, slotId?, coupon?, storeCredit? `{ max: true }`. Exact request/response field names **[CONFIRM]**. Creates payment intent / order draft. Does **not** open Razorpay. Response may include `checkoutId`, `amountPaise`, `razorpayOrderId`, `keyId`, `currency` **[CONFIRM]**. |
+| POST | `payments/razorpay/initiate` | **Phase 9 implemented.** Called from Payment only when checkout did not already return a Razorpay order id + amount. Body: `{ checkoutId, idempotencyKey }`. Amount is **not** sent by the client **[CONFIRM]** if backend requires `amountPaise`. Response normalized: `razorpayOrderId`, `keyId`, `amountPaise`, `currency`. |
+| POST | `payments/razorpay/confirm` | **Phase 9 implemented.** Mandatory backend verification. Body: `{ checkoutId, idempotencyKey, razorpay_payment_id, razorpay_order_id?, razorpay_signature? }` **[CONFIRM]** exact names. Signature is forwarded, never verified on device. Success (`verified` / `success` / `alreadyProcessed`) → Order Confirmation + Cart invalidate + `GET /cart`. |
+| GET | `payments/status` or `payments/{id}` | **Not documented. Not implemented.** Uncertain payment uses UNKNOWN UI and retries confirm only. Do not invent a status poll. |
+| GET | `orders` | `statusGroup=active|past|cancelled` — **not implemented** (later phase) |
+| GET | `orders/{id}` | Full detail + timeline — **not implemented** (later phase) |
 | POST | `orders/{id}/cancel` | reasonCode, otherText?, idempotency |
 | GET | `orders/{id}/cancellation-eligibility` | |
 | POST | `orders/{id}/reorder` | → cart + revalidation result |

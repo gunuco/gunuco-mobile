@@ -76,6 +76,16 @@ export type {
 
 export type { CheckoutPayload, CheckoutResult } from './checkout';
 
+export type {
+  PaymentUiState,
+  InitiateRazorpayPayload,
+  RazorpayCheckoutData,
+  ConfirmRazorpayPayload,
+  PaymentConfirmation,
+} from './payment';
+
+export type { OrderConfirmation } from './order';
+
 export type { StoreCredit, StoreCreditLedgerEntry, ApplyStoreCreditPayload } from './storeCredit';
 
 export type {

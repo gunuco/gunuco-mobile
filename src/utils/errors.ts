@@ -109,8 +109,19 @@ function mapBusinessErrorCode(code: string): string | undefined {
     case 'SLOT_UNAVAILABLE':
     case 'SLOT_INVALID':
       return 'That time slot is no longer available. Please choose another.';
+    case 'CHECKOUT_EXPIRED':
     case 'CHECKOUT_INVALID':
       return 'Please review your checkout details and try again.';
+    case 'PAYMENT_FAILED':
+      return 'Payment failed. Please try again.';
+    case 'PAYMENT_CANCELLED':
+      return 'Payment was cancelled.';
+    case 'PAYMENT_VERIFICATION_FAILED':
+      return 'Payment could not be confirmed.';
+    case 'PAYMENT_ALREADY_PROCESSED':
+      return 'This payment was already processed.';
+    case 'PAYMENT_TIMEOUT':
+      return 'Payment status could not be confirmed.';
     case 'STORE_CREDIT_INSUFFICIENT':
       return 'There is not enough store credit to apply.';
     case 'STORE_CREDIT_INVALID':
@@ -142,4 +153,24 @@ function mapBusinessErrorCode(code: string): string | undefined {
 
 export function isNotFoundError(error: unknown): boolean {
   return Boolean(error && typeof error === 'object' && 'status' in error && error.status === 404);
+}
+
+export function getErrorCode(error: unknown): string | undefined {
+  if (!error || typeof error !== 'object' || !('status' in error)) {
+    return undefined;
+  }
+  const queryError = error as FetchBaseQueryError;
+  if (typeof queryError.data === 'object' && queryError.data !== null) {
+    const body = queryError.data as ApiErrorBody;
+    return typeof body.code === 'string' ? body.code : undefined;
+  }
+  return undefined;
+}
+
+export function isNetworkQueryError(error: unknown): boolean {
+  if (!error || typeof error !== 'object' || !('status' in error)) {
+    return false;
+  }
+  const status = (error as FetchBaseQueryError).status;
+  return status === 'FETCH_ERROR' || status === 'TIMEOUT_ERROR';
 }

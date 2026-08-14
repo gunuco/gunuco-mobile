@@ -50,6 +50,10 @@ export function paymentHref(checkoutId?: string): Href {
   } as unknown as Href;
 }
 
+export function orderConfirmationHref(): Href {
+  return '/order-confirmation' as unknown as Href;
+}
+
 export function addressBookHref(options?: { select?: boolean }): Href {
   return {
     pathname: '/addresses',

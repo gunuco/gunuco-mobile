@@ -4,7 +4,7 @@
  * Catalogue: categoryApi.ts + productApi.ts (search + detail).
  * Cart: cartApi.ts (server cart + coupon + store credit apply/remove).
  * Addresses: addressApi.ts. Fulfilment: fulfilmentApi.ts. Checkout: checkoutApi.ts.
- * Store credit balance: storeCreditApi.ts.
+ * Payments: paymentApi.ts. Store credit balance: storeCreditApi.ts.
  * Wishlist: wishlistApi.ts. Reviews: reviewApi.ts.
  */
 
@@ -87,12 +87,13 @@ export { useCreateCheckoutMutation } from './checkoutApi';
 export { storeCreditApi } from './storeCreditApi';
 export { useGetStoreCreditQuery } from './storeCreditApi';
 
-export const orderApi = baseApi.injectEndpoints({
-  endpoints: () => ({}),
-  overrideExisting: false,
-});
+export { paymentApi } from './paymentApi';
+export {
+  useInitiateRazorpayPaymentMutation,
+  useConfirmRazorpayPaymentMutation,
+} from './paymentApi';
 
-export const paymentApi = baseApi.injectEndpoints({
+export const orderApi = baseApi.injectEndpoints({
   endpoints: () => ({}),
   overrideExisting: false,
 });

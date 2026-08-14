@@ -1,7 +1,7 @@
 import { Stack } from 'expo-router';
 import { useTheme } from '@/src/providers';
 
-export default function PaymentLayout() {
+export default function OrderConfirmationLayout() {
   const theme = useTheme();
   return (
     <Stack

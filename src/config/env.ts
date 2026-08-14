@@ -5,6 +5,7 @@ type EnvConfig = {
   apiBaseUrl: string;
   enableLogging: boolean;
   googleMapsApiKey: string;
+  razorpayKeyId: string;
 };
 
 function resolveAppEnv(): AppEnvironment {
@@ -24,4 +25,5 @@ export const env: EnvConfig = {
   apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://api.dev.gunuco.local',
   enableLogging: process.env.EXPO_PUBLIC_ENABLE_LOGGING === 'true' || __DEV__,
   googleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ?? '',
+  razorpayKeyId: process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID ?? '',
 };

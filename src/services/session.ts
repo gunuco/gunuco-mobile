@@ -3,6 +3,8 @@ import { authApi } from '@/src/store/api/authApi';
 import { baseApi } from '@/src/store/api/baseApi';
 import { setAuthenticated, setUnauthenticated } from '@/src/store/slices/authSlice';
 import { secureStorage } from '@/src/services/secureStorage';
+import { clearPaymentSession } from '@/src/services/paymentSession';
+import { clearOrderConfirmation } from '@/src/services/orderConfirmation';
 import type { Customer, OtpVerifyResponse } from '@/src/types/auth';
 
 function mapCustomer(customer: Customer) {
@@ -35,6 +37,8 @@ export async function applyAuthenticatedSession(
 }
 
 export async function clearSession(dispatch: AppDispatch): Promise<void> {
+  clearPaymentSession();
+  clearOrderConfirmation();
   await secureStorage.clearAuthTokens();
   dispatch(setUnauthenticated());
   dispatch(baseApi.util.resetApiState());

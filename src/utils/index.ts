@@ -1,5 +1,5 @@
 export { formatPaise, paiseToRupees } from './money';
-export { getErrorMessage, isNotFoundError } from './errors';
+export { getErrorMessage, getErrorCode, isNetworkQueryError, isNotFoundError } from './errors';
 export {
   formatPhoneDisplay,
   isValidIndianMobile,
@@ -22,6 +22,7 @@ export {
   writeReviewHref,
   checkoutHref,
   paymentHref,
+  orderConfirmationHref,
   addressBookHref,
   addressFormHref,
 } from './navigation';
@@ -55,6 +56,11 @@ export {
   todayDateParam,
 } from './fulfilment';
 export { normalizeCheckoutResult, buildCheckoutBody } from './checkout';
+export {
+  normalizeRazorpayInitiation,
+  normalizePaymentConfirmation,
+  hasCompleteRazorpayPrep,
+} from './payment';
 export { normalizeStoreCredit } from './storeCredit';
 export { createIdempotencyKey } from './idempotency';
 export {

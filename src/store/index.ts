@@ -61,3 +61,7 @@ export {
 } from './api/fulfilmentApi';
 export { useCreateCheckoutMutation } from './api/checkoutApi';
 export { useGetStoreCreditQuery } from './api/storeCreditApi';
+export {
+  useInitiateRazorpayPaymentMutation,
+  useConfirmRazorpayPaymentMutation,
+} from './api/paymentApi';

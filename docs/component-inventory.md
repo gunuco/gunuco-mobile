@@ -77,7 +77,10 @@
 | `PickupInfoPanel` | Assigned pickup details (no production-house picker) | Checkout |
 | `ServiceabilityMessage` | Deliverable / not + backend fee | Checkout |
 | `StoreCreditCard` | Available balance + apply/remove | Checkout |
-| `OrderCard` | Active/Past/Cancelled lists | Orders |
+| `PaymentSummary` | Payable amount (backend paise), fulfilment, location, schedule | Payment |
+| `PaymentStatusCard` | Preparing / Razorpay / verifying / failed / cancelled / unknown | Payment |
+| `OrderConfirmationCard` | Success copy, order number if provided, total, fulfilment, slot | Order Confirmation |
+| `OrderCard` | Active/Past/Cancelled lists | Orders (later phase) |
 | `OrderTimeline` | Status timeline | Order Detail |
 | `InvoiceButton` | Download invoice PDF | Order Detail |
 | `ReviewCard` | Review display | Product reviews |
@@ -122,8 +125,6 @@ Visible only when backend status allows (typically Out for Delivery).
 | `ForceUpdateView` | Force Update |
 | `MaintenanceView` | Maintenance |
 | `NotificationPermissionCard` | Contextual prompt |
-| `PaymentProcessingView` | Payment Processing |
-| `OrderSuccessActions` | Confirmation |
 | `LegalDocumentView` | Legal |
 
 Promote when a second screen needs the same UI.
@@ -136,7 +137,7 @@ Must remain single implementations with variants:
 
 1. `ProductCard` (all merchandising surfaces)
 2. `ProductOptionRenderer` (all category modules)
-3. `PriceDisplay` / `CartSummary`
+3. `PriceDisplay` / `CartSummary` / `PaymentSummary`
 4. `WishlistButton`
 5. `OrderCard` / `OrderTimeline`
 6. `AddressCard`

@@ -22,5 +22,7 @@ export type CheckoutResult = {
   paymentIntentId?: string;
   amountPaise?: MoneyPaise;
   razorpayOrderId?: string;
+  keyId?: string;
+  currency?: string;
   message?: string | null;
 };

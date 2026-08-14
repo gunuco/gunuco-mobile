@@ -4,7 +4,7 @@ import { buildCheckoutBody, normalizeCheckoutResult } from '@/src/utils/checkout
 
 /**
  * Checkout — logical path from docs/api-requirements.md: POST checkout
- * Creates payment intent / order draft. Razorpay is Phase 9.
+ * Creates payment intent / order draft. Payment screen consumes this result; it does not call POST /checkout again.
  *
  * Idempotency: UUID in `Idempotency-Key` header and body `idempotencyKey`.
  * Exact request/response field names remain [CONFIRM].

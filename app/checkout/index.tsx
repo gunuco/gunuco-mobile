@@ -20,6 +20,7 @@ import {
 } from '@/src/store';
 import { setAuthIntent } from '@/src/services/authIntent';
 import { consumeCheckoutSelectedAddressId } from '@/src/services/checkoutSelection';
+import { setPaymentSession } from '@/src/services/paymentSession';
 import { getErrorMessage } from '@/src/utils/errors';
 import { collectCartChangeMessages, isCartCheckoutReady } from '@/src/utils/cart';
 import { createIdempotencyKey } from '@/src/utils/idempotency';
@@ -218,6 +219,27 @@ export default function CheckoutScreen() {
         setActionMessage('Checkout could not be prepared. Please try again.');
         return;
       }
+      const selectedSlot = slots?.slots.find((item) => item.id === slotId);
+      const scheduleLabel =
+        effectiveMode === 'ASAP'
+          ? 'ASAP'
+          : [selectedDate, selectedSlot?.label].filter(Boolean).join(' · ') || undefined;
+      const locationLabel =
+        fulfilment === 'DELIVERY' && selectedAddress
+          ? [selectedAddress.name, selectedAddress.city].filter(Boolean).join(' · ')
+          : fulfilment === 'PICKUP'
+            ? (pickupQuery.data?.name ?? pickupQuery.data?.address ?? undefined)
+            : undefined;
+      setPaymentSession({
+        checkoutId: paymentRef,
+        amountPaise: result.amountPaise ?? nextCart?.totals.totalPaise ?? cart.totals.totalPaise,
+        fulfilment,
+        locationLabel,
+        scheduleLabel,
+        razorpayOrderId: result.razorpayOrderId,
+        keyId: result.keyId,
+        currency: result.currency,
+      });
       router.push(paymentHref(paymentRef));
     } catch (error) {
       setActionMessage(getErrorMessage(error));
@@ -233,7 +255,10 @@ export default function CheckoutScreen() {
     fulfilment,
     revalidateCart,
     router,
+    pickupQuery.data,
     selectedAddress,
+    selectedDate,
+    slots,
     slotId,
   ]);
 

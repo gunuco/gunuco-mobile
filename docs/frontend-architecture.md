@@ -37,7 +37,8 @@ app/
 ├── wishlist/
 ├── checkout/
 ├── payment/
-├── orders/                 # list, [id], tracking, chat, cancel, review
+├── order-confirmation/
+├── orders/                 # list, [id], tracking — later phase
 ├── addresses/
 ├── offers/
 ├── store-credit/
@@ -158,18 +159,22 @@ Never log tokens; never store card data.
 
 ## 9. Payments
 
-Phase 8 ends at `POST /checkout` + `/payment` route boundary (identifier only). Razorpay SDK, initiate, confirm, and order confirmation are **Phase 9**.
+Phase 9 is implemented. Phase 8 still owns `POST /checkout`. Payment never creates a second checkout.
 
 ```text
 Checkout → POST /cart/revalidate → POST /checkout
-  → /payment (boundary)
-  → Phase 9: payments/razorpay/initiate
-  → open Razorpay SDK
-  → return → poll/confirm via backend
-  → only then Order Confirmation
+  → /payment?checkoutId=
+  → POST /payments/razorpay/initiate (skipped if checkout already returned Razorpay order + amount)
+  → react-native-razorpay hosted UI (UPI / card / net banking)
+  → POST /payments/razorpay/confirm (backend verifies signature)
+  → only then Order Confirmation + Cart invalidate + GET /cart
 ```
 
-Full payment only. Store credit applied server-side before residual Razorpay charge.
+- Package: `react-native-razorpay` ^3.0.0. Requires a development or production native build. **Not Expo Go.**
+- Public key: `EXPO_PUBLIC_RAZORPAY_KEY_ID` via `src/config/env.ts`. Never put Razorpay secret, webhook secret, or verification HMAC in the app.
+- Amount: backend integer paise, passed to Razorpay as-is (no ₹ × 100).
+- Uncertain payment: UNKNOWN UI. No `GET /payments/status` (not documented).
+- Full payment only. Store credit applied server-side before residual Razorpay charge.
 
 ---
 
@@ -393,7 +398,7 @@ Suggested later phase order remains master-aligned, with additions:
 |---|---|
 | Screen | `app/(tabs)/cart.tsx` — one common server cart for all catalogue products |
 | APIs | `GET /cart`, existing `POST /cart/items`, `PATCH /cart/items/{id}` (quantity), `DELETE /cart/items/{id}`, `POST /cart/apply-coupon`, `DELETE /cart/coupon`. `POST /cart/revalidate` is wired in `cartApi` for the future Checkout phase and is not called from Cart UI. |
-| Not called | `POST /cart/merge` **[CONFIRM]**; payment; orders |
+| Not called | `POST /cart/merge` **[CONFIRM]**; orders |
 | Cache | `Cart` tag (`LIST` + cart line id). Mutations update the GET cache when the response is a cart payload; otherwise they invalidate `LIST`. `POST /cart/items` invalidates `LIST`. Logout `resetApiState()` clears cart. |
 | Guest | No local cart. Cart tab shows sign-in. Guest Add to Cart on Product Details still opens phone auth. After OTP, `returnTo` restores `/(tabs)/cart` when the guest opened the tab. |
 | Badge | Tab badge from `itemCount`, else `totalQuantity`, else unique line count from `GET /cart`. Shared query with the Cart screen. |
@@ -408,7 +413,7 @@ Suggested later phase order remains master-aligned, with additions:
 ### Divergence from earlier analysis
 
 1. Guest local draft cart / merge is not implemented.
-2. Payment, orders, tracking, and rider features remain later phases.
+2. Orders, tracking, and rider features remain later phases.
 3. `POST /cart/revalidate` is invoked from Checkout immediately before `POST /checkout`.
 
 ---
@@ -418,7 +423,7 @@ Suggested later phase order remains master-aligned, with additions:
 | Area | Decision |
 |---|---|
 | Checkout route | `app/checkout/index.tsx` — one canonical Checkout. Cart CTA → `/checkout`. Back → Cart. |
-| Payment boundary | `app/payment/index.tsx` — identifier only. No Razorpay, no payment confirm, no “Order placed”. |
+| Payment boundary | `app/payment/index.tsx` — Phase 9 now owns Razorpay + confirm. Checkout still only `POST /checkout` then navigates. |
 | Address routes | `/addresses` (book + `?select=1`), `/addresses/form` (create/edit + map). Profile → Addresses. |
 | Auth | Guest checkout blocked. Existing `authIntent.returnTo` → `/checkout` after OTP. No `checkoutAuth.ts`. |
 | Server state | RTK Query: `addressApi`, `fulfilmentApi`, `checkoutApi`, `storeCreditApi`; store credit apply/remove on `cartApi`. Temporary fulfilment/address/slot selection is Checkout local state + in-memory `checkoutSelection`. |
@@ -431,15 +436,45 @@ Suggested later phase order remains master-aligned, with additions:
 | Totals | `CartSummary` from cart payload (integer paise / `formatPaise`). Checkout hides possibly stale cart delivery fee; serviceability shows backend fee. Tax only if backend returns it. |
 | Continue to Payment | Disabled while loading / invalid cart / address required / not serviceable / slot missing. Flow: revalidate → if changes stay → else `POST /checkout` with reused UUID. |
 | Idempotency | `expo-crypto` UUID. Same fingerprint retries reuse the key. Sent as `Idempotency-Key` header and body `idempotencyKey` **[CONFIRM]**. |
-| Explicitly not implemented | Razorpay SDK, payment initiate/confirm, orders, order history, reorder, tracking, rider chat/call, custom cakes, `POST /products/quote`, `POST /cart/merge`. |
+| Explicitly not implemented | Orders, order history, reorder, tracking, rider chat/call, custom cakes, `POST /products/quote`, `POST /cart/merge`. |
 
 ### Divergence from earlier analysis
 
-1. Payment route exists only as a Phase 9 boundary.
+1. Payment is implemented in Phase 9 (`/payment` + `/order-confirmation`).
 2. Store-credit apply uses `{ max: true }` until OpenAPI confirms `amount` vs `max`.
 3. Slot list cache is keyed by date, fulfilment, address id, and cart revision without sending undocumented extra query params.
 
-Phase 8 is **implemented**. Do **not** start Phase 9 (Payment) until requested.
+Phase 8 is **implemented**. Phase 9 (Payment + Order Confirmation) is **implemented**.
+
+---
+
+## 26. Phase 9 As-Built (Payment + Order Confirmation)
+
+| Area | Decision |
+|---|---|
+| Payment route | `app/payment/index.tsx` — summary + Pay Now. Does not call `POST /checkout`. Does not show checkoutId / razorpayOrderId. |
+| Confirmation route | `app/order-confirmation/index.tsx` — success only after backend confirm. `gestureEnabled: false`. Android back → Home. |
+| Razorpay | `react-native-razorpay` 3.0.0 via `src/services/razorpayCheckout.ts`. Hosted UI only. No card/CVV/UPI PIN collection. |
+| Expo | Native module. Needs `npx expo prebuild` / `expo run:android` / `expo run:ios` or EAS. Not Expo Go. iOS `LSApplicationQueriesSchemes`: tez, phonepe, paytmmp. |
+| Public key | `EXPO_PUBLIC_RAZORPAY_KEY_ID`. Secret never in client, `app.json`, SecureStore, or logs. |
+| Initiate | `POST /payments/razorpay/initiate` only if checkout did not already return Razorpay order + amount. Body `{ checkoutId, idempotencyKey }` **[CONFIRM]**. |
+| Confirm | `POST /payments/razorpay/confirm` with Razorpay callback fields. Backend verifies. Frontend does not HMAC. |
+| Amount | Backend integer paise. Mismatch vs displayed total → “Your total has changed. Please review your order.” → Checkout. Currency other than INR (when present) → do not open Razorpay. Omitted currency sent as `INR` to the SDK **[CONFIRM]**. |
+| State machine | IDLE → PREPARING → RAZORPAY_OPEN → VERIFYING → CONFIRMED / FAILED / CANCELLED / UNKNOWN. Pay Now only from IDLE. Try Again from FAILED/CANCELLED. UNKNOWN retries confirm only. |
+| Idempotency | Initiate key reused per checkout attempt. Confirm key reused per Razorpay payment id retry. Checkout UUID remains Phase 8. |
+| Cart | On verified confirm: invalidate Cart LIST + StoreCredit, then `GET /cart`. Never `items = []` locally. Never clear cart before confirm. |
+| Confirmation data | `orderNumber` if backend returns it (no local `ORD-`). Total/fulfilment/slot from confirm response, with checkout session labels as fallback. |
+| Navigation | Cart → Checkout → Payment → `replace` Order Confirmation. Continue Shopping → `replace /(tabs)`. No View Order (Order Detail later). |
+| Recovery | No payment-status GET. App kill clears in-memory session/confirmation — do not assume success/failure on relaunch. Logout clears payment session + confirmation; customer stays logged in after pay. |
+| Explicitly not implemented | `GET /orders`, Order History, Order Detail, reorder, tracking, rider chat/call, notifications, invoice, Write Review from confirmation, custom payment UI, Stripe/PayPal/etc. |
+
+### Divergence from earlier analysis
+
+1. G3 Payment Processing and G5 Payment Failed are states on Payment, not separate routes.
+2. No status polling; uncertain states retry `POST /payments/razorpay/confirm`.
+3. `orderApi` remains an empty inject — no orders list/detail endpoints.
+
+Phase 9 is **implemented**. Do **not** start Phase 10 (Orders) until requested.
 
 ---
 

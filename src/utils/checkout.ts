@@ -24,6 +24,8 @@ export function normalizeCheckoutResult(response: unknown): CheckoutResult {
     orderDraftId: asString(data.orderDraftId) ?? asString(data.draftOrderId),
     paymentIntentId: asString(data.paymentIntentId) ?? asString(data.paymentId),
     amountPaise: asNumber(data.amountPaise) ?? asNumber(data.amount) ?? asNumber(data.payablePaise),
+    keyId: asString(data.keyId) ?? asString(data.key) ?? asString(data.razorpayKeyId),
+    currency: asString(data.currency),
     razorpayOrderId: asString(data.razorpayOrderId) ?? asString(data.razorpay_order_id),
     message: asString(data.message) ?? null,
   };
