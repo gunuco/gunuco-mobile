@@ -7,19 +7,32 @@ import { GIcon, type GIconName } from './GIcon';
 export type GChipProps = {
   label: string;
   selected?: boolean;
+  disabled?: boolean;
   onPress?: () => void;
   onClear?: () => void;
   iconName?: GIconName;
+  accessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
 };
 
-export function GChip({ label, selected, onPress, onClear, iconName, style }: GChipProps) {
+export function GChip({
+  label,
+  selected,
+  disabled,
+  onPress,
+  onClear,
+  iconName,
+  accessibilityLabel,
+  style,
+}: GChipProps) {
   const theme = useTheme();
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityState={{ selected: !!selected }}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={{ selected: !!selected, disabled: !!disabled }}
+      disabled={disabled}
       onPress={onPress}
       style={[
         {
@@ -33,6 +46,7 @@ export function GChip({ label, selected, onPress, onClear, iconName, style }: GC
           flexDirection: 'row',
           alignItems: 'center',
           gap: theme.spacing.xs,
+          opacity: disabled ? 0.5 : 1,
         },
         style,
       ]}
@@ -44,7 +58,11 @@ export function GChip({ label, selected, onPress, onClear, iconName, style }: GC
           color={selected ? theme.colors.text.inverse : theme.colors.text.secondary}
         />
       ) : null}
-      <GText variant="caption" color={selected ? 'inverse' : 'primary'}>
+      <GText
+        variant="caption"
+        color={selected ? 'inverse' : disabled ? 'disabled' : 'primary'}
+        style={disabled ? { textDecorationLine: 'line-through' } : undefined}
+      >
         {label}
       </GText>
       {onClear ? (

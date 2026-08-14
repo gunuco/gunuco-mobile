@@ -13,3 +13,4 @@ export type { HomeHeaderProps } from './HomeHeader';
 
 export { HomeSkeleton } from './HomeSkeleton';
 export { ProductListSkeleton } from './ProductListSkeleton';
+export { ProductDetailSkeleton } from './ProductDetailSkeleton';

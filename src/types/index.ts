@@ -34,3 +34,18 @@ export type {
   CatalogSelectionState,
 } from './catalog';
 export { DEFAULT_PRODUCT_SORT, DEFAULT_SORT_OPTIONS } from './catalog';
+
+export type {
+  ProductImage,
+  ProductOfferInfo,
+  ProductInfoSection,
+  ProductOptionValue,
+  ProductOptionGroup,
+  ProductVariant,
+  ProductDetail,
+  ProductOptionsResponse,
+  ProductOptionSelection,
+  DisplayedProductPrice,
+  AddCartItemPayload,
+  AddCartItemResponse,
+} from './product';

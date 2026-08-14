@@ -1,5 +1,5 @@
 export { formatPaise, paiseToRupees } from './money';
-export { getErrorMessage } from './errors';
+export { getErrorMessage, isNotFoundError } from './errors';
 export {
   formatPhoneDisplay,
   isValidIndianMobile,
@@ -15,3 +15,17 @@ export {
   normalizeProductListResponse,
 } from './catalogQuery';
 export { categoryHref, categoryProductsHref, productHref } from './navigation';
+export {
+  normalizeProductDetail,
+  normalizeProductOptions,
+  getProductImages,
+  getProductOffer,
+  isMultiSelectGroup,
+  buildDefaultSelection,
+  getMissingRequiredGroups,
+  resolveDisplayedPrice,
+  isOptionValueSelectable,
+  applyOptionValuePress,
+  toCartOptions,
+  getAvailabilityMessage,
+} from './productDetail';

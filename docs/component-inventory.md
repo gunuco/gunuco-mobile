@@ -60,8 +60,9 @@
 | `ProductCarousel` | Horizontal products | Home |
 | `CategorySection` | Section + cards | Home |
 | `OfferCard` / `OfferSection` | Promos | Home, Offers |
-| `ProductOptionRenderer` | **Schema-driven** options (not cake-hardcoded) | Product Options |
-| `AddOnSelector` | Optional/required add-ons if API returns | Options |
+| `ProductOptionRenderer` | **Schema-driven** option groups/values (single/multi); required vs optional; unavailable visible but not selectable | Product Details |
+| `ProductImageGallery` | Swipeable `GImage` gallery, count, dots, preview modal | Product Details |
+| `AddOnSelector` | Not a separate component — add-ons from the options payload render through `ProductOptionRenderer` | Options |
 | `WishlistButton` | Heart toggle | Product surfaces |
 | `CartItem` | Line item + options summary + qty | Cart |
 | `CartSummary` | Totals incl. tax line | Cart, Checkout |
@@ -112,6 +113,7 @@ Visible only when backend status allows (typically Out for Delivery).
 | Component | Screen |
 |---|---|
 | `HomeBannerCarousel` | Home |
+| `ProductDetailSkeleton` | Product Details |
 | `OnboardingSlide` | Onboarding |
 | `ForceUpdateView` | Force Update |
 | `MaintenanceView` | Maintenance |

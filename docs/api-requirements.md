@@ -93,11 +93,11 @@ Launch: active main category = Cakes. Featured sections admin-controlled.
 |---|---|---|
 | GET | `categories` | Customer-visible **active-only** tree. Inactive / future mains (Coffee, Pizza, Burgers) are omitted until backend activates them. If a node includes `isActive`, the app requires `true`; if the flag is omitted, the payload is trusted as already filtered. |
 | GET | `categories/{id}/products` | page, sort, filters |
-| GET | `products/{id}` | Detail, rating summary, wishlist flag, starting price (paise) |
-| GET | `products/{id}/options` | Schema-driven options/variants/add-ons |
-| POST | `products/quote` or cart preview | Selected options → line price **[CONFIRM]** |
+| GET | `products/{id}` | Detail, rating summary, wishlist flag, starting price (paise). Public browse GET. Envelope `{ product }` / `{ data }` / bare object is normalized. |
+| GET | `products/{id}/options` | Schema-driven option groups/values and optional variants. Public browse GET. 404 is treated as “no options”. |
+| POST | `products/quote` or cart preview | Selected options → line price **[CONFIRM]** — **not called** in Phase 5. Displayed price uses detail starting price, a matching variant, or a single backend-provided option `pricePaise`. No frontend price math or discount %. |
 
-Cookies and all cake subcategories use generic option schema — not cake-hardcoded fields.
+Cookies and all cake subcategories use generic option schema — not cake-hardcoded fields. Add-ons, if present on the options payload, are mapped into the same option-group renderer.
 
 ---
 
@@ -139,7 +139,7 @@ Auth required.
 | Method | Logical | Notes |
 |---|---|---|
 | GET | `cart` | Server cart for customer |
-| POST | `cart/items` | productId, options, qty |
+| POST | `cart/items` | productId, quantity, options (`{ groupId, valueIds }[]`). Wired from Product Details Add to Cart for signed-in customers. Guests are sent to phone auth — no local cart. Success UI only after a real 2xx. GET cart / PATCH / DELETE remain later-phase. |
 | PATCH | `cart/items/{id}` | qty/options |
 | DELETE | `cart/items/{id}` | |
 | POST | `cart/revalidate` | availability/price/options/offers/fulfilment |

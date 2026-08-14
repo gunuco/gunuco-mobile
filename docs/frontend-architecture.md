@@ -280,7 +280,7 @@ Suggested later phase order remains master-aligned, with additions:
 | Entry | `/` redirects to `/(tabs)` |
 | Design gallery | Moved to `/design-system` (dev validation) |
 
-Do **not** start Phase 5 (Product Details) until requested.
+Phase 5 (Product Details + Product Options) is **implemented**. Do **not** start Phase 6 (Wishlist + Ratings & Reviews) until requested.
 
 ---
 
@@ -298,7 +298,7 @@ Do **not** start Phase 5 (Product Details) until requested.
 | Lists | Horizontal `@shopify/flash-list` (v2; no `estimatedItemSize`) for banners, categories, offers, products |
 | Images | `GImage` / `expo-image` memory-disk cache |
 | Memoization | `ProductCard`, `CategoryCard`, section carousels memoized |
-| Navigation | Category → `/category/[id]`; Product → `/product/[id]` (PDP shell from Phase 4); offers/notifications/address/add-to-cart still deferred |
+| Navigation | Category → `/category/[id]`; Product → `/product/[id]` |
 | Pagination | Not applicable — Home is a single aggregated payload |
 | Guest | Home loads without auth (token attached only when present) |
 
@@ -317,7 +317,7 @@ Do **not** start Phase 5 (Product Details) until requested.
 | Main category | `app/category/[id]/index.tsx` — subcategory grid; leaf categories auto-`replace` to products |
 | Product listing | `app/category/[id]/products.tsx` — filters, sort, pagination, pull-to-refresh |
 | Search tab | `app/(tabs)/search.tsx` — debounced `GET /products/search` (350ms, min 2 chars) |
-| Product route | `app/product/[id].tsx` — navigation shell only (no full PDP) |
+| Product route | `app/product/[id].tsx` — Product Details implemented in Phase 5 |
 | APIs | `categoryApi` (`getCategories`, `getCategoryProducts`), `productApi.searchProducts` |
 | Shared chrome | `CatalogToolbar`, `SortSheet`, `FilterSheet`, `ProductGridList`, `GChip` |
 | Filter source | Backend `availableFilters` / subcategory list from category tree; price min/max as paise query params |
@@ -331,6 +331,33 @@ Do **not** start Phase 5 (Product Details) until requested.
 1. Option filter keys are passed through from backend filter group ids (not cake-specific query param names).
 2. Add/Wishlist actions hidden on listing cards until Cart/Wishlist phases.
 3. Categories response normalizer accepts `{ categories }`, `{ data }`, or bare array to tolerate backend envelope variance without inventing endpoints.
+
+---
+
+## 22. Phase 5 As-Built (Product Details + Product Options)
+
+| Area | Decision |
+|---|---|
+| Screen | `app/product/[id].tsx` — generic PDP for all catalogue products |
+| Route | `/product/[id]` with product id only (Home / Category / Search already `productHref`) |
+| APIs | `GET /products/{id}`, `GET /products/{id}/options`, `POST /cart/items` |
+| Not called | `POST /products/quote` remains **[CONFIRM]** |
+| Options | `ProductOptionRenderer` from backend groups/values; add-ons mapped into the same groups; no cake-specific fields |
+| Price | Backend starting price, matching variant, or a single option `pricePaise`. No frontend totals or discount %. |
+| Availability | Backend `isAvailable` / labels; unavailable PDP stays visible with disabled CTA |
+| Quantity | Shared `QuantitySelector`; min/max from API when present |
+| Add to Cart | Signed-in customers call `POST /cart/items`. Success copy only after 2xx. Guests are sent to phone auth. No local guest cart. Cart tab remains a placeholder. |
+| Wishlist / reviews | Layout-ready only. Rating summary/count shown if the product payload includes them. No mutations or review list. |
+| Images | `ProductImageGallery` on `GImage` / expo-image memory-disk cache, swipe + count + preview |
+| States | `ProductDetailSkeleton`, `ErrorState` + retry + continue shopping, 404 `EmptyState` |
+| Guest | PDP is public browse (including `/products/{id}/options`). Auth is not required to open the screen. |
+| Custom cake | Not implemented. Wedding/Birthday cakes use this same catalogue PDP. |
+
+### Divergence from earlier analysis
+
+1. Product options live on the Product Details screen (D4 is not a separate route).
+2. Quote/preview API is not used while it remains **[CONFIRM]**.
+3. Guest add-to-cart does not create a local draft cart (`cart/merge` still **[CONFIRM]**).
 
 ---
 

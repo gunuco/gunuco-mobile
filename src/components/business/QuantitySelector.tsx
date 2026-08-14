@@ -10,6 +10,7 @@ export type QuantitySelectorProps = {
   min?: number;
   max?: number;
   disabled?: boolean;
+  loading?: boolean;
 };
 
 export function QuantitySelector({
@@ -18,10 +19,12 @@ export function QuantitySelector({
   min = 1,
   max = 99,
   disabled = false,
+  loading = false,
 }: QuantitySelectorProps) {
   const theme = useTheme();
-  const canDecrement = !disabled && value > min;
-  const canIncrement = !disabled && value < max;
+  const isDisabled = disabled || loading;
+  const canDecrement = !isDisabled && value > min;
+  const canIncrement = !isDisabled && value < max;
 
   return (
     <View
@@ -32,8 +35,10 @@ export function QuantitySelector({
         borderWidth: 1,
         borderColor: theme.colors.border.default,
         overflow: 'hidden',
-        opacity: disabled ? 0.5 : 1,
+        opacity: isDisabled ? 0.5 : 1,
       }}
+      accessibilityLabel="Quantity"
+      accessibilityValue={{ min, max, now: value }}
     >
       <Pressable
         accessibilityRole="button"

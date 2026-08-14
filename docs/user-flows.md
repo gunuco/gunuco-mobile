@@ -40,15 +40,17 @@ Remain logged in until logout; multiple devices supported.
 
 ```text
 Open App (guest)
-  → Browse Home / Search / Categories / Product
-  → Select options → Add to Cart (local draft until login — sync rules backend-defined)
-  → Cart → Checkout
-  → Authentication Required
-  → Phone → OTP → Login/Register
+  → Browse Home / Search / Categories / Product Details
+  → Select options / quantity (guest allowed)
+  → Add to Cart
+       → Sign in required (server-persisted cart; no local guest cart)
+       → Phone → OTP → Login/Register
+  → Cart → Checkout (later phases)
+  → Authentication Required at checkout if needed
   → Resume Checkout → Payment → Order
 ```
 
-Guest checkout is **not** allowed.
+Guest checkout is **not** allowed. Guest local draft cart / `cart/merge` remains **[CONFIRM]** and is not implemented.
 
 ---
 
@@ -59,14 +61,15 @@ Home
   → Main Category (Cakes)
   → Subcategory (GUNUCO Premium | Cakes | Cookies | Wedding Cakes | Birthday Cakes)
   → Product Catalogue
-  → Product Details
-  → Select available options/variants (schema-driven)
-  → Add to Cart
-  → Common Cart
+  → Product Details (`/product/[id]`)
+  → Select available options/variants (schema-driven; same UI for all categories)
+  → Select quantity
+  → Add to Cart (`POST cart/items` when signed in)
+  → Common Cart (Phase 7)
   → Checkout
 ```
 
-Same path via Search or Offers.
+Same path via Search or Offers. Wedding Cakes and Birthday Cakes use this catalogue flow — no custom-cake quotation.
 
 ---
 

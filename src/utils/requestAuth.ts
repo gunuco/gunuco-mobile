@@ -36,12 +36,7 @@ export function isPublicBrowseRequest(args: string | FetchArgs): boolean {
     return false;
   }
   const url = requestUrl(args);
-  return (
-    url === '/customer/home' ||
-    url.startsWith('/categories') ||
-    url.startsWith('/products/search') ||
-    /^\/products\/[^/]+$/.test(url)
-  );
+  return url === '/customer/home' || url.startsWith('/categories') || url.startsWith('/products/');
 }
 
 export function isAnonymousEndpointName(endpoint: string | undefined): boolean {

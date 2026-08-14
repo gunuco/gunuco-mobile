@@ -48,3 +48,9 @@ export type { CatalogToolbarProps } from './CatalogToolbar';
 
 export { ProductGridList } from './ProductGridList';
 export type { ProductGridListProps } from './ProductGridList';
+
+export { ProductImageGallery } from './ProductImageGallery';
+export type { ProductImageGalleryProps } from './ProductImageGallery';
+
+export { ProductOptionRenderer } from './ProductOptionRenderer';
+export type { ProductOptionRendererProps } from './ProductOptionRenderer';
