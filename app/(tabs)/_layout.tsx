@@ -1,5 +1,8 @@
 import { Tabs } from 'expo-router';
 import { useTheme } from '@/src/providers';
+import { useAuth } from '@/src/hooks';
+import { useGetCartQuery } from '@/src/store';
+import { getCartBadgeCount } from '@/src/utils/cart';
 import { GIcon, type GIconName } from '@/src/components';
 
 function TabIcon({ name, color, size }: { name: GIconName; color: string; size: number }) {
@@ -8,6 +11,9 @@ function TabIcon({ name, color, size }: { name: GIconName; color: string; size: 
 
 export default function TabsLayout() {
   const theme = useTheme();
+  const { isAuthenticated } = useAuth();
+  const cartQuery = useGetCartQuery(undefined, { skip: !isAuthenticated });
+  const cartBadge = getCartBadgeCount(cartQuery.data);
 
   return (
     <Tabs
@@ -58,6 +64,11 @@ export default function TabsLayout() {
         name="cart"
         options={{
           title: 'Cart',
+          tabBarBadge: cartBadge > 0 ? cartBadge : undefined,
+          tabBarBadgeStyle: {
+            backgroundColor: theme.colors.brand.primary,
+            color: theme.colors.text.inverse,
+          },
           tabBarIcon: ({ color, size }) => (
             <TabIcon name="cart-outline" color={String(color)} size={size} />
           ),

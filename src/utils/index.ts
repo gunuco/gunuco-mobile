@@ -29,6 +29,14 @@ export {
 } from './wishlist';
 export type { WishlistCartDecision } from './wishlist';
 export {
+  normalizeCart,
+  mutationReturnedCart,
+  getCartBadgeCount,
+  formatCartOptionSummary,
+  isCartCheckoutReady,
+  collectCartChangeMessages,
+} from './cart';
+export {
   normalizeProductDetail,
   normalizeProductOptions,
   getProductImages,

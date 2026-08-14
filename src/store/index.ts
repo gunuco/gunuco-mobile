@@ -27,7 +27,15 @@ export {
 } from './api/categoryApi';
 export { useSearchProductsQuery, useLazySearchProductsQuery } from './api/productApi';
 export { useGetProductQuery, useGetProductOptionsQuery } from './api/productApi';
-export { useAddCartItemMutation } from './api/cartApi';
+export {
+  useGetCartQuery,
+  useAddCartItemMutation,
+  useUpdateCartItemMutation,
+  useRemoveCartItemMutation,
+  useRevalidateCartMutation,
+  useApplyCouponMutation,
+  useRemoveCouponMutation,
+} from './api/cartApi';
 export {
   useGetWishlistQuery,
   useAddWishlistItemMutation,

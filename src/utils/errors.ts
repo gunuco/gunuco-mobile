@@ -78,6 +78,31 @@ function mapBusinessErrorCode(code: string): string | undefined {
     case 'CART_UNAVAILABLE':
     case 'CART_ITEM_UNAVAILABLE':
       return 'This item could not be added to your cart right now.';
+    case 'CART_INVALID':
+      return 'Please review your cart before continuing.';
+    case 'QUANTITY_LIMIT':
+      return 'That quantity is not available for this product.';
+    case 'INVALID_OPTIONS':
+      return 'That option is no longer available. Please choose another.';
+    case 'COUPON_INVALID':
+    case 'COUPON_NOT_FOUND':
+      return 'This coupon code is not valid.';
+    case 'COUPON_EXPIRED':
+      return 'This coupon has expired.';
+    case 'COUPON_MIN_ORDER':
+    case 'COUPON_MINIMUM':
+      return 'This coupon needs a higher cart total.';
+    case 'COUPON_NOT_ELIGIBLE':
+    case 'COUPON_INELIGIBLE':
+    case 'COUPON_NOT_APPLICABLE':
+      return 'This coupon cannot be used on these items.';
+    case 'COUPON_ALREADY_APPLIED':
+      return 'This coupon is already applied.';
+    case 'COUPON_STACKING':
+    case 'COUPON_STACKING_CONFLICT':
+      return 'This coupon cannot be combined with your current offers.';
+    case 'SERVICEABILITY_FAILED':
+      return 'These items cannot be fulfilled together right now.';
     case 'WISHLIST_UNAVAILABLE':
     case 'WISHLIST_ITEM_UNAVAILABLE':
       return 'Unable to update your wishlist right now.';

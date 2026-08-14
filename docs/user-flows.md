@@ -65,8 +65,8 @@ Home
   → Select available options/variants (schema-driven; same UI for all categories)
   → Select quantity
   → Add to Cart (`POST cart/items` when signed in)
-  → Common Cart (Phase 7)
-  → Checkout
+  → Common Cart (`/(tabs)/cart`)
+  → Checkout (later phase)
 ```
 
 Same path via Search or Offers. Wedding Cakes and Birthday Cakes use this catalogue flow — no custom-cake quotation.
@@ -76,15 +76,16 @@ Same path via Search or Offers. Wedding Cakes and Birthday Cakes use this catalo
 ## 4. Cart
 
 ```text
-Cart
-  → View mixed catalogue items
-  → Update quantity / remove / edit options
-  → Apply coupon (optional)
+Cart tab (`/(tabs)/cart`)
+  → Guest: Sign in (phone OTP). No local cart.
+  → Authenticated: GET /cart
+  → View mixed catalogue items (one common cart)
+  → Update quantity (PATCH /cart/items/{id}) / remove (DELETE)
+  → Invalid options → Product Details (existing option renderer)
+  → Apply / remove coupon (optional)
   → Proceed to Checkout
-  → Backend revalidates:
-        availability, price, quantity, options, offers, fulfilment
-  → If changed → "Cart Updated" review UI
-  → If OK → Checkout
+       → Phase 7: CTA is enabled for a valid cart but Checkout is not implemented
+       → Later: POST /cart/revalidate then Checkout
 ```
 
 One cart → one checkout → one order (multi-item allowed; backend validates joint fulfilment).

@@ -46,7 +46,7 @@
 | `ListRow` | Profile/settings rows |
 | `OfflineBanner` | Connectivity / store closed messaging |
 | `OtpInput` | OTP digit group |
-| `CouponInput` | Code field + Apply |
+| `CouponInput` | Code field + Apply / applied + Remove |
 | `ThemeAwareScreen` | Optional safe wrapper consuming theme |
 
 ---
@@ -65,9 +65,10 @@
 | `AddOnSelector` | Not a separate component — add-ons from the options payload render through `ProductOptionRenderer` | Options |
 | `WishlistButton` | Heart add/remove; guest → phone auth | ProductCard, Product Details, Wishlist |
 | `ReviewCard` | Approved review display (rating, text, date, safe name) | Product Reviews |
-| `CartItem` | Line item + options summary + qty | Cart |
-| `CartSummary` | Totals incl. tax line | Cart, Checkout |
-| `CartChangeBanner` | Price/availability change notice | Cart, Checkout, Reorder |
+| `CartItem` | Line item + options summary + qty + remove + unavailable/price-change states | Cart |
+| `CartSummary` | Backend totals: subtotal, discount, tax, delivery if returned, total | Cart (Checkout later) |
+| `CartChangeBanner` | Price/availability/option change notice from cart payload | Cart |
+| `CouponInput` | Code + Apply; applied code + Remove | Cart |
 | `AddressCard` | Saved address | Address book, Checkout |
 | `AddressForm` | Full address fields | Address Form |
 | `MapPicker` | Google Maps pin UI | Address Form |
@@ -115,6 +116,7 @@ Visible only when backend status allows (typically Out for Delivery).
 |---|---|
 | `HomeBannerCarousel` | Home |
 | `ProductDetailSkeleton` | Product Details |
+| `CartSkeleton` | Cart |
 | `OnboardingSlide` | Onboarding |
 | `ForceUpdateView` | Force Update |
 | `MaintenanceView` | Maintenance |

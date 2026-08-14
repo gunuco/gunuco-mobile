@@ -137,14 +137,16 @@ No local guest wishlist. Guest heart/open-wishlist → phone auth. After OTP, pe
 
 | Method | Logical | Notes |
 |---|---|---|
-| GET | `cart` | Server cart for customer |
-| POST | `cart/items` | productId, quantity, options (`{ groupId, valueIds }[]`). Wired from Product Details Add to Cart and from Wishlist when the product is already known not to require options. If Wishlist cannot prove that, it navigates to Product Details instead of posting empty options. Guests are sent to phone auth — no local cart. Success UI only after a real 2xx. GET cart / PATCH / DELETE remain later-phase. |
-| PATCH | `cart/items/{id}` | qty/options |
-| DELETE | `cart/items/{id}` | |
-| POST | `cart/revalidate` | availability/price/options/offers/fulfilment |
-| POST | `cart/merge` | Guest draft → server after login **[CONFIRM]** |
+| GET | `cart` | Auth required. Normalized envelopes `{ cart }` / `{ data }` / bare object. Server-persisted common cart. |
+| POST | `cart/items` | productId, quantity, options (`{ groupId, valueIds }[]`). Wired from Product Details and Wishlist (when options are known to be safe). Guests are sent to phone auth — no local cart. Success UI only after a real 2xx. Invalidates Cart `LIST`. |
+| PATCH | `cart/items/{id}` | Body `{ quantity }`. Option edits go through Product Details, not a Cart option selector. |
+| DELETE | `cart/items/{id}` | Remove one cart line. |
+| POST | `cart/revalidate` | Wired in `cartApi` for future Checkout. Not called from the Cart screen in Phase 7. |
+| POST | `cart/apply-coupon` | Body `{ code }`. Backend stacking. Cart totals update from the mutation/GET response. |
+| DELETE | `cart/coupon` | Remove applied coupon. |
+| POST | `cart/merge` | Guest draft → server after login **[CONFIRM]** — **not called**. |
 
-Common cart; multi-item; no custom-cake cart.
+Common cart; multi-item; no custom-cake cart. No guest local cart.
 
 ---
 

@@ -1,5 +1,7 @@
 import { baseApi } from './baseApi';
 import type { AddCartItemPayload, AddCartItemResponse } from '@/src/types/product';
+import type { ApplyCouponPayload, Cart, UpdateCartItemPayload } from '@/src/types/cart';
+import { mutationReturnedCart, normalizeCart } from '@/src/utils/cart';
 
 function normalizeAddCartItemResponse(response: unknown): AddCartItemResponse {
   if (!response || typeof response !== 'object') {
@@ -18,14 +20,35 @@ function normalizeAddCartItemResponse(response: unknown): AddCartItemResponse {
   return { itemId, cartId };
 }
 
+const cartListTag = { type: 'Cart' as const, id: 'LIST' };
+
+function cartTags(cart: Cart | undefined) {
+  if (!cart) {
+    return [cartListTag];
+  }
+  return [cartListTag, ...cart.items.map((item) => ({ type: 'Cart' as const, id: item.id }))];
+}
+
 /**
- * Cart mutation used by Product Details Add to Cart.
- * Logical path from docs/api-requirements.md: POST cart/items
+ * Common server cart — logical paths from docs/api-requirements.md:
+ * GET cart
+ * POST cart/items
+ * PATCH cart/items/{id}
+ * DELETE cart/items/{id}
+ * POST cart/revalidate
+ * POST cart/apply-coupon
+ * DELETE cart/coupon
  *
- * GET cart and the rest of the Cart feature belong to a later phase.
+ * POST cart/merge remains [CONFIRM] and is not called.
+ * Store credit endpoints are not implemented in this phase.
  */
 export const cartApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
+    getCart: build.query<Cart, void>({
+      query: () => '/cart',
+      transformResponse: (response: unknown) => normalizeCart(response),
+      providesTags: (result) => cartTags(result),
+    }),
     addCartItem: build.mutation<AddCartItemResponse, AddCartItemPayload>({
       query: ({ productId, quantity, options }) => ({
         url: '/cart/items',
@@ -33,10 +56,110 @@ export const cartApi = baseApi.injectEndpoints({
         body: { productId, quantity, options },
       }),
       transformResponse: (response: unknown) => normalizeAddCartItemResponse(response),
-      invalidatesTags: ['Cart'],
+      invalidatesTags: [cartListTag],
+    }),
+    updateCartItem: build.mutation<Cart | undefined, UpdateCartItemPayload>({
+      query: ({ itemId, quantity }) => ({
+        url: `/cart/items/${itemId}`,
+        method: 'PATCH',
+        body: { quantity },
+      }),
+      transformResponse: (response: unknown) => mutationReturnedCart(response),
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          if (data) {
+            dispatch(cartApi.util.updateQueryData('getCart', undefined, () => data));
+          }
+        } catch {
+          // UI keeps previous cart; error is surfaced by the caller.
+        }
+      },
+      invalidatesTags: (result) => (result ? [] : [cartListTag]),
+    }),
+    removeCartItem: build.mutation<Cart | undefined, string>({
+      query: (itemId) => ({
+        url: `/cart/items/${itemId}`,
+        method: 'DELETE',
+      }),
+      transformResponse: (response: unknown) => mutationReturnedCart(response),
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          if (data) {
+            dispatch(cartApi.util.updateQueryData('getCart', undefined, () => data));
+          }
+        } catch {
+          // Keep the item until a successful server response.
+        }
+      },
+      invalidatesTags: (result) => (result ? [] : [cartListTag]),
+    }),
+    revalidateCart: build.mutation<Cart | undefined, void>({
+      query: () => ({
+        url: '/cart/revalidate',
+        method: 'POST',
+      }),
+      transformResponse: (response: unknown) => mutationReturnedCart(response),
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          if (data) {
+            dispatch(cartApi.util.updateQueryData('getCart', undefined, () => data));
+          }
+        } catch {
+          // Caller shows a safe error. Checkout is not implemented in this phase.
+        }
+      },
+      invalidatesTags: (result) => (result ? [] : [cartListTag]),
+    }),
+    applyCoupon: build.mutation<Cart | undefined, ApplyCouponPayload>({
+      query: ({ code }) => ({
+        url: '/cart/apply-coupon',
+        method: 'POST',
+        body: { code },
+      }),
+      transformResponse: (response: unknown) => mutationReturnedCart(response),
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          if (data) {
+            dispatch(cartApi.util.updateQueryData('getCart', undefined, () => data));
+          }
+        } catch {
+          // Totals stay server-authoritative; UI shows mapped coupon errors.
+        }
+      },
+      invalidatesTags: (result) => (result ? [] : [cartListTag]),
+    }),
+    removeCoupon: build.mutation<Cart | undefined, void>({
+      query: () => ({
+        url: '/cart/coupon',
+        method: 'DELETE',
+      }),
+      transformResponse: (response: unknown) => mutationReturnedCart(response),
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          if (data) {
+            dispatch(cartApi.util.updateQueryData('getCart', undefined, () => data));
+          }
+        } catch {
+          // Keep the applied coupon until DELETE succeeds.
+        }
+      },
+      invalidatesTags: (result) => (result ? [] : [cartListTag]),
     }),
   }),
   overrideExisting: true,
 });
 
-export const { useAddCartItemMutation } = cartApi;
+export const {
+  useGetCartQuery,
+  useAddCartItemMutation,
+  useUpdateCartItemMutation,
+  useRemoveCartItemMutation,
+  useRevalidateCartMutation,
+  useApplyCouponMutation,
+  useRemoveCouponMutation,
+} = cartApi;

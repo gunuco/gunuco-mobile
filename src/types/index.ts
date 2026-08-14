@@ -53,6 +53,17 @@ export type {
 export type { WishlistItem, WishlistResponse } from './wishlist';
 
 export type {
+  CartSelectedOption,
+  CartChange,
+  CartLine,
+  CartTotals,
+  CartCoupon,
+  Cart,
+  UpdateCartItemPayload,
+  ApplyCouponPayload,
+} from './cart';
+
+export type {
   ProductReview,
   ProductReviewsArgs,
   ProductReviewsResponse,

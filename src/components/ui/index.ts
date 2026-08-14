@@ -48,3 +48,6 @@ export type { OtpInputProps } from './OtpInput';
 
 export { GChip } from './GChip';
 export type { GChipProps } from './GChip';
+
+export { ConfirmDialog } from './ConfirmDialog';
+export type { ConfirmDialogProps } from './ConfirmDialog';

@@ -19,6 +19,15 @@ export type { AddressCardProps } from './AddressCard';
 export { CartItem } from './CartItem';
 export type { CartItemProps } from './CartItem';
 
+export { CartSummary } from './CartSummary';
+export type { CartSummaryProps } from './CartSummary';
+
+export { CartChangeBanner } from './CartChangeBanner';
+export type { CartChangeBannerProps } from './CartChangeBanner';
+
+export { CouponInput } from './CouponInput';
+export type { CouponInputProps } from './CouponInput';
+
 export { OrderCard } from './OrderCard';
 export type { OrderCardProps } from './OrderCard';
 

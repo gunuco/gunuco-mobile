@@ -88,7 +88,7 @@ Screens compose shared components only.
 | Server | RTK Query |
 | Auth session | `authSlice` + SecureStore |
 | Theme preference | `settingsSlice` / SecureStore or AsyncStorage |
-| Guest cart draft | ephemeral/local until merge **[CONFIRM]** |
+| Guest cart draft | Not implemented. Guest cart mutations go to phone auth. `POST /cart/merge` remains **[CONFIRM]**. |
 | Cart (logged-in) | RTK Query `cartApi` |
 
 Do not duplicate API payloads into slices.
@@ -280,7 +280,7 @@ Suggested later phase order remains master-aligned, with additions:
 | Entry | `/` redirects to `/(tabs)` |
 | Design gallery | Moved to `/design-system` (dev validation) |
 
-Phase 6 (Wishlist + Ratings & Reviews) is **implemented**. Do **not** start Phase 7 (Cart screen) until requested.
+Phase 7 (Cart) is **implemented**. Do **not** start Phase 8 (Checkout) until requested.
 
 ---
 
@@ -346,7 +346,7 @@ Phase 6 (Wishlist + Ratings & Reviews) is **implemented**. Do **not** start Phas
 | Price | Backend starting price, matching variant, or a single option `pricePaise`. No frontend totals or discount %. |
 | Availability | Backend `isAvailable` / labels; unavailable PDP stays visible with disabled CTA |
 | Quantity | Shared `QuantitySelector`; min/max from API when present |
-| Add to Cart | Signed-in customers call `POST /cart/items`. Success copy only after 2xx. Guests are sent to phone auth. No local guest cart. Cart tab remains a placeholder. |
+| Add to Cart | Signed-in customers call `POST /cart/items`. Success copy only after 2xx. Guests are sent to phone auth. No local guest cart. Cart tab is the Phase 7 common cart. |
 | Wishlist / reviews | Phase 6: `WishlistButton` in header; Reviews link → `/product/[id]/reviews` |
 | Images | `ProductImageGallery` on `GImage` / expo-image memory-disk cache, swipe + count + preview |
 | States | `ProductDetailSkeleton`, `ErrorState` + retry + continue shopping, 404 `EmptyState` |
@@ -380,6 +380,32 @@ Phase 6 (Wishlist + Ratings & Reviews) is **implemented**. Do **not** start Phas
 
 1. Guest local wishlist is not implemented.
 2. Write Review is architecture-ready without an Orders entry point.
+
+---
+
+## 24. Phase 7 As-Built (Common Cart)
+
+| Area | Decision |
+|---|---|
+| Screen | `app/(tabs)/cart.tsx` — one common server cart for all catalogue products |
+| APIs | `GET /cart`, existing `POST /cart/items`, `PATCH /cart/items/{id}` (quantity), `DELETE /cart/items/{id}`, `POST /cart/apply-coupon`, `DELETE /cart/coupon`. `POST /cart/revalidate` is wired in `cartApi` for the future Checkout phase and is not called from Cart UI. |
+| Not called | `POST /cart/merge` **[CONFIRM]**; store credit; addresses; fulfilment; checkout; payment; orders |
+| Cache | `Cart` tag (`LIST` + cart line id). Mutations update the GET cache when the response is a cart payload; otherwise they invalidate `LIST`. `POST /cart/items` invalidates `LIST`. Logout `resetApiState()` clears cart. |
+| Guest | No local cart. Cart tab shows sign-in. Guest Add to Cart on Product Details still opens phone auth. After OTP, `returnTo` restores `/(tabs)/cart` when the guest opened the tab. |
+| Badge | Tab badge from `itemCount`, else `totalQuantity`, else unique line count from `GET /cart`. Shared query with the Cart screen. |
+| Options | Option summary from cart payload labels/`optionsSummary`. Invalid options stay on the line; customer is sent to `/product/[id]`. No Cart option selector. |
+| Pricing | Backend totals only (subtotal, discount, tax, delivery fee if returned, total). Integer paise via `formatPaise`. No frontend price math. |
+| Quantity | Shared `QuantitySelector`; loading on the mutating line; previous quantity kept on failure. Min/max from API when present. |
+| Remove | Confirm dialog, then `DELETE`. Item stays until 2xx. |
+| Coupon | `CouponInput` → backend validate/stack. Success only after 2xx. |
+| Checkout CTA | Enabled when the cart is valid. Does **not** open a checkout screen. Shows that checkout arrives later. |
+| Custom cake | Not implemented. Wedding/Birthday cakes and cookies are normal cart lines. |
+
+### Divergence from earlier analysis
+
+1. Guest local draft cart / merge is not implemented.
+2. Checkout, addresses, fulfilment, payment, store credit, and orders are not implemented.
+3. `POST /cart/revalidate` is API-ready but not invoked until Checkout.
 
 ---
 

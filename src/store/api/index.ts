@@ -2,7 +2,7 @@
  * API module shells. Auth endpoints live in authApi.ts.
  * Home endpoints live in homeApi.ts.
  * Catalogue: categoryApi.ts + productApi.ts (search + detail).
- * Cart: cartApi.ts (add item mutation for Product Details).
+ * Cart: cartApi.ts (server cart + add/update/remove/coupon/revalidate).
  * Wishlist: wishlistApi.ts. Reviews: reviewApi.ts.
  */
 
@@ -38,7 +38,15 @@ export {
 } from './productApi';
 
 export { cartApi } from './cartApi';
-export { useAddCartItemMutation } from './cartApi';
+export {
+  useGetCartQuery,
+  useAddCartItemMutation,
+  useUpdateCartItemMutation,
+  useRemoveCartItemMutation,
+  useRevalidateCartMutation,
+  useApplyCouponMutation,
+  useRemoveCouponMutation,
+} from './cartApi';
 
 export { wishlistApi } from './wishlistApi';
 export {
