@@ -5,7 +5,12 @@ import type {
   CategoryProductsArgs,
   ProductListResponse,
 } from '@/src/types/catalog';
-import { buildCatalogQueryParams, catalogListCacheKey } from '@/src/utils/catalogQuery';
+import {
+  buildCatalogQueryParams,
+  catalogListCacheKey,
+  mergeProductListPages,
+  normalizeProductListResponse,
+} from '@/src/utils/catalogQuery';
 
 function normalizeCategoriesResponse(
   response: CategoriesResponse | CategoryNode[] | { data: CategoryNode[] },
@@ -39,19 +44,13 @@ export const categoryApi = baseApi.injectEndpoints({
         url: `/categories/${categoryId}/products`,
         params: buildCatalogQueryParams(rest),
       }),
+      transformResponse: (response: ProductListResponse, _meta, arg) =>
+        normalizeProductListResponse(response, arg.page),
       providesTags: (_result, _error, arg) => [
         { type: 'Product', id: `category-${arg.categoryId}` },
       ],
       serializeQueryArgs: ({ queryArgs }) => catalogListCacheKey(queryArgs),
-      merge: (currentCache, newItems) => {
-        if (newItems.page <= 1) {
-          return newItems;
-        }
-        return {
-          ...newItems,
-          items: [...(currentCache?.items ?? []), ...newItems.items],
-        };
-      },
+      merge: (currentCache, newItems) => mergeProductListPages(currentCache, newItems),
       forceRefetch: ({ currentArg, previousArg }) => currentArg?.page !== previousArg?.page,
     }),
   }),

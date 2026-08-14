@@ -3,8 +3,9 @@ import { ScrollView, View } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GButton, GCard, GText, Header } from '@/src/components';
+import { persistThemePreference } from '@/src/services/themePreference';
 import { useAuth } from '@/src/hooks';
-import { setThemePreference, useAppDispatch, useAppSelector } from '@/src/store';
+import { useAppDispatch, useAppSelector } from '@/src/store';
 import { useTheme } from '@/src/providers';
 import { formatPhoneDisplay } from '@/src/utils';
 
@@ -81,29 +82,37 @@ export default function ProfileTabScreen() {
               title="Light"
               size="sm"
               variant="secondary"
-              onPress={() => dispatch(setThemePreference('light'))}
+              onPress={() => {
+                void persistThemePreference(dispatch, 'light');
+              }}
             />
             <GButton
               title="Dark"
               size="sm"
               variant="secondary"
-              onPress={() => dispatch(setThemePreference('dark'))}
+              onPress={() => {
+                void persistThemePreference(dispatch, 'dark');
+              }}
             />
             <GButton
               title="System"
               size="sm"
               variant="ghost"
-              onPress={() => dispatch(setThemePreference('system'))}
+              onPress={() => {
+                void persistThemePreference(dispatch, 'system');
+              }}
             />
           </View>
         </GCard>
 
-        <GButton
-          title="Design system gallery"
-          variant="tertiary"
-          fullWidth
-          onPress={() => router.push('/design-system')}
-        />
+        {__DEV__ ? (
+          <GButton
+            title="Design system gallery"
+            variant="tertiary"
+            fullWidth
+            onPress={() => router.push('/design-system')}
+          />
+        ) : null}
       </ScrollView>
     </View>
   );

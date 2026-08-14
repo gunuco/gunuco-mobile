@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GButton, GText, Header, OtpInput } from '@/src/components';
 import { useAuth } from '@/src/hooks';
 import { useRequestOtpMutation, useVerifyOtpMutation } from '@/src/store';
 import { useTheme } from '@/src/providers';
 import { formatPhoneDisplay, getErrorMessage } from '@/src/utils';
+import { clearOtpChallenge, getOtpChallenge, setOtpChallenge } from '@/src/services/otpChallenge';
 
 const OTP_LENGTH = 6;
 
@@ -14,20 +15,11 @@ export default function OtpAuthScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { completeLogin } = useAuth();
-  const params = useLocalSearchParams<{
-    phone?: string;
-    challengeId?: string;
-    expiresIn?: string;
-  }>();
+  const stored = getOtpChallenge();
 
-  const phone = typeof params.phone === 'string' ? params.phone : '';
-  const [challengeId, setChallengeId] = useState(
-    typeof params.challengeId === 'string' ? params.challengeId : '',
-  );
-  const initialExpiry = Number(params.expiresIn ?? 60);
-  const [secondsLeft, setSecondsLeft] = useState(
-    Number.isFinite(initialExpiry) && initialExpiry > 0 ? initialExpiry : 60,
-  );
+  const phone = stored?.phone ?? '';
+  const [challengeId, setChallengeId] = useState(stored?.challengeId ?? '');
+  const [secondsLeft, setSecondsLeft] = useState(stored?.expiresIn ?? 60);
   const [otp, setOtp] = useState('');
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -36,6 +28,7 @@ export default function OtpAuthScreen() {
 
   useEffect(() => {
     if (!phone || !challengeId) {
+      clearOtpChallenge();
       router.replace('/(auth)/phone');
     }
   }, [phone, challengeId]);
@@ -80,6 +73,11 @@ export default function OtpAuthScreen() {
     setOtp('');
     try {
       const result = await requestOtp({ phone }).unwrap();
+      setOtpChallenge({
+        phone,
+        challengeId: result.challengeId,
+        expiresIn: result.expiresIn > 0 ? result.expiresIn : 60,
+      });
       setChallengeId(result.challengeId);
       setSecondsLeft(result.expiresIn > 0 ? result.expiresIn : 60);
     } catch {
@@ -97,7 +95,14 @@ export default function OtpAuthScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.bg.canvas }}>
-      <Header title="Verify OTP" showBack onBackPress={() => router.back()} />
+      <Header
+        title="Verify OTP"
+        showBack
+        onBackPress={() => {
+          clearOtpChallenge();
+          router.back();
+        }}
+      />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

@@ -1,6 +1,8 @@
 import { useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '@/src/store/hooks';
 import { applyAuthenticatedSession, logoutSession, restoreSession } from '@/src/services/session';
+import { clearOtpChallenge } from '@/src/services/otpChallenge';
+import { restoreThemePreference } from '@/src/services/themePreference';
 import { dismissSessionExpired } from '@/src/store/slices/authSlice';
 import type { OtpVerifyResponse } from '@/src/types/auth';
 
@@ -10,6 +12,7 @@ export function useAuth() {
 
   const completeLogin = useCallback(
     async (payload: OtpVerifyResponse) => {
+      clearOtpChallenge();
       await applyAuthenticatedSession(dispatch, payload);
     },
     [dispatch],
@@ -21,6 +24,7 @@ export function useAuth() {
   }, [dispatch]);
 
   const bootstrap = useCallback(async () => {
+    await restoreThemePreference(dispatch);
     await restoreSession(dispatch);
   }, [dispatch]);
 

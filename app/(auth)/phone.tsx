@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GButton, GInput, GText, Header } from '@/src/components';
 import { useRequestOtpMutation } from '@/src/store';
+import { setOtpChallenge, clearOtpChallenge } from '@/src/services/otpChallenge';
 import { useTheme } from '@/src/providers';
 import { getErrorMessage, isValidIndianMobile, toE164India } from '@/src/utils';
 
@@ -24,14 +25,12 @@ export default function PhoneAuthScreen() {
     const e164 = toE164India(phone);
     try {
       const result = await requestOtp({ phone: e164 }).unwrap();
-      router.push({
-        pathname: '/(auth)/otp',
-        params: {
-          phone: e164,
-          challengeId: result.challengeId,
-          expiresIn: String(result.expiresIn ?? 60),
-        },
+      setOtpChallenge({
+        phone: e164,
+        challengeId: result.challengeId,
+        expiresIn: result.expiresIn ?? 60,
       });
+      router.push('/(auth)/otp');
     } catch {
       // RTK error surfaced below via `error`
     }
@@ -98,7 +97,10 @@ export default function PhoneAuthScreen() {
             title="Continue as guest"
             variant="ghost"
             fullWidth
-            onPress={() => router.replace('/(tabs)')}
+            onPress={() => {
+              clearOtpChallenge();
+              router.replace('/(tabs)');
+            }}
           />
         </ScrollView>
       </KeyboardAvoidingView>

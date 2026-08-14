@@ -5,6 +5,7 @@ import { useTheme } from '@/src/providers';
 import { useGetCategoriesQuery } from '@/src/store';
 import { getErrorMessage } from '@/src/utils/errors';
 import { categoryHref, categoryProductsHref } from '@/src/utils/navigation';
+import { isCustomerVisibleCategory } from '@/src/utils/categoryTree';
 import type { CategoryNode } from '@/src/types';
 import { CategoryCard, EmptyState, ErrorState, Header, Section, Skeleton } from '@/src/components';
 
@@ -16,7 +17,7 @@ export default function CategoriesTabScreen() {
   const { data, error, isLoading, isError, isFetching, refetch } = useGetCategoriesQuery();
 
   const mainCategories = useMemo(
-    () => (data?.categories ?? []).filter((category) => category.isActive !== false),
+    () => (data?.categories ?? []).filter(isCustomerVisibleCategory),
     [data?.categories],
   );
 
@@ -31,7 +32,7 @@ export default function CategoriesTabScreen() {
 
   const openCategory = useCallback(
     (category: CategoryNode) => {
-      const activeChildren = (category.children ?? []).filter((child) => child.isActive !== false);
+      const activeChildren = (category.children ?? []).filter(isCustomerVisibleCategory);
       if (activeChildren.length > 0) {
         router.push(categoryHref(category.id));
         return;
@@ -58,9 +59,21 @@ export default function CategoriesTabScreen() {
             gap: theme.spacing.md,
           }}
         >
-          <Skeleton width={120} height={140} borderRadius={theme.radius.lg} />
-          <Skeleton width={120} height={140} borderRadius={theme.radius.lg} />
-          <Skeleton width={120} height={140} borderRadius={theme.radius.lg} />
+          <Skeleton
+            width={theme.dimensions.categoryCard.width}
+            height={theme.dimensions.categoryCard.skeletonHeight}
+            borderRadius={theme.radius.lg}
+          />
+          <Skeleton
+            width={theme.dimensions.categoryCard.width}
+            height={theme.dimensions.categoryCard.skeletonHeight}
+            borderRadius={theme.radius.lg}
+          />
+          <Skeleton
+            width={theme.dimensions.categoryCard.width}
+            height={theme.dimensions.categoryCard.skeletonHeight}
+            borderRadius={theme.radius.lg}
+          />
         </View>
       ) : null}
 

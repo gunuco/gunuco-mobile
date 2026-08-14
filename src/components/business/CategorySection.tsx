@@ -45,12 +45,24 @@ function CategorySectionComponent({
             gap: theme.spacing.md,
           }}
         >
-          <Skeleton width={120} height={140} borderRadius={theme.radius.lg} />
-          <Skeleton width={120} height={140} borderRadius={theme.radius.lg} />
-          <Skeleton width={120} height={140} borderRadius={theme.radius.lg} />
+          <Skeleton
+            width={theme.dimensions.categoryCard.width}
+            height={theme.dimensions.categoryCard.skeletonHeight}
+            borderRadius={theme.radius.lg}
+          />
+          <Skeleton
+            width={theme.dimensions.categoryCard.width}
+            height={theme.dimensions.categoryCard.skeletonHeight}
+            borderRadius={theme.radius.lg}
+          />
+          <Skeleton
+            width={theme.dimensions.categoryCard.width}
+            height={theme.dimensions.categoryCard.skeletonHeight}
+            borderRadius={theme.radius.lg}
+          />
         </View>
       ) : (
-        <View style={{ height: 160 }}>
+        <View style={{ height: theme.dimensions.catalogRowHeight }}>
           <FlashList
             data={categories}
             horizontal

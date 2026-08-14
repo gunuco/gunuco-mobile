@@ -6,22 +6,35 @@ import {
   type FetchBaseQueryError,
 } from '@reduxjs/toolkit/query/react';
 import { Mutex } from '@/src/utils/mutex';
+import {
+  isAnonymousAuthRequest,
+  isAnonymousEndpointName,
+  isPublicBrowseRequest,
+} from '@/src/utils/requestAuth';
 import { env } from '@/src/config';
 import { secureStorage } from '@/src/services/secureStorage';
-import { markSessionExpired } from '../slices/authSlice';
+import { markSessionExpired, setUnauthenticated } from '../slices/authSlice';
 import type { RefreshTokenResponse } from '@/src/types/auth';
 
 const mutex = new Mutex();
 
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: env.apiBaseUrl,
-  prepareHeaders: async (headers) => {
-    const token = await secureStorage.getAccessToken();
-    if (token) {
-      headers.set('Authorization', `Bearer ${token}`);
-    }
+  prepareHeaders: async (headers, { endpoint }) => {
     headers.set('Accept', 'application/json');
     headers.set('Content-Type', 'application/json');
+
+    if (isAnonymousEndpointName(endpoint)) {
+      return headers;
+    }
+
+    const [accessToken, refreshToken] = await Promise.all([
+      secureStorage.getAccessToken(),
+      secureStorage.getRefreshToken(),
+    ]);
+    if (accessToken && refreshToken) {
+      headers.set('Authorization', `Bearer ${accessToken}`);
+    }
     return headers;
   },
 });
@@ -33,50 +46,80 @@ async function persistTokens(tokens: RefreshTokenResponse): Promise<void> {
   ]);
 }
 
+async function dropInvalidSession(
+  api: Parameters<BaseQueryFn>[1],
+  showExpiredModal: boolean,
+): Promise<void> {
+  await secureStorage.clearAuthTokens();
+  if (showExpiredModal) {
+    api.dispatch(markSessionExpired());
+  } else {
+    api.dispatch(setUnauthenticated());
+  }
+}
+
 export const baseQueryWithReauth: BaseQueryFn<
   string | FetchArgs,
   unknown,
   FetchBaseQueryError
 > = async (args, api, extraOptions) => {
+  if (isAnonymousAuthRequest(args, api.endpoint)) {
+    return rawBaseQuery(args, api, extraOptions);
+  }
+
   await mutex.waitForUnlock();
   let result = await rawBaseQuery(args, api, extraOptions);
 
-  if (result.error && result.error.status === 401) {
-    if (!mutex.isLocked()) {
-      const release = await mutex.acquire();
-      try {
-        const refreshToken = await secureStorage.getRefreshToken();
-        if (!refreshToken) {
-          await secureStorage.clearAuthTokens();
-          api.dispatch(markSessionExpired());
-          return result;
-        }
+  if (!result.error || result.error.status !== 401) {
+    return result;
+  }
 
-        const refreshResult = await rawBaseQuery(
-          {
-            url: '/auth/token/refresh',
-            method: 'POST',
-            body: { refreshToken },
-          },
-          api,
-          extraOptions,
-        );
+  const publicBrowse = isPublicBrowseRequest(args);
 
-        if (refreshResult.data) {
-          const tokens = refreshResult.data as RefreshTokenResponse;
-          await persistTokens(tokens);
-          result = await rawBaseQuery(args, api, extraOptions);
-        } else {
-          await secureStorage.clearAuthTokens();
-          api.dispatch(markSessionExpired());
-        }
-      } finally {
-        release();
+  if (!mutex.isLocked()) {
+    const release = await mutex.acquire();
+    try {
+      const refreshToken = await secureStorage.getRefreshToken();
+      if (!refreshToken) {
+        await dropInvalidSession(api, false);
+        return publicBrowse ? rawBaseQuery(args, api, extraOptions) : result;
       }
-    } else {
-      await mutex.waitForUnlock();
-      result = await rawBaseQuery(args, api, extraOptions);
+
+      const refreshResult = await rawBaseQuery(
+        {
+          url: '/auth/token/refresh',
+          method: 'POST',
+          body: { refreshToken },
+        },
+        api,
+        extraOptions,
+      );
+
+      if (refreshResult.data) {
+        const tokens = refreshResult.data as RefreshTokenResponse;
+        await persistTokens(tokens);
+        return rawBaseQuery(args, api, extraOptions);
+      }
+
+      await dropInvalidSession(api, !publicBrowse);
+      return publicBrowse ? rawBaseQuery(args, api, extraOptions) : result;
+    } finally {
+      release();
     }
+  }
+
+  await mutex.waitForUnlock();
+  const [accessToken, refreshToken] = await Promise.all([
+    secureStorage.getAccessToken(),
+    secureStorage.getRefreshToken(),
+  ]);
+
+  if (accessToken && refreshToken) {
+    return rawBaseQuery(args, api, extraOptions);
+  }
+
+  if (publicBrowse) {
+    return rawBaseQuery(args, api, extraOptions);
   }
 
   return result;

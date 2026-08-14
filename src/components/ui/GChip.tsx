@@ -23,7 +23,7 @@ export function GChip({ label, selected, onPress, onClear, iconName, style }: GC
       onPress={onPress}
       style={[
         {
-          minHeight: 32,
+          minHeight: theme.dimensions.chipMin,
           paddingHorizontal: theme.spacing.md,
           paddingVertical: theme.spacing.xs,
           borderRadius: theme.radius.pill,

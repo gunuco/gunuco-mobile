@@ -1,12 +1,14 @@
 import { useEffect, useRef } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
+import { useAppSelector } from '@/src/store/hooks';
 import { useAuth } from './useAuth';
 
 /**
- * Restores session once on cold start and hides splash when auth status is known.
+ * Restores theme + session once on cold start and hides splash when both are ready.
  */
 export function useSessionBootstrap() {
   const { status, bootstrap } = useAuth();
+  const themeHydrated = useAppSelector((state) => state.settings.themeHydrated);
   const started = useRef(false);
 
   useEffect(() => {
@@ -17,11 +19,13 @@ export function useSessionBootstrap() {
     void bootstrap();
   }, [bootstrap]);
 
+  const isBootstrapping = status === 'unknown' || !themeHydrated;
+
   useEffect(() => {
-    if (status !== 'unknown') {
+    if (!isBootstrapping) {
       SplashScreen.hideAsync().catch(() => undefined);
     }
-  }, [status]);
+  }, [isBootstrapping]);
 
-  return { isBootstrapping: status === 'unknown' };
+  return { isBootstrapping };
 }

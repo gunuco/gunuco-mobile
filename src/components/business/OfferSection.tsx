@@ -42,11 +42,19 @@ function OfferSectionComponent({
             gap: theme.spacing.md,
           }}
         >
-          <Skeleton width={200} height={148} borderRadius={theme.radius.lg} />
-          <Skeleton width={200} height={148} borderRadius={theme.radius.lg} />
+          <Skeleton
+            width={theme.dimensions.offerCard.width}
+            height={theme.dimensions.offerCard.minHeight}
+            borderRadius={theme.radius.lg}
+          />
+          <Skeleton
+            width={theme.dimensions.offerCard.width}
+            height={theme.dimensions.offerCard.minHeight}
+            borderRadius={theme.radius.lg}
+          />
         </View>
       ) : (
-        <View style={{ height: 160 }}>
+        <View style={{ height: theme.dimensions.catalogRowHeight }}>
           <FlashList
             data={offers}
             horizontal

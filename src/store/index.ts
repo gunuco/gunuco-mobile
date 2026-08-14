@@ -9,7 +9,7 @@ export {
   markSessionExpired,
   dismissSessionExpired,
 } from './slices/authSlice';
-export { setThemePreference } from './slices/settingsSlice';
+export { setThemePreference, markThemeHydrated } from './slices/settingsSlice';
 export type { ThemePreference } from './slices/settingsSlice';
 export {
   useRequestOtpMutation,

@@ -3,7 +3,7 @@ import { RefreshControl, ScrollView, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTheme } from '@/src/providers';
 import { useGetCategoriesQuery } from '@/src/store';
-import { findCategoryById } from '@/src/utils/categoryTree';
+import { findCategoryById, isCustomerVisibleCategory } from '@/src/utils/categoryTree';
 import { getErrorMessage } from '@/src/utils/errors';
 import { categoryProductsHref } from '@/src/utils/navigation';
 import type { CategoryNode } from '@/src/types';
@@ -24,7 +24,7 @@ export default function CategoryDetailScreen() {
   );
 
   const subcategories = useMemo(
-    () => (category?.children ?? []).filter((child) => child.isActive !== false),
+    () => (category?.children ?? []).filter(isCustomerVisibleCategory),
     [category?.children],
   );
 
@@ -75,8 +75,16 @@ export default function CategoryDetailScreen() {
         <View style={{ padding: theme.spacing.lg, gap: theme.spacing.lg }}>
           <Skeleton height={140} borderRadius={theme.radius.xl} />
           <View style={{ flexDirection: 'row', gap: theme.spacing.md }}>
-            <Skeleton width={120} height={140} borderRadius={theme.radius.lg} />
-            <Skeleton width={120} height={140} borderRadius={theme.radius.lg} />
+            <Skeleton
+              width={theme.dimensions.categoryCard.width}
+              height={theme.dimensions.categoryCard.skeletonHeight}
+              borderRadius={theme.radius.lg}
+            />
+            <Skeleton
+              width={theme.dimensions.categoryCard.width}
+              height={theme.dimensions.categoryCard.skeletonHeight}
+              borderRadius={theme.radius.lg}
+            />
           </View>
         </View>
       ) : null}

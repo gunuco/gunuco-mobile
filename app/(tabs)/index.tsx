@@ -90,10 +90,6 @@ export default function HomeTabScreen() {
     [router],
   );
 
-  const onAddPress = useCallback((_product: ProductSummary) => {
-    // Cart mutations arrive in a later phase.
-  }, []);
-
   const onBannerPress = useCallback(
     (banner: HomeBanner) => {
       if (banner.linkType === 'category' && banner.linkId) {
@@ -216,24 +212,24 @@ export default function HomeTabScreen() {
                 title="Featured"
                 products={data?.featuredProducts ?? []}
                 onProductPress={onProductPress}
-                onAddPress={onAddPress}
                 showWishlist={false}
+                showAddButton={false}
               />
 
               <ProductCarousel
                 title="Best sellers"
                 products={data?.bestSellers ?? []}
                 onProductPress={onProductPress}
-                onAddPress={onAddPress}
                 showWishlist={false}
+                showAddButton={false}
               />
 
               <ProductCarousel
                 title="Recommended"
                 products={data?.recommendedProducts ?? []}
                 onProductPress={onProductPress}
-                onAddPress={onAddPress}
                 showWishlist={false}
+                showAddButton={false}
               />
             </>
           )}

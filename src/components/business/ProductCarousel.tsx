@@ -28,7 +28,7 @@ function ProductCarouselComponent({
   onAddPress,
   onSeeAllPress,
   showWishlist = false,
-  showAddButton = true,
+  showAddButton = false,
 }: ProductCarouselProps) {
   const theme = useTheme();
   const cardWidth = theme.dimensions.productImage.card + theme.spacing.md * 2;
@@ -56,7 +56,7 @@ function ProductCarouselComponent({
           <Skeleton width={cardWidth} height={260} borderRadius={theme.radius.lg} />
         </View>
       ) : (
-        <View style={{ minHeight: 280 }}>
+        <View style={{ minHeight: theme.dimensions.productCarouselMinHeight }}>
           <FlashList
             data={products}
             horizontal

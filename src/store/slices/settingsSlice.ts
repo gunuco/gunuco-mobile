@@ -5,10 +5,12 @@ export type ThemePreference = ThemeMode | 'system';
 
 type SettingsState = {
   themePreference: ThemePreference;
+  themeHydrated: boolean;
 };
 
 const initialState: SettingsState = {
   themePreference: 'system',
+  themeHydrated: false,
 };
 
 const settingsSlice = createSlice({
@@ -18,8 +20,11 @@ const settingsSlice = createSlice({
     setThemePreference(state, action: PayloadAction<ThemePreference>) {
       state.themePreference = action.payload;
     },
+    markThemeHydrated(state) {
+      state.themeHydrated = true;
+    },
   },
 });
 
-export const { setThemePreference } = settingsSlice.actions;
+export const { setThemePreference, markThemeHydrated } = settingsSlice.actions;
 export const settingsReducer = settingsSlice.reducer;

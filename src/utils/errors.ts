@@ -2,9 +2,11 @@ import type { SerializedError } from '@reduxjs/toolkit';
 import type { FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import type { ApiErrorBody } from '@/src/types/auth';
 
+const GENERIC_MESSAGE = 'Something went wrong. Please try again.';
+
 export function getErrorMessage(
   error: FetchBaseQueryError | SerializedError | undefined,
-  fallback = 'Something went wrong. Please try again.',
+  fallback = GENERIC_MESSAGE,
 ): string {
   if (!error) {
     return fallback;
@@ -31,9 +33,6 @@ export function getErrorMessage(
           return mapped;
         }
       }
-      if (typeof body.message === 'string' && body.message.trim().length > 0) {
-        return body.message;
-      }
     }
 
     if (error.status === 401) {
@@ -49,10 +48,6 @@ export function getErrorMessage(
     }
 
     return fallback;
-  }
-
-  if (typeof error.message === 'string' && error.message.trim().length > 0) {
-    return error.message;
   }
 
   return fallback;

@@ -21,9 +21,21 @@ function HomeSkeletonComponent() {
             gap: theme.spacing.md,
           }}
         >
-          <Skeleton width={120} height={140} borderRadius={theme.radius.lg} />
-          <Skeleton width={120} height={140} borderRadius={theme.radius.lg} />
-          <Skeleton width={120} height={140} borderRadius={theme.radius.lg} />
+          <Skeleton
+            width={theme.dimensions.categoryCard.width}
+            height={theme.dimensions.categoryCard.skeletonHeight}
+            borderRadius={theme.radius.lg}
+          />
+          <Skeleton
+            width={theme.dimensions.categoryCard.width}
+            height={theme.dimensions.categoryCard.skeletonHeight}
+            borderRadius={theme.radius.lg}
+          />
+          <Skeleton
+            width={theme.dimensions.categoryCard.width}
+            height={theme.dimensions.categoryCard.skeletonHeight}
+            borderRadius={theme.radius.lg}
+          />
         </View>
       </Section>
 
@@ -35,8 +47,16 @@ function HomeSkeletonComponent() {
             gap: theme.spacing.md,
           }}
         >
-          <Skeleton width={160} height={240} borderRadius={theme.radius.lg} />
-          <Skeleton width={160} height={240} borderRadius={theme.radius.lg} />
+          <Skeleton
+            width={theme.dimensions.productImage.card}
+            height={240}
+            borderRadius={theme.radius.lg}
+          />
+          <Skeleton
+            width={theme.dimensions.productImage.card}
+            height={240}
+            borderRadius={theme.radius.lg}
+          />
         </View>
       </Section>
     </View>

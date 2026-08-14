@@ -275,7 +275,7 @@ Suggested later phase order remains master-aligned, with additions:
 | Auth UI | `/(auth)/phone`, `/(auth)/otp` (modal presentation) |
 | Tabs | Home / Search / Categories / Cart / Profile (feature placeholders except Profile session actions) |
 | Session restore | Cold start refresh → `customers/me` |
-| 401 handling | Single-flight refresh mutex; failure → `markSessionExpired` modal |
+| 401 handling | Public catalogue GETs retry as guest after a failed refresh; private 401s refresh once then clear session. Waiters never replay a dead token. |
 | Logout | Calls logout API then clears SecureStore + RTK cache |
 | Entry | `/` redirects to `/(tabs)` |
 | Design gallery | Moved to `/design-system` (dev validation) |

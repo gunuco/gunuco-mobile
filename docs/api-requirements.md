@@ -91,7 +91,7 @@ Launch: active main category = Cakes. Featured sections admin-controlled.
 
 | Method | Logical | Query / notes |
 |---|---|---|
-| GET | `categories` | Tree; only active for customer |
+| GET | `categories` | Customer-visible **active-only** tree. Inactive / future mains (Coffee, Pizza, Burgers) are omitted until backend activates them. If a node includes `isActive`, the app requires `true`; if the flag is omitted, the payload is trusted as already filtered. |
 | GET | `categories/{id}/products` | page, sort, filters |
 | GET | `products/{id}` | Detail, rating summary, wishlist flag, starting price (paise) |
 | GET | `products/{id}/options` | Schema-driven options/variants/add-ons |

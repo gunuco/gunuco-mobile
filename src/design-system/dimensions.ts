@@ -16,6 +16,19 @@ export const dimensions = {
     card: 140,
     hero: 320,
   },
+  categoryCard: {
+    width: 120,
+    image: 72,
+    skeletonHeight: 140,
+  },
+  offerCard: {
+    width: 200,
+    minHeight: 148,
+    imageHeight: 72,
+  },
+  catalogRowHeight: 160,
+  productCarouselMinHeight: 280,
+  chipMin: 32,
   bottomNavHeight: 64,
   headerHeight: 56,
   buttonHeight: {

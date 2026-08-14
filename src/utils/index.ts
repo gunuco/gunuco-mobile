@@ -7,6 +7,11 @@ export {
   toE164India,
 } from './phone';
 export { Mutex } from './mutex';
-export { buildCatalogQueryParams, catalogListCacheKey } from './catalogQuery';
-export { findCategoryById, flattenSubcategories } from './categoryTree';
+export { findCategoryById, flattenSubcategories, isCustomerVisibleCategory } from './categoryTree';
+export {
+  buildCatalogQueryParams,
+  catalogListCacheKey,
+  mergeProductListPages,
+  normalizeProductListResponse,
+} from './catalogQuery';
 export { categoryHref, categoryProductsHref, productHref } from './navigation';

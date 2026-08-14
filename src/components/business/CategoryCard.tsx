@@ -16,11 +16,17 @@ function CategoryCardComponent({ category, onPress }: CategoryCardProps) {
 
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={category.name} onPress={onPress}>
-      <GCard style={{ width: 120, alignItems: 'center', gap: theme.spacing.sm }}>
+      <GCard
+        style={{
+          width: theme.dimensions.categoryCard.width,
+          alignItems: 'center',
+          gap: theme.spacing.sm,
+        }}
+      >
         <GImage
           uri={category.imageUrl}
-          width={72}
-          height={72}
+          width={theme.dimensions.categoryCard.image}
+          height={theme.dimensions.categoryCard.image}
           borderRadius={theme.radius.md}
           accessibilityLabel={category.name}
         />

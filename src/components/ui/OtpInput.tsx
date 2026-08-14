@@ -101,7 +101,7 @@ export function OtpInput({
             editable={!disabled}
             selectTextOnFocus
             style={{
-              width: 44,
+              width: theme.dimensions.touchMin,
               height: theme.dimensions.inputHeight,
               borderRadius: theme.radius.lg,
               borderWidth: 1.5,

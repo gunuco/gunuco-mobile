@@ -19,23 +19,23 @@ function OfferCardComponent({ offer, onPress }: OfferCardProps) {
     <Pressable accessibilityRole="button" accessibilityLabel={offer.title} onPress={onPress}>
       <GCard
         style={{
-          width: 200,
+          width: theme.dimensions.offerCard.width,
           gap: theme.spacing.sm,
-          minHeight: 148,
+          minHeight: theme.dimensions.offerCard.minHeight,
         }}
       >
         {offer.imageUrl ? (
           <GImage
             uri={offer.imageUrl}
-            width={168}
-            height={72}
+            width={theme.dimensions.offerCard.width - theme.spacing.md * 2}
+            height={theme.dimensions.offerCard.imageHeight}
             borderRadius={theme.radius.md}
             accessibilityLabel={offer.title}
           />
         ) : (
           <View
             style={{
-              height: 72,
+              height: theme.dimensions.offerCard.imageHeight,
               borderRadius: theme.radius.md,
               backgroundColor: theme.colors.bg.surfaceMuted,
               alignItems: 'center',
