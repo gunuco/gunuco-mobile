@@ -14,6 +14,12 @@ export type ProductSummary = {
   isAvailable?: boolean;
   discountLabel?: string | null;
   isWishlisted?: boolean;
+  /**
+   * Present only when list/wishlist payload (or cached product data) already
+   * states whether required option groups exist. `undefined` means unknown —
+   * do not assume the product can be added with empty options.
+   */
+  hasRequiredOptions?: boolean;
 };
 
 export type CategorySummary = {

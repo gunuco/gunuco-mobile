@@ -22,6 +22,13 @@ export {
   writeReviewHref,
 } from './navigation';
 export {
+  normalizeWishlistResponse,
+  wishlistContains,
+  readCachedWishlistCartSources,
+  resolveWishlistCartAdd,
+} from './wishlist';
+export type { WishlistCartDecision } from './wishlist';
+export {
   normalizeProductDetail,
   normalizeProductOptions,
   getProductImages,
@@ -29,6 +36,7 @@ export {
   isMultiSelectGroup,
   buildDefaultSelection,
   getMissingRequiredGroups,
+  canSubmitProductConfiguration,
   resolveDisplayedPrice,
   isOptionValueSelectable,
   applyOptionValuePress,

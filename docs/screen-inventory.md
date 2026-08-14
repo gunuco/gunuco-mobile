@@ -62,7 +62,7 @@ Guest browsing: no auth required for Home/Search/Categories/Product. Checkout re
 
 | # | Screen | Purpose | Entry | Components | API | States | Actions | Destinations |
 |---|---|---|---|---|---|---|---|---|
-| E1 | Wishlist | Saved products | Profile / heart | ProductCard, WishlistButton, EmptyState | `GET/POST/DELETE wishlist` | Empty, error, guest sign-in | Remove, open product, add cart (existing `POST cart/items`) | Product Detail, Cart tab placeholder |
+| E1 | Wishlist | Saved products | Profile / heart | ProductCard, WishlistButton, EmptyState | `GET/POST/DELETE wishlist`; add cart uses existing `POST cart/items` or opens Product Detail when options are required/unknown | Empty, error, guest sign-in | Remove, open product, add cart | Product Detail, Cart tab placeholder |
 | E2 | Product Reviews List | Approved reviews for a product | Product Detail | ReviewCard, RatingView, FlashList | `GET products/{id}/reviews` | Skeleton, empty, pagination, error+retry | Back | Product Detail |
 | E3 | Write Review | Rate + write review for an eligible order item | Future Past Order / post-delivery (`/review/write?orderItemId=`) | RatingView input, GInput, GButton | `POST reviews`; eligibility `GET orders/{id}/reviewable-items` (API ready, Orders UI later) | Validation, pending moderation message, error | Submit | Back. No fake orders. |
 

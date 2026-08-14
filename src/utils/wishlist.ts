@@ -1,5 +1,18 @@
+import { productApi } from '@/src/store/api/productApi';
+import type { RootState } from '@/src/store/store';
 import type { ProductSummary } from '@/src/types/commerce';
+import type {
+  AddCartItemPayload,
+  ProductDetail,
+  ProductOptionsResponse,
+} from '@/src/types/product';
 import type { WishlistResponse } from '@/src/types/wishlist';
+import { isNotFoundError } from './errors';
+import {
+  buildDefaultSelection,
+  canSubmitProductConfiguration,
+  toCartOptions,
+} from './productDetail';
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   if (value && typeof value === 'object' && !Array.isArray(value)) {
@@ -45,7 +58,113 @@ function normalizeWishlistProduct(raw: unknown): ProductSummary | null {
     isAvailable: asBoolean(product.isAvailable),
     discountLabel: asString(product.discountLabel) ?? null,
     isWishlisted: true,
+    hasRequiredOptions: normalizeHasRequiredOptions(product),
   };
+}
+
+/**
+ * Reads option-requirement from wishlist payload only. Never fetches
+ * GET /products/{id}/options. Unknown → undefined (open Product Details).
+ */
+function normalizeHasRequiredOptions(product: Record<string, unknown>): boolean | undefined {
+  const explicit =
+    asBoolean(product.hasRequiredOptions) ??
+    asBoolean(product.requiresOptions) ??
+    asBoolean(product.requiresConfiguration);
+  if (explicit !== undefined) {
+    return explicit;
+  }
+
+  if (Array.isArray(product.variants) && product.variants.length > 0) {
+    return true;
+  }
+
+  const rawGroups = product.optionGroups ?? product.options ?? product.optionSchema;
+  if (!Array.isArray(rawGroups)) {
+    return undefined;
+  }
+
+  return rawGroups.some((group) => asRecord(group)?.required === true);
+}
+
+export type WishlistCartDecision =
+  { action: 'add'; payload: AddCartItemPayload } | { action: 'configure' };
+
+/**
+ * Cache lookup only — does not start GET /products/{id} or GET /products/{id}/options.
+ * A prior Product Details visit may already have this data in RTK Query cache.
+ */
+export function readCachedWishlistCartSources(
+  state: RootState,
+  productId: string,
+): {
+  cachedDetail?: ProductDetail;
+  cachedOptions?: ProductOptionsResponse;
+} {
+  const productResult = productApi.endpoints.getProduct.select(productId)(state);
+  const optionsResult = productApi.endpoints.getProductOptions.select(productId)(state);
+  const cachedDetail = productResult.status === 'fulfilled' ? productResult.data : undefined;
+
+  if (optionsResult.status === 'fulfilled' && optionsResult.data) {
+    return { cachedDetail, cachedOptions: optionsResult.data };
+  }
+
+  if (optionsResult.status === 'rejected' && isNotFoundError(optionsResult.error)) {
+    return { cachedDetail, cachedOptions: { groups: [] } };
+  }
+
+  return { cachedDetail };
+}
+
+/**
+ * Decide whether Wishlist can POST /cart/items immediately.
+ * If requirement cannot be proven without a new options request, returns `configure`.
+ */
+export function resolveWishlistCartAdd(args: {
+  product: ProductSummary;
+  cachedDetail?: ProductDetail;
+  cachedOptions?: ProductOptionsResponse;
+}): WishlistCartDecision {
+  const productId = args.product.id;
+
+  if (args.cachedOptions) {
+    const selection = buildDefaultSelection(args.cachedOptions.groups);
+    if (
+      !canSubmitProductConfiguration(
+        args.cachedOptions.groups,
+        selection,
+        args.cachedOptions.variants,
+      )
+    ) {
+      return { action: 'configure' };
+    }
+    return {
+      action: 'add',
+      payload: {
+        productId,
+        quantity: 1,
+        options: toCartOptions(selection),
+      },
+    };
+  }
+
+  const requiredFlag = args.product.hasRequiredOptions ?? args.cachedDetail?.hasRequiredOptions;
+  if (requiredFlag === true) {
+    return { action: 'configure' };
+  }
+
+  if (requiredFlag === false) {
+    return {
+      action: 'add',
+      payload: {
+        productId,
+        quantity: 1,
+        options: [],
+      },
+    };
+  }
+
+  return { action: 'configure' };
 }
 
 export function normalizeWishlistResponse(response: unknown): WishlistResponse {

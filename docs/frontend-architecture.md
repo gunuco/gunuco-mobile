@@ -374,7 +374,7 @@ Phase 6 (Wishlist + Ratings & Reviews) is **implemented**. Do **not** start Phas
 | Write review | `/review/write` requires `orderItemId`. No fake orders; Orders UI is later. |
 | Review APIs | `GET /products/{id}/reviews` (paginated, public GET), `GET /orders/{id}/reviewable-items` (hook only), `POST /reviews` `{ orderItemId, rating, text }` |
 | Moderation | Pending/submitted status → confirmation only. Public list is backend-approved reviews. No local average recalculation. |
-| Listing hearts | Home / Search / Category show `WishlistButton`. Add on listings stays off except Wishlist (reuses Phase 5 `POST /cart/items`). |
+| Listing hearts | Home / Search / Category show `WishlistButton`. Add on listings stays off except Wishlist. Wishlist Add to Cart posts `POST /cart/items` only when option requirement is already known to be safe (wishlist metadata or cached Product Options). Otherwise it opens canonical Product Details — no N+1 options fetch, no duplicate option UI. |
 
 ### Divergence from earlier analysis
 

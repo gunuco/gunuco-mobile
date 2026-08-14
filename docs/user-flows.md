@@ -172,7 +172,10 @@ Product / listing heart
   → Guest: Phone OTP, then pending add + return to product when possible
   → Authenticated: POST /wishlist/{productId} or DELETE
 Profile → Wishlist (`/wishlist`)
-  → Open product / Add to cart (POST /cart/items) / Remove heart
+  → Open product / Remove heart
+  → Add to cart:
+       if required options are unknown or required → Product Details
+       if no required options (known) → POST /cart/items (quantity 1, existing options payload)
 ```
 
 Server-persisted wishlist for signed-in customers. No local guest wishlist.

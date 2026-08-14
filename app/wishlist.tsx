@@ -3,10 +3,11 @@ import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/src/providers';
 import { useAuth } from '@/src/hooks';
-import { useAddCartItemMutation, useGetWishlistQuery } from '@/src/store';
+import { store, useAddCartItemMutation, useGetWishlistQuery } from '@/src/store';
 import { setAuthIntent } from '@/src/services/authIntent';
 import { getErrorMessage } from '@/src/utils/errors';
 import { productHref } from '@/src/utils/navigation';
+import { readCachedWishlistCartSources, resolveWishlistCartAdd } from '@/src/utils/wishlist';
 import type { ProductSummary } from '@/src/types';
 import {
   EmptyState,
@@ -67,12 +68,19 @@ export default function WishlistScreen() {
         return;
       }
       setActionMessage(null);
+
+      const decision = resolveWishlistCartAdd({
+        product,
+        ...readCachedWishlistCartSources(store.getState(), product.id),
+      });
+
+      if (decision.action === 'configure') {
+        router.push(productHref(product.id));
+        return;
+      }
+
       try {
-        await addCartItem({
-          productId: product.id,
-          quantity: 1,
-          options: [],
-        }).unwrap();
+        await addCartItem(decision.payload).unwrap();
         setActionMessage({ tone: 'success', text: 'Added to cart.' });
       } catch (error) {
         setActionMessage({
@@ -81,7 +89,7 @@ export default function WishlistScreen() {
         });
       }
     },
-    [addCartItem, addCartState.isLoading],
+    [addCartItem, addCartState.isLoading, router],
   );
 
   const products = wishlistQuery.data?.items ?? [];

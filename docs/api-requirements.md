@@ -138,7 +138,7 @@ No local guest wishlist. Guest heart/open-wishlist → phone auth. After OTP, pe
 | Method | Logical | Notes |
 |---|---|---|
 | GET | `cart` | Server cart for customer |
-| POST | `cart/items` | productId, quantity, options (`{ groupId, valueIds }[]`). Wired from Product Details Add to Cart for signed-in customers. Guests are sent to phone auth — no local cart. Success UI only after a real 2xx. GET cart / PATCH / DELETE remain later-phase. |
+| POST | `cart/items` | productId, quantity, options (`{ groupId, valueIds }[]`). Wired from Product Details Add to Cart and from Wishlist when the product is already known not to require options. If Wishlist cannot prove that, it navigates to Product Details instead of posting empty options. Guests are sent to phone auth — no local cart. Success UI only after a real 2xx. GET cart / PATCH / DELETE remain later-phase. |
 | PATCH | `cart/items/{id}` | qty/options |
 | DELETE | `cart/items/{id}` | |
 | POST | `cart/revalidate` | availability/price/options/offers/fulfilment |

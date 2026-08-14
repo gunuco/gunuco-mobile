@@ -298,6 +298,9 @@ export function normalizeProductDetail(response: unknown): ProductDetail {
     quantityMax: asNumber(payload.quantityMax) ?? asNumber(payload.maxQuantity),
     infoSections: normalizeInfoSections(payload.infoSections, payload.attributes),
     optionGroups,
+    hasRequiredOptions: optionGroups.length
+      ? optionGroups.some((group) => group.required === true)
+      : undefined,
     category: asRecord(payload.category)
       ? {
           id: asString(asRecord(payload.category)?.id) ?? '',
@@ -562,6 +565,25 @@ export function toCartOptions(selection: ProductOptionSelection): {
   return Object.entries(selection)
     .filter(([, valueIds]) => valueIds.length > 0)
     .map(([groupId, valueIds]) => ({ groupId, valueIds }));
+}
+
+/**
+ * True when the current selection satisfies required groups and, if variants
+ * exist, matches a backend variant. Used by Wishlist to decide whether a
+ * cached/default configuration is safe to POST without opening Product Details.
+ */
+export function canSubmitProductConfiguration(
+  groups: ProductOptionGroup[],
+  selection: ProductOptionSelection,
+  variants?: ProductVariant[],
+): boolean {
+  if (getMissingRequiredGroups(groups, selection).length > 0) {
+    return false;
+  }
+  if (!variants?.length) {
+    return true;
+  }
+  return Boolean(findMatchingVariant(variants, selection));
 }
 
 export function getAvailabilityMessage(
