@@ -12,6 +12,7 @@ import {
   getProductOffer,
   toCartOptions,
 } from '@/src/utils/productDetail';
+import { productReviewsHref } from '@/src/utils/navigation';
 import {
   EmptyState,
   ErrorState,
@@ -27,6 +28,7 @@ import {
   QuantitySelector,
   RatingView,
   Skeleton,
+  WishlistButton,
 } from '@/src/components';
 
 const DESCRIPTION_COLLAPSE_LENGTH = 220;
@@ -46,6 +48,7 @@ export default function ProductDetailScreen() {
     tone: 'success' | 'danger';
     text: string;
   } | null>(null);
+  const [wishlistError, setWishlistError] = useState<string | null>(null);
 
   const productQuery = useGetProductQuery(productId, { skip: !productId });
   const product = productQuery.data;
@@ -161,7 +164,12 @@ export default function ProductDetailScreen() {
   if (productQuery.isLoading && !product) {
     return (
       <View style={{ flex: 1, backgroundColor: theme.colors.bg.canvas }}>
-        <Header title="Product" showBack onBackPress={goBack} />
+        <Header
+          title="Product"
+          showBack
+          onBackPress={goBack}
+          rightSlot={<WishlistButton productId={productId} onError={setWishlistError} />}
+        />
         <ProductDetailSkeleton />
       </View>
     );
@@ -223,7 +231,18 @@ export default function ProductDetailScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.bg.canvas }}>
-      <Header title={product.name} showBack onBackPress={goBack} />
+      <Header
+        title={product.name}
+        showBack
+        onBackPress={goBack}
+        rightSlot={
+          <WishlistButton
+            productId={product.id}
+            initialWishlisted={product.isWishlisted}
+            onError={setWishlistError}
+          />
+        }
+      />
 
       <ScrollView
         ref={scrollRef}
@@ -247,22 +266,24 @@ export default function ProductDetailScreen() {
             </GText>
           ) : null}
           <GText variant="titleMd">{product.name}</GText>
-          {showRating ? (
-            <View
-              accessible
-              accessibilityLabel={
-                typeof product.ratingCount === 'number'
-                  ? `Rated ${product.ratingAverage} out of 5 from ${product.ratingCount} reviews`
-                  : `Rated ${product.ratingAverage} out of 5`
-              }
-            >
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="See product reviews"
+            onPress={() => router.push(productReviewsHref(product.id))}
+            hitSlop={8}
+            style={{ gap: theme.spacing.xs }}
+          >
+            {showRating ? (
               <RatingView
                 value={product.ratingAverage ?? 0}
                 count={product.ratingCount}
                 size="md"
               />
-            </View>
-          ) : null}
+            ) : null}
+            <GText variant="label" color="brand">
+              {showRating ? 'See reviews' : 'Reviews'}
+            </GText>
+          </Pressable>
 
           <View
             style={{
@@ -449,6 +470,11 @@ export default function ProductDetailScreen() {
           compareAtPricePaise={configuration.displayedPrice.compareAtPricePaise}
           size="md"
         />
+        {wishlistError ? (
+          <GText variant="bodySm" color="danger">
+            {wishlistError}
+          </GText>
+        ) : null}
         {cartMessage ? (
           <GText variant="bodySm" color={cartMessage.tone === 'success' ? 'success' : 'danger'}>
             {cartMessage.text}

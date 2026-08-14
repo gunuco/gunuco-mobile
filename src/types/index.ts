@@ -49,3 +49,15 @@ export type {
   AddCartItemPayload,
   AddCartItemResponse,
 } from './product';
+
+export type { WishlistItem, WishlistResponse } from './wishlist';
+
+export type {
+  ProductReview,
+  ProductReviewsArgs,
+  ProductReviewsResponse,
+  ReviewableItem,
+  ReviewableItemsResponse,
+  CreateReviewPayload,
+  CreateReviewResponse,
+} from './review';

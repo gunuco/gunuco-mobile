@@ -3,6 +3,7 @@
  * Home endpoints live in homeApi.ts.
  * Catalogue: categoryApi.ts + productApi.ts (search + detail).
  * Cart: cartApi.ts (add item mutation for Product Details).
+ * Wishlist: wishlistApi.ts. Reviews: reviewApi.ts.
  */
 
 import { baseApi } from './baseApi';
@@ -38,6 +39,20 @@ export {
 
 export { cartApi } from './cartApi';
 export { useAddCartItemMutation } from './cartApi';
+
+export { wishlistApi } from './wishlistApi';
+export {
+  useGetWishlistQuery,
+  useAddWishlistItemMutation,
+  useRemoveWishlistItemMutation,
+} from './wishlistApi';
+
+export { reviewApi } from './reviewApi';
+export {
+  useGetProductReviewsQuery,
+  useGetReviewableItemsQuery,
+  useCreateReviewMutation,
+} from './reviewApi';
 
 export const addressApi = baseApi.injectEndpoints({
   endpoints: () => ({}),

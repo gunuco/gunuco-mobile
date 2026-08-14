@@ -168,23 +168,30 @@ Active Order → Cancel
 ## 10. Wishlist
 
 ```text
-Product → Wishlist heart
-  → Profile → Wishlist
-  → Open product / Add to cart / Remove
+Product / listing heart
+  → Guest: Phone OTP, then pending add + return to product when possible
+  → Authenticated: POST /wishlist/{productId} or DELETE
+Profile → Wishlist (`/wishlist`)
+  → Open product / Add to cart (POST /cart/items) / Remove heart
 ```
 
-Requires authenticated customer for server wishlist **[guest wishlist local until login — CONFIRM]**.
+Server-persisted wishlist for signed-in customers. No local guest wishlist.
 
 ---
 
 ## 11. Ratings & Reviews
 
 ```text
-Delivered / Past Order → Write Review (eligible items)
+Product Detail → Reviews (`/product/{id}/reviews`)
+  → Approved review list (paginated)
+
+Eligible order item (future Past Order)
+  → Write Review (`/review/write?orderItemId=`)
   → Stars + text
-  → Submit (backend eligibility + moderation)
-Product Detail → read Review list
+  → POST /reviews (backend eligibility + moderation)
 ```
+
+Write Review is not shown on every product. Orders UI is not part of this phase; the form is ready for a real `orderItemId`.
 
 ---
 

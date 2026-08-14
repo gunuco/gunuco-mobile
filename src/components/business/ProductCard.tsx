@@ -7,9 +7,9 @@ import { GImage } from '../ui/GImage';
 import { GText } from '../ui/GText';
 import { GBadge } from '../ui/GBadge';
 import { GButton } from '../ui/GButton';
-import { GIcon } from '../ui/GIcon';
 import { PriceDisplay } from './PriceDisplay';
 import { RatingView } from './RatingView';
+import { WishlistButton } from './WishlistButton';
 
 export type ProductCardVariant = 'grid' | 'list' | 'compact';
 
@@ -22,7 +22,6 @@ export type ProductCardProps = {
   showWishlist?: boolean;
   onPress?: () => void;
   onAddPress?: () => void;
-  onWishlistPress?: () => void;
   wishlisted?: boolean;
 };
 
@@ -35,8 +34,7 @@ function ProductCardComponent({
   showWishlist = true,
   onPress,
   onAddPress,
-  onWishlistPress,
-  wishlisted = false,
+  wishlisted,
 }: ProductCardProps) {
   const theme = useTheme();
   const imageSize =
@@ -70,26 +68,12 @@ function ProductCardComponent({
             accessibilityLabel={product.name}
           />
           {showWishlist ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
-              onPress={onWishlistPress}
-              hitSlop={8}
-              style={{
-                position: 'absolute',
-                top: theme.spacing.xs,
-                right: theme.spacing.xs,
-                backgroundColor: theme.colors.bg.surface,
-                borderRadius: theme.radius.pill,
-                padding: theme.spacing.xs,
-              }}
-            >
-              <GIcon
-                name={wishlisted ? 'heart' : 'heart-outline'}
-                color={wishlisted ? theme.colors.semantic.danger : theme.colors.text.secondary}
-                size="sm"
-              />
-            </Pressable>
+            <WishlistButton
+              productId={product.id}
+              initialWishlisted={wishlisted ?? product.isWishlisted}
+              overlay
+              size="sm"
+            />
           ) : null}
         </View>
 

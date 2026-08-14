@@ -140,6 +140,7 @@ export const baseApi = createApi({
     'Payment',
     'Offer',
     'Wishlist',
+    'Review',
     'Notification',
     'Support',
     'StoreCredit',

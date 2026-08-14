@@ -14,7 +14,13 @@ export {
   mergeProductListPages,
   normalizeProductListResponse,
 } from './catalogQuery';
-export { categoryHref, categoryProductsHref, productHref } from './navigation';
+export {
+  categoryHref,
+  categoryProductsHref,
+  productHref,
+  productReviewsHref,
+  writeReviewHref,
+} from './navigation';
 export {
   normalizeProductDetail,
   normalizeProductOptions,

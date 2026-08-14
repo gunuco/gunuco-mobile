@@ -24,3 +24,17 @@ export function productHref(productId: string): Href {
     params: { id: productId },
   } as unknown as Href;
 }
+
+export function productReviewsHref(productId: string): Href {
+  return {
+    pathname: '/product/[id]/reviews',
+    params: { id: productId },
+  } as unknown as Href;
+}
+
+export function writeReviewHref(orderItemId: string, productId?: string): Href {
+  return {
+    pathname: '/review/write',
+    params: productId ? { orderItemId, productId } : { orderItemId },
+  } as unknown as Href;
+}

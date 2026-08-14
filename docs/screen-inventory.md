@@ -51,7 +51,7 @@ Guest browsing: no auth required for Home/Search/Categories/Product. Checkout re
 |---|---|---|---|---|---|---|---|---|
 | D1 | Main Category | Show Cakes (and future mains) | Categories / Home | Category hero, subcategory grid | Categories | — | Open subcategory | Subcategory Products |
 | D2 | Subcategory Products | Catalogue for Premium / Cakes / Cookies / Wedding / Birthday | Category | ProductCard FlashList, filters | Products by subcategory | Empty, pagination | Open product, add, wishlist | Product Detail, Options |
-| D3 | Product Detail | Info, price, rating summary, options, qty, sticky Add to Cart | Home / Category / Search / deep link `/product/[id]` | ProductImageGallery, PriceDisplay, RatingView, ProductOptionRenderer, QuantitySelector, GButton, sticky CTA | `GET products/{id}`, `GET products/{id}/options`, `POST cart/items` | Skeleton, 404/empty, error+retry, unavailable (screen remains, CTA disabled) | Select options, qty, Add to Cart (auth required for mutation). Wishlist/reviews deferred to Phase 6. | Back, Continue shopping, View cart tab (placeholder), Phone auth if guest adds |
+| D3 | Product Detail | Info, price, rating summary, options, qty, sticky Add to Cart, wishlist | Home / Category / Search / deep link `/product/[id]` | ProductImageGallery, PriceDisplay, RatingView, ProductOptionRenderer, QuantitySelector, WishlistButton, GButton, sticky CTA | `GET products/{id}`, `GET products/{id}/options`, `POST cart/items` | Skeleton, 404/empty, error+retry, unavailable (screen remains, CTA disabled) | Select options, qty, Add to Cart, Wishlist, See reviews | Reviews, Back, Continue shopping, View cart tab (placeholder), Phone auth if guest adds/wishlists |
 | D4 | Product Options / Variants | Composed into D3 (not a separate route). Schema-driven option groups/values; required vs optional; unavailable options visible but not selectable. | Product Detail | ProductOptionRenderer, QuantitySelector, PriceDisplay, sticky CTA | Options payload (groups/values/variants). `POST products/quote` not called — still **[CONFIRM]**. | Options skeleton; options 404 = no options; options error + retry | Select options, Add to Cart | Cart (later phase) |
 | D5 | Offer List | Browse offers | Home / Profile | OfferCard | Offers | Empty | Open offer products | Product / Category |
 | D6 | Offer Detail | Offer terms + eligible products | Offer List | OfferCard, ProductCard | Offer detail | — | Shop products | Product |
@@ -62,9 +62,9 @@ Guest browsing: no auth required for Home/Search/Categories/Product. Checkout re
 
 | # | Screen | Purpose | Entry | Components | API | States | Actions | Destinations |
 |---|---|---|---|---|---|---|---|---|
-| E1 | Wishlist | Saved products | Profile / heart | ProductCard, WishlistButton, EmptyState | Wishlist | Empty, error | Remove, open product, add cart | Product Detail, Cart |
-| E2 | Product Reviews List | All reviews for product | Product Detail | ReviewCard, RatingView | Reviews list | Empty | — | — |
-| E3 | Write Review | Rate + write review | Post-delivery prompt / Past order | RatingView input, GInput, GButton | Create review | Eligibility error | Submit | Order Detail / Product |
+| E1 | Wishlist | Saved products | Profile / heart | ProductCard, WishlistButton, EmptyState | `GET/POST/DELETE wishlist` | Empty, error, guest sign-in | Remove, open product, add cart (existing `POST cart/items`) | Product Detail, Cart tab placeholder |
+| E2 | Product Reviews List | Approved reviews for a product | Product Detail | ReviewCard, RatingView, FlashList | `GET products/{id}/reviews` | Skeleton, empty, pagination, error+retry | Back | Product Detail |
+| E3 | Write Review | Rate + write review for an eligible order item | Future Past Order / post-delivery (`/review/write?orderItemId=`) | RatingView input, GInput, GButton | `POST reviews`; eligibility `GET orders/{id}/reviewable-items` (API ready, Orders UI later) | Validation, pending moderation message, error | Submit | Back. No fake orders. |
 
 ---
 

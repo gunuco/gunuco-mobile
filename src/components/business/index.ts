@@ -54,3 +54,9 @@ export type { ProductImageGalleryProps } from './ProductImageGallery';
 
 export { ProductOptionRenderer } from './ProductOptionRenderer';
 export type { ProductOptionRendererProps } from './ProductOptionRenderer';
+
+export { WishlistButton } from './WishlistButton';
+export type { WishlistButtonProps } from './WishlistButton';
+
+export { ReviewCard } from './ReviewCard';
+export type { ReviewCardProps } from './ReviewCard';

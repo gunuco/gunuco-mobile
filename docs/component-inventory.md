@@ -63,7 +63,8 @@
 | `ProductOptionRenderer` | **Schema-driven** option groups/values (single/multi); required vs optional; unavailable visible but not selectable | Product Details |
 | `ProductImageGallery` | Swipeable `GImage` gallery, count, dots, preview modal | Product Details |
 | `AddOnSelector` | Not a separate component — add-ons from the options payload render through `ProductOptionRenderer` | Options |
-| `WishlistButton` | Heart toggle | Product surfaces |
+| `WishlistButton` | Heart add/remove; guest → phone auth | ProductCard, Product Details, Wishlist |
+| `ReviewCard` | Approved review display (rating, text, date, safe name) | Product Reviews |
 | `CartItem` | Line item + options summary + qty | Cart |
 | `CartSummary` | Totals incl. tax line | Cart, Checkout |
 | `CartChangeBanner` | Price/availability change notice | Cart, Checkout, Reorder |

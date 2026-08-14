@@ -78,6 +78,23 @@ function mapBusinessErrorCode(code: string): string | undefined {
     case 'CART_UNAVAILABLE':
     case 'CART_ITEM_UNAVAILABLE':
       return 'This item could not be added to your cart right now.';
+    case 'WISHLIST_UNAVAILABLE':
+    case 'WISHLIST_ITEM_UNAVAILABLE':
+      return 'Unable to update your wishlist right now.';
+    case 'WISHLIST_NOT_FOUND':
+      return 'That wishlist item is no longer available.';
+    case 'REVIEW_NOT_ELIGIBLE':
+    case 'REVIEW_INELIGIBLE':
+    case 'NOT_ELIGIBLE_TO_REVIEW':
+      return 'This item cannot be reviewed yet.';
+    case 'ALREADY_REVIEWED':
+    case 'REVIEW_EXISTS':
+      return 'You have already reviewed this item.';
+    case 'REVIEW_INVALID':
+    case 'REVIEW_TEXT_INVALID':
+      return 'Please check your rating and review, then try again.';
+    case 'REVIEW_REJECTED':
+      return 'This review could not be submitted.';
     default:
       return undefined;
   }

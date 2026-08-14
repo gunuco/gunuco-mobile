@@ -280,7 +280,7 @@ Suggested later phase order remains master-aligned, with additions:
 | Entry | `/` redirects to `/(tabs)` |
 | Design gallery | Moved to `/design-system` (dev validation) |
 
-Phase 5 (Product Details + Product Options) is **implemented**. Do **not** start Phase 6 (Wishlist + Ratings & Reviews) until requested.
+Phase 6 (Wishlist + Ratings & Reviews) is **implemented**. Do **not** start Phase 7 (Cart screen) until requested.
 
 ---
 
@@ -338,7 +338,7 @@ Phase 5 (Product Details + Product Options) is **implemented**. Do **not** start
 
 | Area | Decision |
 |---|---|
-| Screen | `app/product/[id].tsx` — generic PDP for all catalogue products |
+| Screen | `app/product/[id]/index.tsx` — generic PDP for all catalogue products |
 | Route | `/product/[id]` with product id only (Home / Category / Search already `productHref`) |
 | APIs | `GET /products/{id}`, `GET /products/{id}/options`, `POST /cart/items` |
 | Not called | `POST /products/quote` remains **[CONFIRM]** |
@@ -347,7 +347,7 @@ Phase 5 (Product Details + Product Options) is **implemented**. Do **not** start
 | Availability | Backend `isAvailable` / labels; unavailable PDP stays visible with disabled CTA |
 | Quantity | Shared `QuantitySelector`; min/max from API when present |
 | Add to Cart | Signed-in customers call `POST /cart/items`. Success copy only after 2xx. Guests are sent to phone auth. No local guest cart. Cart tab remains a placeholder. |
-| Wishlist / reviews | Layout-ready only. Rating summary/count shown if the product payload includes them. No mutations or review list. |
+| Wishlist / reviews | Phase 6: `WishlistButton` in header; Reviews link → `/product/[id]/reviews` |
 | Images | `ProductImageGallery` on `GImage` / expo-image memory-disk cache, swipe + count + preview |
 | States | `ProductDetailSkeleton`, `ErrorState` + retry + continue shopping, 404 `EmptyState` |
 | Guest | PDP is public browse (including `/products/{id}/options`). Auth is not required to open the screen. |
@@ -358,6 +358,28 @@ Phase 5 (Product Details + Product Options) is **implemented**. Do **not** start
 1. Product options live on the Product Details screen (D4 is not a separate route).
 2. Quote/preview API is not used while it remains **[CONFIRM]**.
 3. Guest add-to-cart does not create a local draft cart (`cart/merge` still **[CONFIRM]**).
+
+---
+
+## 23. Phase 6 As-Built (Wishlist + Ratings & Reviews)
+
+| Area | Decision |
+|---|---|
+| Wishlist route | `/wishlist` from Profile. One canonical route. |
+| Wishlist APIs | `GET /wishlist`, `POST /wishlist/{productId}`, `DELETE /wishlist/{productId}` via `wishlistApi` |
+| WishlistButton | Single heart used by ProductCard overlay, Product Details header, and Wishlist list |
+| Cache | `Wishlist` tag (`LIST` + product id) + invalidate matching `Product` id. Shared `useGetWishlistQuery`. Mutations are non-optimistic. |
+| Guest | No local wishlist. Heart sets in-memory `authIntent` and opens phone auth. After OTP, pending add is dispatched and the modal is dismissed (or `/wishlist` is restored). |
+| Reviews route | `/product/[id]/reviews` |
+| Write review | `/review/write` requires `orderItemId`. No fake orders; Orders UI is later. |
+| Review APIs | `GET /products/{id}/reviews` (paginated, public GET), `GET /orders/{id}/reviewable-items` (hook only), `POST /reviews` `{ orderItemId, rating, text }` |
+| Moderation | Pending/submitted status → confirmation only. Public list is backend-approved reviews. No local average recalculation. |
+| Listing hearts | Home / Search / Category show `WishlistButton`. Add on listings stays off except Wishlist (reuses Phase 5 `POST /cart/items`). |
+
+### Divergence from earlier analysis
+
+1. Guest local wishlist is not implemented.
+2. Write Review is architecture-ready without an Orders entry point.
 
 ---
 

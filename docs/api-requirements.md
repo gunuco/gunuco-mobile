@@ -113,13 +113,13 @@ Architecture must accept future category filters without redesign.
 
 ## 8. Wishlist
 
-| Method | Logical |
-|---|---|
-| GET | `wishlist` |
-| POST | `wishlist/{productId}` |
-| DELETE | `wishlist/{productId}` |
+| Method | Logical | Notes |
+|---|---|---|
+| GET | `wishlist` | Auth required. Normalized to `{ items: ProductSummary[] }`. |
+| POST | `wishlist/{productId}` | Auth required. Invalidates Wishlist + Product tags. |
+| DELETE | `wishlist/{productId}` | Auth required. Invalidates Wishlist + Product tags. |
 
-Auth required.
+No local guest wishlist. Guest heart/open-wishlist → phone auth. After OTP, pending add is dispatched and the previous screen is restored when possible.
 
 ---
 
@@ -127,10 +127,9 @@ Auth required.
 
 | Method | Logical | Notes |
 |---|---|---|
-| GET | `products/{id}/reviews` | Paginated |
-| GET | `orders/{id}/reviewable-items` | Eligibility |
-| POST | `reviews` | orderItemId, rating, text |
-| Backend moderation | Admin-side | Client shows approved reviews |
+| GET | `products/{id}/reviews` | Paginated public browse. Customer app shows backend-approved reviews only. |
+| GET | `orders/{id}/reviewable-items` | Eligibility. Hook implemented for the future Orders phase. No fake order UI. |
+| POST | `reviews` | Body: `{ orderItemId, rating, text }` only. Optional `productId` is cache invalidation, not sent. If response `status` is pending/submitted, UI shows a moderation message and does not treat the review as publicly approved. |
 
 ---
 

@@ -32,6 +32,8 @@ function RootNavigator() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="category" />
         <Stack.Screen name="product" />
+        <Stack.Screen name="wishlist" />
+        <Stack.Screen name="review" />
         <Stack.Screen
           name="(auth)"
           options={{

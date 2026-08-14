@@ -28,3 +28,13 @@ export {
 export { useSearchProductsQuery, useLazySearchProductsQuery } from './api/productApi';
 export { useGetProductQuery, useGetProductOptionsQuery } from './api/productApi';
 export { useAddCartItemMutation } from './api/cartApi';
+export {
+  useGetWishlistQuery,
+  useAddWishlistItemMutation,
+  useRemoveWishlistItemMutation,
+} from './api/wishlistApi';
+export {
+  useGetProductReviewsQuery,
+  useGetReviewableItemsQuery,
+  useCreateReviewMutation,
+} from './api/reviewApi';

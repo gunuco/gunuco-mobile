@@ -16,10 +16,13 @@ export type ProductGridListProps = {
   errorMessage?: string | null;
   emptyTitle?: string;
   emptyDescription?: string;
+  showWishlist?: boolean;
+  showAddButton?: boolean;
   onRefresh?: () => void;
   onRetry?: () => void;
   onEndReached?: () => void;
   onProductPress?: (product: ProductSummary) => void;
+  onAddPress?: (product: ProductSummary) => void;
   ListHeaderComponent?: React.ReactElement | null;
 };
 
@@ -31,10 +34,13 @@ function ProductGridListComponent({
   errorMessage,
   emptyTitle = 'No products found',
   emptyDescription = 'Try a different filter or check back soon.',
+  showWishlist = true,
+  showAddButton = false,
   onRefresh,
   onRetry,
   onEndReached,
   onProductPress,
+  onAddPress,
   ListHeaderComponent,
 }: ProductGridListProps) {
   const theme = useTheme();
@@ -45,13 +51,14 @@ function ProductGridListComponent({
         <ProductCard
           product={item}
           variant="grid"
-          showWishlist={false}
-          showAddButton={false}
+          showWishlist={showWishlist}
+          showAddButton={showAddButton}
           onPress={() => onProductPress?.(item)}
+          onAddPress={() => onAddPress?.(item)}
         />
       </View>
     ),
-    [onProductPress, theme.spacing.sm],
+    [onAddPress, onProductPress, showAddButton, showWishlist, theme.spacing.sm],
   );
 
   if (errorMessage && products.length === 0) {

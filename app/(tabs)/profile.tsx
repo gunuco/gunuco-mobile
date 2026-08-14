@@ -73,6 +73,16 @@ export default function ProfileTabScreen() {
         </GCard>
 
         <GCard style={{ gap: theme.spacing.sm }}>
+          <GText variant="label">Account</GText>
+          <GButton
+            title="Wishlist"
+            variant="secondary"
+            fullWidth
+            onPress={() => router.push('/wishlist')}
+          />
+        </GCard>
+
+        <GCard style={{ gap: theme.spacing.sm }}>
           <GText variant="label">Appearance</GText>
           <GText variant="caption" color="secondary">
             Current preference: {preference}

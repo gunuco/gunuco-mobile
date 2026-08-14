@@ -212,7 +212,6 @@ export default function HomeTabScreen() {
                 title="Featured"
                 products={data?.featuredProducts ?? []}
                 onProductPress={onProductPress}
-                showWishlist={false}
                 showAddButton={false}
               />
 
@@ -220,7 +219,6 @@ export default function HomeTabScreen() {
                 title="Best sellers"
                 products={data?.bestSellers ?? []}
                 onProductPress={onProductPress}
-                showWishlist={false}
                 showAddButton={false}
               />
 
@@ -228,7 +226,6 @@ export default function HomeTabScreen() {
                 title="Recommended"
                 products={data?.recommendedProducts ?? []}
                 onProductPress={onProductPress}
-                showWishlist={false}
                 showAddButton={false}
               />
             </>

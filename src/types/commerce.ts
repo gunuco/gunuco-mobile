@@ -13,6 +13,7 @@ export type ProductSummary = {
   isPremium?: boolean;
   isAvailable?: boolean;
   discountLabel?: string | null;
+  isWishlisted?: boolean;
 };
 
 export type CategorySummary = {

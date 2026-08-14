@@ -27,7 +27,7 @@ function ProductCarouselComponent({
   onProductPress,
   onAddPress,
   onSeeAllPress,
-  showWishlist = false,
+  showWishlist = true,
   showAddButton = false,
 }: ProductCarouselProps) {
   const theme = useTheme();

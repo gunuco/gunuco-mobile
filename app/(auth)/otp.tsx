@@ -1,10 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GButton, GText, Header, OtpInput } from '@/src/components';
 import { useAuth } from '@/src/hooks';
-import { useRequestOtpMutation, useVerifyOtpMutation } from '@/src/store';
+import { store, useRequestOtpMutation, useVerifyOtpMutation } from '@/src/store';
+import { wishlistApi } from '@/src/store/api/wishlistApi';
+import { consumeAuthIntent } from '@/src/services/authIntent';
+import { writeReviewHref } from '@/src/utils/navigation';
 import { useTheme } from '@/src/providers';
 import { formatPhoneDisplay, getErrorMessage } from '@/src/utils';
 import { clearOtpChallenge, getOtpChallenge, setOtpChallenge } from '@/src/services/otpChallenge';
@@ -59,7 +62,26 @@ export default function OtpAuthScreen() {
         otp,
       }).unwrap();
       await completeLogin(result);
-      router.replace('/(tabs)');
+      const intent = consumeAuthIntent();
+      if (intent?.pendingWishlistProductId) {
+        store.dispatch(
+          wishlistApi.endpoints.addWishlistItem.initiate(intent.pendingWishlistProductId),
+        );
+      }
+      if (intent?.pendingWriteReview) {
+        router.replace(
+          writeReviewHref(
+            intent.pendingWriteReview.orderItemId,
+            intent.pendingWriteReview.productId,
+          ),
+        );
+      } else if (intent?.returnTo) {
+        router.replace(intent.returnTo as Href);
+      } else if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/(tabs)');
+      }
     } catch {
       // surfaced via verifyError
     }
