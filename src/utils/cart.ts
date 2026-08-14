@@ -158,6 +158,10 @@ function normalizeTotals(
   return {
     subtotalPaise: asNumber(source.subtotalPaise) ?? asNumber(source.subtotal),
     discountPaise: asNumber(source.discountPaise) ?? asNumber(source.discount),
+    storeCreditPaise:
+      asNumber(source.storeCreditPaise) ??
+      asNumber(source.storeCredit) ??
+      asNumber(source.storeCreditAppliedPaise),
     taxPaise: asNumber(source.taxPaise) ?? asNumber(source.tax),
     deliveryFeePaise:
       asNumber(source.deliveryFeePaise) ??
@@ -215,11 +219,19 @@ export function normalizeCart(response: unknown): Cart {
     items.push(item);
   }
 
+  const totals = normalizeTotals(payload, asRecord(payload.totals));
+  const storeCreditFlag =
+    asBoolean(payload.storeCreditApplied) ?? asBoolean(asRecord(payload.storeCredit)?.applied);
+  const storeCreditApplied =
+    storeCreditFlag ??
+    (typeof totals.storeCreditPaise === 'number' ? totals.storeCreditPaise !== 0 : undefined);
+
   return {
     id: asString(payload.id) ?? asString(payload.cartId),
     items,
-    totals: normalizeTotals(payload, asRecord(payload.totals)),
+    totals,
     coupon: normalizeCoupon(payload),
+    storeCreditApplied,
     itemCount: asNumber(payload.itemCount) ?? asNumber(payload.lineCount),
     totalQuantity: asNumber(payload.totalQuantity) ?? asNumber(payload.quantity),
     isValid: asBoolean(payload.isValid),

@@ -4,6 +4,7 @@ type EnvConfig = {
   appEnv: AppEnvironment;
   apiBaseUrl: string;
   enableLogging: boolean;
+  googleMapsApiKey: string;
 };
 
 function resolveAppEnv(): AppEnvironment {
@@ -22,4 +23,5 @@ export const env: EnvConfig = {
   appEnv: resolveAppEnv(),
   apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://api.dev.gunuco.local',
   enableLogging: process.env.EXPO_PUBLIC_ENABLE_LOGGING === 'true' || __DEV__,
+  googleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ?? '',
 };

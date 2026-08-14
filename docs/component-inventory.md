@@ -20,7 +20,7 @@
 | `GLoader` | Inline/overlay loader |
 | `GCheckbox` / `GRadio` / `GSwitch` | Form + settings (incl. dark mode) |
 | `GChip` | Filters / option chips |
-| `GSegmentedControl` | Tabs (orders), fulfilment, ASAP/Schedule |
+| `GSegmentedControl` | Tabs (orders later), fulfilment, ASAP/Schedule — **implemented** |
 | `GPressable` | Accessible press feedback |
 | `GSkeleton` | Base skeleton |
 | `GSpacer` | Token spacing |
@@ -65,18 +65,18 @@
 | `AddOnSelector` | Not a separate component — add-ons from the options payload render through `ProductOptionRenderer` | Options |
 | `WishlistButton` | Heart add/remove; guest → phone auth | ProductCard, Product Details, Wishlist |
 | `ReviewCard` | Approved review display (rating, text, date, safe name) | Product Reviews |
-| `CartItem` | Line item + options summary + qty + remove + unavailable/price-change states | Cart |
-| `CartSummary` | Backend totals: subtotal, discount, tax, delivery if returned, total | Cart (Checkout later) |
-| `CartChangeBanner` | Price/availability/option change notice from cart payload | Cart |
-| `CouponInput` | Code + Apply; applied code + Remove | Cart |
-| `AddressCard` | Saved address | Address book, Checkout |
-| `AddressForm` | Full address fields | Address Form |
-| `MapPicker` | Google Maps pin UI | Address Form |
+| `CartItem` | Line item + options summary + qty + remove; `compact` review mode on Checkout | Cart, Checkout |
+| `CartSummary` | Backend totals: subtotal, discount, store credit, tax, delivery if returned, total | Cart, Checkout |
+| `CartChangeBanner` | Price/availability/option change notice from cart payload | Cart, Checkout |
+| `CouponInput` | Code + Apply; applied code + Remove | Cart, Checkout |
+| `AddressCard` | Saved address; select/edit/delete/default | Address book, Checkout |
+| `AddressForm` | Full address fields + default toggle | Address Form |
+| `MapPicker` | Google Maps pin UI (`react-native-maps`) | Address Form |
 | `FulfilmentSelector` | Pickup vs Delivery | Checkout |
-| `DeliverySlot` / `SlotSelector` | ASAP + backend slots | Checkout |
-| `PickupInfoPanel` | Assigned pickup details | Checkout, Order |
-| `ServiceabilityResult` | Deliverable / not + fee | Checkout |
-| `StoreCreditCard` | Balance + apply control | Profile, Checkout |
+| `SlotSelector` | ASAP + backend dates/slots | Checkout |
+| `PickupInfoPanel` | Assigned pickup details (no production-house picker) | Checkout |
+| `ServiceabilityMessage` | Deliverable / not + backend fee | Checkout |
+| `StoreCreditCard` | Available balance + apply/remove | Checkout |
 | `OrderCard` | Active/Past/Cancelled lists | Orders |
 | `OrderTimeline` | Status timeline | Order Detail |
 | `InvoiceButton` | Download invoice PDF | Order Detail |
@@ -117,6 +117,7 @@ Visible only when backend status allows (typically Out for Delivery).
 | `HomeBannerCarousel` | Home |
 | `ProductDetailSkeleton` | Product Details |
 | `CartSkeleton` | Cart |
+| `CheckoutSkeleton` | Checkout |
 | `OnboardingSlide` | Onboarding |
 | `ForceUpdateView` | Force Update |
 | `MaintenanceView` | Maintenance |
@@ -139,7 +140,7 @@ Must remain single implementations with variants:
 4. `WishlistButton`
 5. `OrderCard` / `OrderTimeline`
 6. `AddressCard`
-7. `FulfilmentSelector` + `DeliverySlot`
+7. `FulfilmentSelector` + `SlotSelector`
 8. `CouponInput`
 9. `RiderMap` / chat primitives (do not fork for support unless necessary — share message list primitive)
 10. Theme tokens for all colors/spacing — no hard-coded dual palettes in screens

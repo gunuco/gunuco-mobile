@@ -41,6 +41,7 @@ export type CartLine = {
 export type CartTotals = {
   subtotalPaise?: MoneyPaise;
   discountPaise?: MoneyPaise;
+  storeCreditPaise?: MoneyPaise;
   taxPaise?: MoneyPaise;
   deliveryFeePaise?: MoneyPaise;
   totalPaise?: MoneyPaise;
@@ -56,6 +57,7 @@ export type Cart = {
   items: CartLine[];
   totals: CartTotals;
   coupon?: CartCoupon | null;
+  storeCreditApplied?: boolean;
   itemCount?: number;
   totalQuantity?: number;
   isValid?: boolean;

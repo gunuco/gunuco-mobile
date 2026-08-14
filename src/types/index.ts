@@ -63,6 +63,21 @@ export type {
   ApplyCouponPayload,
 } from './cart';
 
+export type { Address, AddressType, AddressPayload, AddressListResponse } from './address';
+export { ADDRESS_TYPES } from './address';
+
+export type {
+  FulfilmentType,
+  ServiceabilityResult,
+  FulfilmentSlot,
+  FulfilmentSlotsResponse,
+  PickupInfo,
+} from './fulfilment';
+
+export type { CheckoutPayload, CheckoutResult } from './checkout';
+
+export type { StoreCredit, StoreCreditLedgerEntry, ApplyStoreCreditPayload } from './storeCredit';
+
 export type {
   ProductReview,
   ProductReviewsArgs,

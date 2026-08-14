@@ -20,6 +20,10 @@ export {
   productHref,
   productReviewsHref,
   writeReviewHref,
+  checkoutHref,
+  paymentHref,
+  addressBookHref,
+  addressFormHref,
 } from './navigation';
 export {
   normalizeWishlistResponse,
@@ -36,6 +40,23 @@ export {
   isCartCheckoutReady,
   collectCartChangeMessages,
 } from './cart';
+export {
+  isValidIndianPincode,
+  toAddressSummary,
+  normalizeAddress,
+  normalizeAddressList,
+  toAddressPayload,
+} from './address';
+export {
+  normalizeFulfilmentType,
+  normalizeServiceability,
+  normalizeSlots,
+  normalizePickupInfo,
+  todayDateParam,
+} from './fulfilment';
+export { normalizeCheckoutResult, buildCheckoutBody } from './checkout';
+export { normalizeStoreCredit } from './storeCredit';
+export { createIdempotencyKey } from './idempotency';
 export {
   normalizeProductDetail,
   normalizeProductOptions,

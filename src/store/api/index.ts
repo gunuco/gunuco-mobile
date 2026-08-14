@@ -2,7 +2,9 @@
  * API module shells. Auth endpoints live in authApi.ts.
  * Home endpoints live in homeApi.ts.
  * Catalogue: categoryApi.ts + productApi.ts (search + detail).
- * Cart: cartApi.ts (server cart + add/update/remove/coupon/revalidate).
+ * Cart: cartApi.ts (server cart + coupon + store credit apply/remove).
+ * Addresses: addressApi.ts. Fulfilment: fulfilmentApi.ts. Checkout: checkoutApi.ts.
+ * Store credit balance: storeCreditApi.ts.
  * Wishlist: wishlistApi.ts. Reviews: reviewApi.ts.
  */
 
@@ -46,6 +48,8 @@ export {
   useRevalidateCartMutation,
   useApplyCouponMutation,
   useRemoveCouponMutation,
+  useApplyStoreCreditMutation,
+  useRemoveStoreCreditMutation,
 } from './cartApi';
 
 export { wishlistApi } from './wishlistApi';
@@ -62,10 +66,26 @@ export {
   useCreateReviewMutation,
 } from './reviewApi';
 
-export const addressApi = baseApi.injectEndpoints({
-  endpoints: () => ({}),
-  overrideExisting: false,
-});
+export { addressApi } from './addressApi';
+export {
+  useGetAddressesQuery,
+  useCreateAddressMutation,
+  useUpdateAddressMutation,
+  useDeleteAddressMutation,
+} from './addressApi';
+
+export { fulfilmentApi } from './fulfilmentApi';
+export {
+  useCheckServiceabilityMutation,
+  useGetFulfilmentSlotsQuery,
+  useGetPickupInfoQuery,
+} from './fulfilmentApi';
+
+export { checkoutApi } from './checkoutApi';
+export { useCreateCheckoutMutation } from './checkoutApi';
+
+export { storeCreditApi } from './storeCreditApi';
+export { useGetStoreCreditQuery } from './storeCreditApi';
 
 export const orderApi = baseApi.injectEndpoints({
   endpoints: () => ({}),

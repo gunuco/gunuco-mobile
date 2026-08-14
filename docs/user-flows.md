@@ -45,9 +45,10 @@ Open App (guest)
   → Add to Cart
        → Sign in required (server-persisted cart; no local guest cart)
        → Phone → OTP → Login/Register
-  → Cart → Checkout (later phases)
-  → Authentication Required at checkout if needed
-  → Resume Checkout → Payment → Order
+  → Cart → Proceed to Checkout
+  → If guest: Phone OTP (`returnTo` = `/checkout`) → Checkout
+  → If authenticated: Checkout
+  → Revalidate → POST /checkout → Payment (Phase 9)
 ```
 
 Guest checkout is **not** allowed. Guest local draft cart / `cart/merge` remains **[CONFIRM]** and is not implemented.
@@ -66,7 +67,7 @@ Home
   → Select quantity
   → Add to Cart (`POST cart/items` when signed in)
   → Common Cart (`/(tabs)/cart`)
-  → Checkout (later phase)
+  → Checkout (`/checkout`)
 ```
 
 Same path via Search or Offers. Wedding Cakes and Birthday Cakes use this catalogue flow — no custom-cake quotation.
@@ -84,8 +85,9 @@ Cart tab (`/(tabs)/cart`)
   → Invalid options → Product Details (existing option renderer)
   → Apply / remove coupon (optional)
   → Proceed to Checkout
-       → Phase 7: CTA is enabled for a valid cart but Checkout is not implemented
-       → Later: POST /cart/revalidate then Checkout
+       → Guest: Phone OTP, then `/checkout`
+       → Authenticated: `/checkout`
+       → Checkout calls POST /cart/revalidate then POST /checkout
 ```
 
 One cart → one checkout → one order (multi-item allowed; backend validates joint fulfilment).
@@ -95,26 +97,35 @@ One cart → one checkout → one order (multi-item allowed; backend validates j
 ## 5. Fulfilment
 
 ```text
-Checkout
-  → Select / confirm Address (Delivery) OR show Pickup info
+Cart → Proceed to Checkout
+  → Auth gate if guest (Phone OTP → return to /checkout)
+  → Load GET /cart (empty → Continue shopping)
   → Choose Pickup OR Delivery
-  → Choose ASAP OR Schedule for Later
-  → Backend-provided slots (never hard-coded)
-  → If same-day unavailable → show cutoff message; pick another date
-  → Review fees / tax / discounts / store credit
+  → Delivery: select/confirm address (default if marked) → POST /fulfilment/serviceability { lat, lng }
+       → serviceable + fee (paise) or not serviceable
+  → Pickup: GET /fulfilment/pickup-info (no production-house picker)
+  → ASAP (only if backend asapAvailable) OR Schedule for Later
+  → GET /fulfilment/slots?date&fulfilmentType (never hard-coded)
+  → If same-day unavailable → backend cutoff message; pick another backend date
+  → Review coupon / store credit / tax / delivery fee / total (backend values)
   → Continue to Payment
+       → POST /cart/revalidate
+       → if invalid: show changes, stay Checkout
+       → if valid: POST /checkout (idempotency UUID reused on retry)
+       → navigate to /payment with checkout id only
+       → Razorpay is Phase 9
 ```
 
 Production house is **backend-assigned**; customer does not pick it. Google Maps used for address pin/validation.
 
 ---
 
-## 6. Payment (Razorpay — Full Payment)
+## 6. Payment (Razorpay — Phase 9)
 
 ```text
-Checkout
-  → Place Order / Pay
-  → Initiate Razorpay (amount in paise)
+POST /checkout success
+  → /payment boundary (Phase 8: no SDK)
+  → Phase 9: Initiate Razorpay (amount in paise)
   → Customer pays via UPI / Card / Net Banking
   → Gateway return → Payment Processing
   → Backend payment verification
@@ -214,9 +225,10 @@ Cart / Checkout → enter coupon code → Apply
 
 ```text
 Profile → Store Credit (balance + history)
-Checkout → Use Store Credit (if allowed)
-  → Backend ledger applies amount
-  → Pay remaining via Razorpay if needed
+Checkout → Use Store Credit (`POST /cart/apply-store-credit` `{ max: true }` **[CONFIRM]**)
+  → Backend ledger applies credit
+  → Remove via `DELETE /cart/store-credit`
+  → Residual payable is Phase 9 Razorpay
 ```
 
 ---

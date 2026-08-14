@@ -12,16 +12,29 @@ export type AddressCardProps = {
   selected?: boolean;
   onPress?: () => void;
   onEditPress?: () => void;
+  onDeletePress?: () => void;
+  onSetDefaultPress?: () => void;
 };
 
-export function AddressCard({ address, selected, onPress, onEditPress }: AddressCardProps) {
+export function AddressCard({
+  address,
+  selected,
+  onPress,
+  onEditPress,
+  onDeletePress,
+  onSetDefaultPress,
+}: AddressCardProps) {
   const theme = useTheme();
   const line = [address.line1, address.line2, address.city, address.pincode]
     .filter(Boolean)
     .join(', ');
 
   return (
-    <Pressable accessibilityRole="button" onPress={onPress}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${selected ? 'Selected address' : 'Address'} ${address.name}`}
+      onPress={onPress}
+    >
       <GCard
         style={{
           borderWidth: selected ? 2 : 1,
@@ -45,12 +58,45 @@ export function AddressCard({ address, selected, onPress, onEditPress }: Address
             {address.phone}
           </GText>
         ) : null}
-        {onEditPress ? (
-          <Pressable accessibilityRole="button" onPress={onEditPress} hitSlop={8}>
-            <GText variant="label" color="brand">
-              Edit
-            </GText>
-          </Pressable>
+        {onEditPress || onDeletePress || onSetDefaultPress ? (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.md }}>
+            {onEditPress ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Edit ${address.name}`}
+                onPress={onEditPress}
+                hitSlop={8}
+              >
+                <GText variant="label" color="brand">
+                  Edit
+                </GText>
+              </Pressable>
+            ) : null}
+            {onSetDefaultPress && !address.isDefault ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Set ${address.name} as default`}
+                onPress={onSetDefaultPress}
+                hitSlop={8}
+              >
+                <GText variant="label" color="brand">
+                  Set default
+                </GText>
+              </Pressable>
+            ) : null}
+            {onDeletePress ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Delete ${address.name}`}
+                onPress={onDeletePress}
+                hitSlop={8}
+              >
+                <GText variant="label" color="danger">
+                  Delete
+                </GText>
+              </Pressable>
+            ) : null}
+          </View>
         ) : null}
       </GCard>
     </Pressable>

@@ -34,6 +34,9 @@ function RootNavigator() {
         <Stack.Screen name="product" />
         <Stack.Screen name="wishlist" />
         <Stack.Screen name="review" />
+        <Stack.Screen name="checkout" />
+        <Stack.Screen name="addresses" />
+        <Stack.Screen name="payment" />
         <Stack.Screen
           name="(auth)"
           options={{

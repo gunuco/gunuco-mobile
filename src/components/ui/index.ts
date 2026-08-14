@@ -51,3 +51,6 @@ export type { GChipProps } from './GChip';
 
 export { ConfirmDialog } from './ConfirmDialog';
 export type { ConfirmDialogProps } from './ConfirmDialog';
+
+export { GSegmentedControl } from './GSegmentedControl';
+export type { GSegmentedControlProps, GSegmentedControlOption } from './GSegmentedControl';

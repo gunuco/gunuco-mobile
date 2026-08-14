@@ -9,6 +9,8 @@ import { GDivider } from '../ui/GDivider';
 
 export type CartSummaryProps = {
   totals: CartTotals;
+  /** Hide a possibly stale cart delivery fee (Checkout shows serviceability fee separately). */
+  hideDeliveryFee?: boolean;
 };
 
 type SummaryRow = {
@@ -19,7 +21,7 @@ type SummaryRow = {
   emphasize?: boolean;
 };
 
-function buildRows(totals: CartTotals): SummaryRow[] {
+function buildRows(totals: CartTotals, hideDeliveryFee = false): SummaryRow[] {
   const rows: SummaryRow[] = [];
   if (typeof totals.subtotalPaise === 'number') {
     rows.push({ key: 'subtotal', label: 'Subtotal', amountPaise: totals.subtotalPaise });
@@ -34,10 +36,20 @@ function buildRows(totals: CartTotals): SummaryRow[] {
       tone: 'success',
     });
   }
+  if (typeof totals.storeCreditPaise === 'number' && totals.storeCreditPaise !== 0) {
+    const credit =
+      totals.storeCreditPaise > 0 ? -Math.abs(totals.storeCreditPaise) : totals.storeCreditPaise;
+    rows.push({
+      key: 'storeCredit',
+      label: 'Store Credit',
+      amountPaise: credit,
+      tone: 'success',
+    });
+  }
   if (typeof totals.taxPaise === 'number') {
     rows.push({ key: 'tax', label: 'Tax', amountPaise: totals.taxPaise });
   }
-  if (typeof totals.deliveryFeePaise === 'number') {
+  if (!hideDeliveryFee && typeof totals.deliveryFeePaise === 'number') {
     rows.push({ key: 'delivery', label: 'Delivery fee', amountPaise: totals.deliveryFeePaise });
   }
   if (typeof totals.totalPaise === 'number') {
@@ -51,9 +63,9 @@ function buildRows(totals: CartTotals): SummaryRow[] {
   return rows;
 }
 
-export function CartSummary({ totals }: CartSummaryProps) {
+export function CartSummary({ totals, hideDeliveryFee = false }: CartSummaryProps) {
   const theme = useTheme();
-  const rows = buildRows(totals);
+  const rows = buildRows(totals, hideDeliveryFee);
 
   if (rows.length === 0) {
     return null;

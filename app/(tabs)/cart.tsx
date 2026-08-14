@@ -14,7 +14,7 @@ import {
 } from '@/src/store';
 import { setAuthIntent } from '@/src/services/authIntent';
 import { getErrorMessage } from '@/src/utils/errors';
-import { productHref } from '@/src/utils/navigation';
+import { productHref, checkoutHref } from '@/src/utils/navigation';
 import { collectCartChangeMessages, isCartCheckoutReady } from '@/src/utils/cart';
 import type { CartLine } from '@/src/types/cart';
 import {
@@ -45,7 +45,6 @@ export default function CartTabScreen() {
   } | null>(null);
   const [mutatingItemId, setMutatingItemId] = useState<string | null>(null);
   const [pendingRemove, setPendingRemove] = useState<CartLine | null>(null);
-  const [checkoutNotice, setCheckoutNotice] = useState<string | null>(null);
 
   const cartQuery = useGetCartQuery(undefined, { skip: !isAuthenticated });
   const [updateCartItem, updateState] = useUpdateCartItemMutation();
@@ -150,8 +149,13 @@ export default function CartTabScreen() {
     if (!checkoutReady) {
       return;
     }
-    setCheckoutNotice('Checkout will be available in a later update.');
-  }, [checkoutReady]);
+    if (!isAuthenticated) {
+      setAuthIntent({ returnTo: '/checkout' });
+      router.push('/(auth)/phone');
+      return;
+    }
+    router.push(checkoutHref());
+  }, [checkoutReady, isAuthenticated, router]);
 
   const renderItem = useCallback(
     ({ item }: { item: CartLine }) => (
@@ -282,11 +286,6 @@ export default function CartTabScreen() {
               {cart?.checkoutBlockedReason && !checkoutReady ? (
                 <GText variant="bodySm" color="danger">
                   {cart.checkoutBlockedReason}
-                </GText>
-              ) : null}
-              {checkoutNotice ? (
-                <GText variant="bodySm" color="secondary">
-                  {checkoutNotice}
                 </GText>
               ) : null}
               <GButton

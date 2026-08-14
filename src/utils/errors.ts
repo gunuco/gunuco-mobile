@@ -103,6 +103,21 @@ function mapBusinessErrorCode(code: string): string | undefined {
       return 'This coupon cannot be combined with your current offers.';
     case 'SERVICEABILITY_FAILED':
       return 'These items cannot be fulfilled together right now.';
+    case 'NOT_SERVICEABLE':
+    case 'LOCATION_NOT_SERVICEABLE':
+      return 'Delivery is not available to this location.';
+    case 'SLOT_UNAVAILABLE':
+    case 'SLOT_INVALID':
+      return 'That time slot is no longer available. Please choose another.';
+    case 'CHECKOUT_INVALID':
+      return 'Please review your checkout details and try again.';
+    case 'STORE_CREDIT_INSUFFICIENT':
+      return 'There is not enough store credit to apply.';
+    case 'STORE_CREDIT_INVALID':
+      return 'Store credit could not be applied.';
+    case 'ADDRESS_INVALID':
+    case 'ADDRESS_NOT_FOUND':
+      return 'Please choose a valid delivery address.';
     case 'WISHLIST_UNAVAILABLE':
     case 'WISHLIST_ITEM_UNAVAILABLE':
       return 'Unable to update your wishlist right now.';

@@ -15,3 +15,4 @@ export { HomeSkeleton } from './HomeSkeleton';
 export { ProductListSkeleton } from './ProductListSkeleton';
 export { ProductDetailSkeleton } from './ProductDetailSkeleton';
 export { CartSkeleton } from './CartSkeleton';
+export { CheckoutSkeleton } from './CheckoutSkeleton';

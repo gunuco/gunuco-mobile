@@ -35,6 +35,8 @@ export {
   useRevalidateCartMutation,
   useApplyCouponMutation,
   useRemoveCouponMutation,
+  useApplyStoreCreditMutation,
+  useRemoveStoreCreditMutation,
 } from './api/cartApi';
 export {
   useGetWishlistQuery,
@@ -46,3 +48,16 @@ export {
   useGetReviewableItemsQuery,
   useCreateReviewMutation,
 } from './api/reviewApi';
+export {
+  useGetAddressesQuery,
+  useCreateAddressMutation,
+  useUpdateAddressMutation,
+  useDeleteAddressMutation,
+} from './api/addressApi';
+export {
+  useCheckServiceabilityMutation,
+  useGetFulfilmentSlotsQuery,
+  useGetPickupInfoQuery,
+} from './api/fulfilmentApi';
+export { useCreateCheckoutMutation } from './api/checkoutApi';
+export { useGetStoreCreditQuery } from './api/storeCreditApi';

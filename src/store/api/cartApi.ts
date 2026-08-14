@@ -1,6 +1,7 @@
 import { baseApi } from './baseApi';
 import type { AddCartItemPayload, AddCartItemResponse } from '@/src/types/product';
 import type { ApplyCouponPayload, Cart, UpdateCartItemPayload } from '@/src/types/cart';
+import type { ApplyStoreCreditPayload } from '@/src/types/storeCredit';
 import { mutationReturnedCart, normalizeCart } from '@/src/utils/cart';
 
 function normalizeAddCartItemResponse(response: unknown): AddCartItemResponse {
@@ -38,9 +39,10 @@ function cartTags(cart: Cart | undefined) {
  * POST cart/revalidate
  * POST cart/apply-coupon
  * DELETE cart/coupon
+ * POST cart/apply-store-credit
+ * DELETE cart/store-credit
  *
  * POST cart/merge remains [CONFIRM] and is not called.
- * Store credit endpoints are not implemented in this phase.
  */
 export const cartApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
@@ -108,7 +110,7 @@ export const cartApi = baseApi.injectEndpoints({
             dispatch(cartApi.util.updateQueryData('getCart', undefined, () => data));
           }
         } catch {
-          // Caller shows a safe error. Checkout is not implemented in this phase.
+          // Caller shows a safe error and stays on Checkout.
         }
       },
       invalidatesTags: (result) => (result ? [] : [cartListTag]),
@@ -150,6 +152,49 @@ export const cartApi = baseApi.injectEndpoints({
       },
       invalidatesTags: (result) => (result ? [] : [cartListTag]),
     }),
+    applyStoreCredit: build.mutation<Cart | undefined, ApplyStoreCreditPayload>({
+      query: (body) => ({
+        url: '/cart/apply-store-credit',
+        method: 'POST',
+        body,
+      }),
+      transformResponse: (response: unknown) => mutationReturnedCart(response),
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          if (data) {
+            dispatch(cartApi.util.updateQueryData('getCart', undefined, () => data));
+          }
+        } catch {
+          // Totals stay server-authoritative.
+        }
+      },
+      invalidatesTags: (result) =>
+        result
+          ? [{ type: 'StoreCredit' as const }]
+          : [cartListTag, { type: 'StoreCredit' as const }],
+    }),
+    removeStoreCredit: build.mutation<Cart | undefined, void>({
+      query: () => ({
+        url: '/cart/store-credit',
+        method: 'DELETE',
+      }),
+      transformResponse: (response: unknown) => mutationReturnedCart(response),
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          if (data) {
+            dispatch(cartApi.util.updateQueryData('getCart', undefined, () => data));
+          }
+        } catch {
+          // Keep applied store credit until DELETE succeeds.
+        }
+      },
+      invalidatesTags: (result) =>
+        result
+          ? [{ type: 'StoreCredit' as const }]
+          : [cartListTag, { type: 'StoreCredit' as const }],
+    }),
   }),
   overrideExisting: true,
 });
@@ -162,4 +207,6 @@ export const {
   useRevalidateCartMutation,
   useApplyCouponMutation,
   useRemoveCouponMutation,
+  useApplyStoreCreditMutation,
+  useRemoveStoreCreditMutation,
 } = cartApi;

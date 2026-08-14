@@ -90,6 +90,7 @@ Screens compose shared components only.
 | Theme preference | `settingsSlice` / SecureStore or AsyncStorage |
 | Guest cart draft | Not implemented. Guest cart mutations go to phone auth. `POST /cart/merge` remains **[CONFIRM]**. |
 | Cart (logged-in) | RTK Query `cartApi` |
+| Checkout UI | Local component state (fulfilment, addressId, slot, schedule). Address pick handoff is in-memory, not persisted. |
 
 Do not duplicate API payloads into slices.
 
@@ -107,11 +108,12 @@ wishlistApi.ts
 reviewApi.ts
 cartApi.ts
 addressApi.ts
-deliveryApi.ts
+fulfilmentApi.ts
+checkoutApi.ts
+storeCreditApi.ts
 orderApi.ts
 paymentApi.ts
 offerApi.ts
-storeCreditApi.ts
 trackingApi.ts
 chatApi.ts
 notificationApi.ts
@@ -156,8 +158,12 @@ Never log tokens; never store card data.
 
 ## 9. Payments
 
+Phase 8 ends at `POST /checkout` + `/payment` route boundary (identifier only). Razorpay SDK, initiate, confirm, and order confirmation are **Phase 9**.
+
 ```text
-Checkout → payments/razorpay/initiate
+Checkout → POST /cart/revalidate → POST /checkout
+  → /payment (boundary)
+  → Phase 9: payments/razorpay/initiate
   → open Razorpay SDK
   → return → poll/confirm via backend
   → only then Order Confirmation
@@ -169,10 +175,10 @@ Full payment only. Store credit applied server-side before residual Razorpay cha
 
 ## 10. Maps & Tracking
 
-- Address form: Google Maps pin
-- Live tracking: rider coordinates from tracking API; map component shared
-- Call: use backend-provided number/token
-- Chat: RTK Query + polling or socket **[CONFIRM transport]**
+- Address form: Google Maps pin via `react-native-maps` + `MapPicker` (Phase 8)
+- API key: `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY` through `app.config.js` plugin. Native rebuild required. Key value **[CONFIRM / infra]**.
+- Live tracking: rider coordinates from tracking API — **not implemented** (later phase)
+- Call/Chat: later phase
 
 ---
 
@@ -279,8 +285,6 @@ Suggested later phase order remains master-aligned, with additions:
 | Logout | Calls logout API then clears SecureStore + RTK cache |
 | Entry | `/` redirects to `/(tabs)` |
 | Design gallery | Moved to `/design-system` (dev validation) |
-
-Phase 7 (Cart) is **implemented**. Do **not** start Phase 8 (Checkout) until requested.
 
 ---
 
@@ -389,7 +393,7 @@ Phase 7 (Cart) is **implemented**. Do **not** start Phase 8 (Checkout) until req
 |---|---|
 | Screen | `app/(tabs)/cart.tsx` — one common server cart for all catalogue products |
 | APIs | `GET /cart`, existing `POST /cart/items`, `PATCH /cart/items/{id}` (quantity), `DELETE /cart/items/{id}`, `POST /cart/apply-coupon`, `DELETE /cart/coupon`. `POST /cart/revalidate` is wired in `cartApi` for the future Checkout phase and is not called from Cart UI. |
-| Not called | `POST /cart/merge` **[CONFIRM]**; store credit; addresses; fulfilment; checkout; payment; orders |
+| Not called | `POST /cart/merge` **[CONFIRM]**; payment; orders |
 | Cache | `Cart` tag (`LIST` + cart line id). Mutations update the GET cache when the response is a cart payload; otherwise they invalidate `LIST`. `POST /cart/items` invalidates `LIST`. Logout `resetApiState()` clears cart. |
 | Guest | No local cart. Cart tab shows sign-in. Guest Add to Cart on Product Details still opens phone auth. After OTP, `returnTo` restores `/(tabs)/cart` when the guest opened the tab. |
 | Badge | Tab badge from `itemCount`, else `totalQuantity`, else unique line count from `GET /cart`. Shared query with the Cart screen. |
@@ -398,14 +402,44 @@ Phase 7 (Cart) is **implemented**. Do **not** start Phase 8 (Checkout) until req
 | Quantity | Shared `QuantitySelector`; loading on the mutating line; previous quantity kept on failure. Min/max from API when present. |
 | Remove | Confirm dialog, then `DELETE`. Item stays until 2xx. |
 | Coupon | `CouponInput` → backend validate/stack. Success only after 2xx. |
-| Checkout CTA | Enabled when the cart is valid. Does **not** open a checkout screen. Shows that checkout arrives later. |
+| Checkout CTA | Enabled when the cart is valid. Navigates to `/checkout`. Guests are sent to phone OTP with `returnTo` `/checkout`. |
 | Custom cake | Not implemented. Wedding/Birthday cakes and cookies are normal cart lines. |
 
 ### Divergence from earlier analysis
 
 1. Guest local draft cart / merge is not implemented.
-2. Checkout, addresses, fulfilment, payment, store credit, and orders are not implemented.
-3. `POST /cart/revalidate` is API-ready but not invoked until Checkout.
+2. Payment, orders, tracking, and rider features remain later phases.
+3. `POST /cart/revalidate` is invoked from Checkout immediately before `POST /checkout`.
+
+---
+
+## 25. Phase 8 As-Built (Checkout & Fulfilment)
+
+| Area | Decision |
+|---|---|
+| Checkout route | `app/checkout/index.tsx` — one canonical Checkout. Cart CTA → `/checkout`. Back → Cart. |
+| Payment boundary | `app/payment/index.tsx` — identifier only. No Razorpay, no payment confirm, no “Order placed”. |
+| Address routes | `/addresses` (book + `?select=1`), `/addresses/form` (create/edit + map). Profile → Addresses. |
+| Auth | Guest checkout blocked. Existing `authIntent.returnTo` → `/checkout` after OTP. No `checkoutAuth.ts`. |
+| Server state | RTK Query: `addressApi`, `fulfilmentApi`, `checkoutApi`, `storeCreditApi`; store credit apply/remove on `cartApi`. Temporary fulfilment/address/slot selection is Checkout local state + in-memory `checkoutSelection`. |
+| Cart | Checkout loads `GET /cart`. Empty cart → EmptyState + Continue shopping. Compact `CartItem` review; edits return to Cart. |
+| Address | CRUD via `/addresses`. Default preselected only when `isDefault === true`. Delete confirms; selected checkout address is cleared if deleted. Google Maps pin → `lat`/`lng`. |
+| Fulfilment | `DELIVERY` / `PICKUP` local state. Delivery: address + `POST /fulfilment/serviceability`. Pickup: `GET /fulfilment/pickup-info`. No production-house picker. |
+| Scheduling | `GET /fulfilment/slots?date&fulfilmentType`. ASAP only if `asapAvailable`. Dates from backend `availableDates` (fallback: currently queried date). Slot `id` is the identifier. |
+| Coupon | Reuses Phase 7 `applyCoupon` / `removeCoupon`. No local discount math. |
+| Store credit | `GET /store-credit`. Apply `{ max: true }` **[CONFIRM]**. Remove `DELETE /cart/store-credit`. |
+| Totals | `CartSummary` from cart payload (integer paise / `formatPaise`). Checkout hides possibly stale cart delivery fee; serviceability shows backend fee. Tax only if backend returns it. |
+| Continue to Payment | Disabled while loading / invalid cart / address required / not serviceable / slot missing. Flow: revalidate → if changes stay → else `POST /checkout` with reused UUID. |
+| Idempotency | `expo-crypto` UUID. Same fingerprint retries reuse the key. Sent as `Idempotency-Key` header and body `idempotencyKey` **[CONFIRM]**. |
+| Explicitly not implemented | Razorpay SDK, payment initiate/confirm, orders, order history, reorder, tracking, rider chat/call, custom cakes, `POST /products/quote`, `POST /cart/merge`. |
+
+### Divergence from earlier analysis
+
+1. Payment route exists only as a Phase 9 boundary.
+2. Store-credit apply uses `{ max: true }` until OpenAPI confirms `amount` vs `max`.
+3. Slot list cache is keyed by date, fulfilment, address id, and cart revision without sending undocumented extra query params.
+
+Phase 8 is **implemented**. Do **not** start Phase 9 (Payment) until requested.
 
 ---
 

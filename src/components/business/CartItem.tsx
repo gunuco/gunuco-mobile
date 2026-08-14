@@ -15,6 +15,7 @@ export type CartItemProps = {
   item: CartLine;
   quantityLoading?: boolean;
   removeDisabled?: boolean;
+  compact?: boolean;
   onPress?: () => void;
   onQuantityChange?: (quantity: number) => void;
   onRemove?: () => void;
@@ -25,6 +26,7 @@ function CartItemComponent({
   item,
   quantityLoading = false,
   removeDisabled = false,
+  compact = false,
   onPress,
   onQuantityChange,
   onRemove,
@@ -81,56 +83,60 @@ function CartItemComponent({
         {typeof item.lineTotalPaise === 'number' ? (
           <GText variant="bodySm">{formatPaise(item.lineTotalPaise)}</GText>
         ) : null}
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: theme.spacing.sm,
-            marginTop: theme.spacing.xs,
-            flexWrap: 'wrap',
-          }}
-        >
-          {onQuantityChange ? (
-            <QuantitySelector
-              value={item.quantity}
-              min={minQuantity}
-              max={maxQuantity}
-              onChange={onQuantityChange}
-              disabled={unavailable}
-              loading={quantityLoading}
-            />
-          ) : (
-            <GText variant="caption">Qty {item.quantity}</GText>
-          )}
-          <View style={{ flexDirection: 'row', gap: theme.spacing.md }}>
-            {item.optionsChanged && onEditOptions ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Choose options for ${item.name}`}
-                onPress={onEditOptions}
-                hitSlop={8}
-              >
-                <GText variant="label" color="brand">
-                  Choose options
-                </GText>
-              </Pressable>
-            ) : null}
-            {onRemove ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Remove ${item.name} from cart`}
-                disabled={removeDisabled}
-                onPress={onRemove}
-                hitSlop={8}
-              >
-                <GText variant="label" color="danger">
-                  Remove
-                </GText>
-              </Pressable>
-            ) : null}
+        {compact ? (
+          <GText variant="caption">Qty {item.quantity}</GText>
+        ) : (
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: theme.spacing.sm,
+              marginTop: theme.spacing.xs,
+              flexWrap: 'wrap',
+            }}
+          >
+            {onQuantityChange ? (
+              <QuantitySelector
+                value={item.quantity}
+                min={minQuantity}
+                max={maxQuantity}
+                onChange={onQuantityChange}
+                disabled={unavailable}
+                loading={quantityLoading}
+              />
+            ) : (
+              <GText variant="caption">Qty {item.quantity}</GText>
+            )}
+            <View style={{ flexDirection: 'row', gap: theme.spacing.md }}>
+              {item.optionsChanged && onEditOptions ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Choose options for ${item.name}`}
+                  onPress={onEditOptions}
+                  hitSlop={8}
+                >
+                  <GText variant="label" color="brand">
+                    Choose options
+                  </GText>
+                </Pressable>
+              ) : null}
+              {onRemove ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Remove ${item.name} from cart`}
+                  disabled={removeDisabled}
+                  onPress={onRemove}
+                  hitSlop={8}
+                >
+                  <GText variant="label" color="danger">
+                    Remove
+                  </GText>
+                </Pressable>
+              ) : null}
+            </View>
           </View>
-        </View>
+        )}
         {unavailable ? (
           <GBadge label={item.availabilityLabel ?? 'Unavailable'} variant="danger" />
         ) : null}

@@ -23,7 +23,7 @@
 | Reviews | `reviewApi` | Required |
 | Cart | `cartApi` | Server-persisted |
 | Addresses | `addressApi` | Saved book |
-| Fulfilment / Slots | `deliveryApi` | Serviceability, ASAP/slots |
+| Fulfilment / Slots | `fulfilmentApi` | Serviceability, ASAP/slots, pickup info. Implemented in Phase 8. |
 | Orders | `orderApi` | List tabs, detail, cancel, reorder |
 | Payments | `paymentApi` | Razorpay initiate + status |
 | Coupons / Offers | `offerApi` | Codes + auto offers |
@@ -141,7 +141,7 @@ No local guest wishlist. Guest heart/open-wishlist → phone auth. After OTP, pe
 | POST | `cart/items` | productId, quantity, options (`{ groupId, valueIds }[]`). Wired from Product Details and Wishlist (when options are known to be safe). Guests are sent to phone auth — no local cart. Success UI only after a real 2xx. Invalidates Cart `LIST`. |
 | PATCH | `cart/items/{id}` | Body `{ quantity }`. Option edits go through Product Details, not a Cart option selector. |
 | DELETE | `cart/items/{id}` | Remove one cart line. |
-| POST | `cart/revalidate` | Wired in `cartApi` for future Checkout. Not called from the Cart screen in Phase 7. |
+| POST | `cart/revalidate` | Called from Checkout immediately before `POST /checkout`. Not called from the Cart screen. If the payload includes cart changes / invalid flags, Checkout stays and shows `CartChangeBanner`. |
 | POST | `cart/apply-coupon` | Body `{ code }`. Backend stacking. Cart totals update from the mutation/GET response. |
 | DELETE | `cart/coupon` | Remove applied coupon. |
 | POST | `cart/merge` | Guest draft → server after login **[CONFIRM]** — **not called**. |
@@ -154,7 +154,7 @@ Common cart; multi-item; no custom-cake cart. No guest local cart.
 
 | Method | Logical | Body fields |
 |---|---|---|
-| GET/POST/PATCH/DELETE | `addresses` | addressType, name, phone, house, street, area, landmark, city, state, pincode, lat, lng, isDefault |
+| GET/POST/PATCH/DELETE | `addresses` | **Phase 8 implemented.** Body: addressType, name, phone, house, street, area, landmark, city, state, pincode, lat, lng, isDefault. `PATCH/DELETE addresses/{id}`. Envelope `{ addresses }` / `{ items }` / `{ data }` is normalized. |
 
 Google Maps used client-side for pin; backend validates serviceability separately.
 
@@ -164,9 +164,9 @@ Google Maps used client-side for pin; backend validates serviceability separatel
 
 | Method | Logical | Notes |
 |---|---|---|
-| POST | `fulfilment/serviceability` | lat/lng → serviceable, fee (paise), message |
-| GET | `fulfilment/slots` | date, fulfilmentType, cart context → ASAP flag + slot list |
-| GET | `fulfilment/pickup-info` | Assigned production-house public pickup details |
+| POST | `fulfilment/serviceability` | **Phase 8.** Body `{ lat, lng }` → `serviceable`, `fee`/`feePaise`, `message`. Fee is integer paise. Not calculated on the client. |
+| GET | `fulfilment/slots` | **Phase 8.** Query `date`, `fulfilmentType`. Response ASAP flag + slot list + optional `availableDates` + cutoff message. **[CONFIRM]** whether cart/location is implied by session or extra query params. Slots never hard-coded. |
+| GET | `fulfilment/pickup-info` | **Phase 8.** Assigned production-house public pickup details. Customer cannot select a production house. |
 
 Slots **never** hard-coded. Production house **never** client-selected.
 
@@ -192,9 +192,9 @@ Scopes: order / product / subcategory (launch).
 
 | Method | Logical |
 |---|---|
-| GET | `store-credit` | balance (paise) + history |
-| POST | `cart/apply-store-credit` | amount or max **[CONFIRM]** |
-| DELETE | `cart/store-credit` | |
+| GET | `store-credit` | **Phase 8.** balance (paise) + optional history. `storeCreditApi`. |
+| POST | `cart/apply-store-credit` | amount or max **[CONFIRM]**. Phase 8 sends `{ max: true }` for “use available credit”. No amount picker. |
+| DELETE | `cart/store-credit` | **Phase 8.** Remove applied store credit; cart totals refresh from the mutation/GET response. |
 
 Ledger maintained by backend (refunds, compensation, promos, admin).
 
@@ -204,8 +204,8 @@ Ledger maintained by backend (refunds, compensation, promos, admin).
 
 | Method | Logical | Notes |
 |---|---|---|
-| POST | `checkout` | idempotency, addressId?, fulfilment, slotId/ASAP, coupon, storeCredit | Creates payment intent / order draft |
-| POST | `payments/razorpay/initiate` | order/checkout id, amount paise | Razorpay order id + key payload |
+| POST | `checkout` | **Phase 8 implemented.** Idempotency UUID (`Idempotency-Key` header and body `idempotencyKey` — **[CONFIRM]** which the backend requires). Body also sends fulfilment, asap, addressId?, slotId?, coupon?, storeCredit? `{ max: true }`. Exact request/response field names **[CONFIRM]**. Creates payment intent / order draft. Does **not** open Razorpay. |
+| POST | `payments/razorpay/initiate` | Phase 9 — **not called**. |
 | POST | `payments/razorpay/confirm` or webhook-driven | Client may poll `payments/{id}` / `orders/{id}` | Backend verifies signature |
 | GET | `orders` | `statusGroup=active|past|cancelled` |
 | GET | `orders/{id}` | Full detail + timeline |

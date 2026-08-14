@@ -8,6 +8,7 @@ import { useAuth } from '@/src/hooks';
 import { useAppDispatch, useAppSelector } from '@/src/store';
 import { useTheme } from '@/src/providers';
 import { formatPhoneDisplay } from '@/src/utils';
+import { addressBookHref } from '@/src/utils/navigation';
 
 export default function ProfileTabScreen() {
   const theme = useTheme();
@@ -80,6 +81,14 @@ export default function ProfileTabScreen() {
             fullWidth
             onPress={() => router.push('/wishlist')}
           />
+          {isAuthenticated ? (
+            <GButton
+              title="Addresses"
+              variant="secondary"
+              fullWidth
+              onPress={() => router.push(addressBookHref())}
+            />
+          ) : null}
         </GCard>
 
         <GCard style={{ gap: theme.spacing.sm }}>

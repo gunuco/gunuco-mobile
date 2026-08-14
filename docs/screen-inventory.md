@@ -40,7 +40,7 @@ Guest browsing: no auth required for Home/Search/Categories/Product. Checkout re
 | C1 | Home | Aggregated discovery | Tab | Header, SearchBar entry, banners, CategorySection, OfferSection, ProductCarousel, ProductCard, WishlistButton | `GET customer/home` | Section skeletons / empty / retry | Open category, product, offers, notifications | Search, Category, Product, Offers, Notifications |
 | C2 | Search | Catalogue search | Tab / Home | SearchBar, filters, sort, ProductCard FlashList | Search API | Skeleton, no results, error | Filter, sort, open product, wishlist | Product Detail |
 | C3 | Categories | Main + subcategory browse | Tab | CategoryCard, subcategory list | Categories tree | Empty if none active | Select | Subcategory Products |
-| C4 | Cart | Common cart review | Tab | CartItem, QuantitySelector, PriceDisplay, CartSummary, CouponInput, CartChangeBanner, CartSkeleton, EmptyState, ConfirmDialog | `GET cart`, `PATCH/DELETE cart/items/{id}`, `POST cart/apply-coupon`, `DELETE cart/coupon` | Empty, error+retry, refresh, revalidation banners, guest sign-in | Update qty, remove, apply/remove coupon, open product, checkout CTA (placeholder until Phase 8) | Product Detail, Auth. Checkout not implemented |
+| C4 | Cart | Common cart review | Tab | CartItem, QuantitySelector, PriceDisplay, CartSummary, CouponInput, CartChangeBanner, CartSkeleton, EmptyState, ConfirmDialog | `GET cart`, `PATCH/DELETE cart/items/{id}`, `POST cart/apply-coupon`, `DELETE cart/coupon` | Empty, error+retry, refresh, revalidation banners, guest sign-in | Update qty, remove, apply/remove coupon, open product, Proceed to Checkout | Product Detail, Auth, Checkout (`/checkout`) |
 | C5 | Profile | Account hub | Tab | ListRow, avatar | Customer profile | Skeleton | Navigate sections | Orders, Addresses, Wishlist, Store Credit, Support, Notifications, Settings, Legal, Edit Profile |
 
 ---
@@ -72,8 +72,8 @@ Guest browsing: no auth required for Home/Search/Categories/Product. Checkout re
 
 | # | Screen | Purpose | Entry | Components | API | States | Actions | Destinations |
 |---|---|---|---|---|---|---|---|---|
-| F1 | Address Book | Manage saved addresses | Profile / Checkout | AddressCard list | Addresses | Empty | Add, edit, delete, set default | Address Form |
-| F2 | Address Form + Map | Create/edit with Google Maps pin | Address Book / Checkout | AddressForm, map, GButton | Address CRUD, geocode | Validation errors | Save | Address Book / Checkout |
+| F1 | Address Book | Manage saved addresses | Profile / Checkout (`/addresses`, `?select=1` from Checkout) | AddressCard list, ConfirmDialog | `GET/PATCH/DELETE addresses` | Empty, error+retry, guest sign-in | Add, edit, delete (confirm), set default, select for checkout | Address Form, Checkout |
+| F2 | Address Form + Map | Create/edit with Google Maps pin | Address Book / Checkout (`/addresses/form`) | AddressForm, MapPicker, GButton | `POST addresses`, `PATCH addresses/{id}` | Validation errors, save failure stays on form | Save pin lat/lng | Address Book / Checkout |
 
 ---
 
@@ -81,11 +81,11 @@ Guest browsing: no auth required for Home/Search/Categories/Product. Checkout re
 
 | # | Screen | Purpose | Entry | Components | API | States | Actions | Destinations |
 |---|---|---|---|---|---|---|---|---|
-| G1 | Checkout | Address, fulfilment, ASAP/schedule, coupon, store credit, totals | Cart (auth required) | AddressCard, FulfilmentSelector, DeliverySlot, CouponInput, StoreCreditCard, CartSummary, tax line | Cart revalidate, slots, serviceability, coupons, store credit | Cart updated banner, calculating | Change options, place order / pay | Payment, Address, Auth |
-| G2 | Razorpay Payment | Launch gateway for full payment | Checkout | Razorpay SDK UI | Payment initiate (paise) | Initiating | Pay | Processing |
-| G3 | Payment Processing | Wait for backend verification | Gateway return | GLoader | Payment/order status poll | Processing / fail | Retry / support | Order Confirmation / Failed |
-| G4 | Order Confirmation | Success after backend confirm | Verified payment | OrderIdHighlight, summary, GButton | Order detail | — | Track, Home | Order Detail, Home |
-| G5 | Payment Failed | Failure messaging | Failed verify | ErrorState | Status | — | Retry, Support | Checkout, Support |
+| G1 | Checkout | Fulfilment, address or pickup, ASAP/schedule, coupon, store credit, totals, revalidate, create checkout | Cart CTA (`/checkout`). Auth required. | CartItem (compact), AddressCard, FulfilmentSelector, SlotSelector, CouponInput, StoreCreditCard, CartSummary, CartChangeBanner, ServiceabilityMessage, PickupInfoPanel, CheckoutSkeleton | `GET cart`, addresses, serviceability, slots, pickup-info, store-credit, coupon + store-credit cart mutations, `POST cart/revalidate`, `POST checkout` | Empty cart, auth gate, serviceability/slot/checkout errors, cart-updated banner | Continue to Payment (disabled until valid). Does **not** open Razorpay. | `/payment` boundary, Address Book, Address Form, Cart, Auth |
+| G2 | Payment (boundary only) | Holds checkout identifier until Phase 9. No Razorpay SDK. | Successful `POST /checkout` (`/payment?checkoutId=`) | EmptyState | None | Static “next phase” copy | Back to cart | Cart, Checkout |
+| G3 | Payment Processing | Wait for backend verification — Phase 9 | Gateway return | GLoader | Payment/order status poll | Processing / fail | Retry / support | Order Confirmation / Failed |
+| G4 | Order Confirmation | Success after backend confirm — Phase 9 | Verified payment | OrderIdHighlight, summary, GButton | Order detail | — | Track, Home | Order Detail, Home |
+| G5 | Payment Failed | Failure messaging — Phase 9 | Failed verify | ErrorState | Status | — | Retry, Support | Checkout, Support |
 
 ---
 
