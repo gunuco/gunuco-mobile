@@ -114,11 +114,11 @@ checkoutApi.ts
 storeCreditApi.ts
 orderApi.ts
 paymentApi.ts
-offerApi.ts
 trackingApi.ts
 chatApi.ts
-notificationApi.ts
 supportApi.ts
+offerApi.ts
+notificationApi.ts
 configApi.ts
 ```
 
@@ -181,9 +181,8 @@ Checkout → POST /cart/revalidate → POST /checkout
 ## 10. Maps & Tracking
 
 - Address form: Google Maps pin via `react-native-maps` + `MapPicker` (Phase 8)
-- API key: `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY` through `app.config.js` plugin. Native rebuild required. Key value **[CONFIRM / infra]**.
-- Live tracking: rider coordinates from tracking API — **not implemented** (later phase)
-- Call/Chat: later phase
+- Live tracking: `RiderMap` on `/orders/[id]/tracking` using `GET /orders/{id}/tracking` (Phase 10). Poll 15s while focused. Stop when delivered/cancelled/unavailable.
+- Call/Chat: backend-gated on Order Detail + Tracking/Chat screens. No Rider/Admin modules.
 
 ---
 
@@ -413,7 +412,7 @@ Suggested later phase order remains master-aligned, with additions:
 ### Divergence from earlier analysis
 
 1. Guest local draft cart / merge is not implemented.
-2. Orders, tracking, and rider features remain later phases.
+2. Notifications, Settings, Legal, and Support Hub remain later phases.
 3. `POST /cart/revalidate` is invoked from Checkout immediately before `POST /checkout`.
 
 ---
@@ -464,17 +463,46 @@ Phase 8 is **implemented**. Phase 9 (Payment + Order Confirmation) is **implemen
 | Idempotency | Initiate key reused per checkout attempt. Confirm key reused per Razorpay payment id retry. Checkout UUID remains Phase 8. |
 | Cart | On verified confirm: invalidate Cart LIST + StoreCredit, then `GET /cart`. Never `items = []` locally. Never clear cart before confirm. |
 | Confirmation data | `orderNumber` if backend returns it (no local `ORD-`). Total/fulfilment/slot from confirm response, with checkout session labels as fallback. |
-| Navigation | Cart → Checkout → Payment → `replace` Order Confirmation. Continue Shopping → `replace /(tabs)`. No View Order (Order Detail later). |
+| Navigation | Cart → Checkout → Payment → `replace` Order Confirmation. View Order → `/orders/[id]` when `orderId` is present. Continue Shopping → `replace /(tabs)`. |
 | Recovery | No payment-status GET. App kill clears in-memory session/confirmation — do not assume success/failure on relaunch. Logout clears payment session + confirmation; customer stays logged in after pay. |
-| Explicitly not implemented | `GET /orders`, Order History, Order Detail, reorder, tracking, rider chat/call, notifications, invoice, Write Review from confirmation, custom payment UI, Stripe/PayPal/etc. |
+| Explicitly not implemented in Phase 9 | Notifications, custom payment UI, Stripe/PayPal/etc. Orders belong to Phase 10. |
 
 ### Divergence from earlier analysis
 
 1. G3 Payment Processing and G5 Payment Failed are states on Payment, not separate routes.
 2. No status polling; uncertain states retry `POST /payments/razorpay/confirm`.
-3. `orderApi` remains an empty inject — no orders list/detail endpoints.
+3. Order list/detail/tracking/chat are Phase 10.
 
-Phase 9 is **implemented**. Do **not** start Phase 10 (Orders) until requested.
+Phase 9 is **implemented**. Phase 10 (Orders + post-purchase) is **implemented**.
+
+---
+
+## 27. Phase 10 As-Built (Orders + Post-Purchase)
+
+| Area | Decision |
+|---|---|
+| Routes | `/orders` list; `/orders/[id]` detail; `/tracking`, `/rider-chat`, `/cancel`, `/complaint` nested. Not a bottom tab. Entry: Profile + Order Confirmation View Order. |
+| List | One screen, Active / Past / Cancelled. Fetches only the visible tab. Page pagination like reviews. FlashList + OrderListSkeleton. |
+| Detail | `GET /orders/{id}` only. No object in navigation. 403/404 → “Order not found”. Pull-to-refresh. No order-detail polling. |
+| Status | `src/utils/orders.ts` maps known codes to Confirmed / Preparing / Ready / Out for Delivery / Delivered / Cancelled. Unknown codes use backend labels. |
+| Cancel | Shown only if eligibility `allowed`. Q37 reasons + Other. Refund from backend paise. Same idempotency key on retry. |
+| Reorder | `POST /orders/{id}/reorder`. Double-tap protected. Navigate to Cart only after cartUpdated. Current cart prices apply. |
+| Invoice | Lazy `GET /orders/{id}/invoice`. System browser. URL not logged or stored. |
+| Tracking | Separate cache. 15s poll while focused. Google Maps rider + destination + point polyline. Stale copy only if `updatedAt` exists. |
+| Rider | Display-safe fields. Call Rider via `tel:` when a number exists. Chat/Call hidden without backend flags. |
+| Chat | FlashList, chronological, 10s poll while focused, send disabled while in flight, draft kept on failure. |
+| Reviews | Reuses Phase 6 `GET /orders/{id}/reviewable-items` + `/review/write`. Real `orderItemId`. |
+| Complaint | Shown only if `complaintAllowed`. `POST /support/tickets` + ≤3 photos. No Support Hub. Eligibility API **[CONFIRM]**. |
+| Auth | Bearer via `baseApi`. `resetApiState()` on logout clears Order/Tracking/RiderChat/Support tags. |
+| Explicitly not implemented | Notifications center, push, Support Hub, Settings, Legal, Force Update, Maintenance, Store Credit standalone screen, Rider/Admin apps, custom cake. |
+
+### Divergence from earlier analysis
+
+1. Invoice and reorder results are not separate routes.
+2. No WebSocket; conservative polling on Tracking and Chat screens only.
+3. Complaint uses documented support ticket create, not an invented return-window API.
+
+Phase 10 is **implemented**. Do **not** start Phase 11 until requested.
 
 ---
 

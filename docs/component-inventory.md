@@ -80,11 +80,12 @@
 | `PaymentSummary` | Payable amount (backend paise), fulfilment, location, schedule | Payment |
 | `PaymentStatusCard` | Preparing / Razorpay / verifying / failed / cancelled / unknown | Payment |
 | `OrderConfirmationCard` | Success copy, order number if provided, total, fulfilment, slot | Order Confirmation |
-| `OrderCard` | Active/Past/Cancelled lists | Orders (later phase) |
-| `OrderTimeline` | Status timeline | Order Detail |
-| `InvoiceButton` | Download invoice PDF | Order Detail |
+| `OrderCard` | Active/Past/Cancelled summary + gated Track/Reorder | Orders |
+| `OrderTimeline` | Backend status history | Order Detail |
+| `OrderItemCard` | Historical line (image, options labels, qty, price, Write Review) | Order Detail |
+| `CancellationReasonSelector` | Predefined reasons + Other | Cancel, Complaint |
+| `ImageUploaderSlots` | Max 3 JPG/PNG/WEBP evidence | Complaint |
 | `ReviewCard` | Review display | Product reviews |
-| `CancellationReasonList` | Predefined + Other | Cancel |
 | `ProductConfigurationSummary` | Category/sub/product/options/qty | Cart, Order, Support |
 
 ---
@@ -93,13 +94,13 @@
 
 | Component | Purpose |
 |---|---|
-| `RiderInfo` | Rider name/photo/vehicle summary |
-| `RiderMap` | Live map + rider marker |
-| `TrackingStatus` | Status + ETA |
-| `RiderChat` | Chat thread UI (delivery-scoped) |
-| `RiderCall` | Call action (tel / masked number per API) |
+| `RiderInfo` | Rider name/photo/rating + Chat with Rider / Call Rider |
+| `RiderMap` | Live Google Map: rider, destination, polyline if provided |
+| `TrackingStatus` | Status + backend ETA + freshness copy from `updatedAt` |
+| `RiderChatMessage` | Customer vs rider vs system bubbles |
+| `RiderChatComposer` | Text + Send |
 
-Visible only when backend status allows (typically Out for Delivery).
+Call is a labeled `GButton` (“Call Rider”), not an icon-only control. Visible only when backend flags allow.
 
 ---
 
@@ -121,10 +122,10 @@ Visible only when backend status allows (typically Out for Delivery).
 | `ProductDetailSkeleton` | Product Details |
 | `CartSkeleton` | Cart |
 | `CheckoutSkeleton` | Checkout |
+| `OrderListSkeleton` | Orders |
 | `OnboardingSlide` | Onboarding |
 | `ForceUpdateView` | Force Update |
 | `MaintenanceView` | Maintenance |
-| `NotificationPermissionCard` | Contextual prompt |
 | `LegalDocumentView` | Legal |
 
 Promote when a second screen needs the same UI.

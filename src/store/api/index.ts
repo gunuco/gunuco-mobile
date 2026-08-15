@@ -5,6 +5,8 @@
  * Cart: cartApi.ts (server cart + coupon + store credit apply/remove).
  * Addresses: addressApi.ts. Fulfilment: fulfilmentApi.ts. Checkout: checkoutApi.ts.
  * Payments: paymentApi.ts. Store credit balance: storeCreditApi.ts.
+ * Orders: orderApi.ts. Tracking: trackingApi.ts. Rider chat: chatApi.ts.
+ * Complaint create: supportApi.ts (no Support Hub).
  * Wishlist: wishlistApi.ts. Reviews: reviewApi.ts.
  */
 
@@ -93,10 +95,24 @@ export {
   useConfirmRazorpayPaymentMutation,
 } from './paymentApi';
 
-export const orderApi = baseApi.injectEndpoints({
-  endpoints: () => ({}),
-  overrideExisting: false,
-});
+export { orderApi } from './orderApi';
+export {
+  useGetOrdersQuery,
+  useGetOrderQuery,
+  useGetCancellationEligibilityQuery,
+  useCancelOrderMutation,
+  useReorderOrderMutation,
+  useLazyGetOrderInvoiceQuery,
+} from './orderApi';
+
+export { trackingApi } from './trackingApi';
+export { useGetOrderTrackingQuery, useGetOrderRiderQuery } from './trackingApi';
+
+export { chatApi } from './chatApi';
+export { useGetRiderChatMessagesQuery, useSendRiderChatMessageMutation } from './chatApi';
+
+export { supportApi } from './supportApi';
+export { useCreateComplaintMutation } from './supportApi';
 
 export const notificationApi = baseApi.injectEndpoints({
   endpoints: () => ({}),

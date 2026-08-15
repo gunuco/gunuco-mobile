@@ -138,36 +138,46 @@ POST /checkout success
   → Network/uncertain after pay → UNKNOWN (retry confirm only; no status GET)
 ```
 
-No advance/balance split for catalogue orders. Do not confirm order from client-only Razorpay success. No Order History / Order Detail / tracking from this flow.
+No advance/balance split for catalogue orders. Do not confirm order from client-only Razorpay success.
 
 Public Razorpay key: `EXPO_PUBLIC_RAZORPAY_KEY_ID`. Razorpay secret stays on the backend. Native development/production build required (not Expo Go).
 
 ---
 
-## 7. Delivery Tracking
+## 7. Orders + Tracking (Phase 10 implemented)
 
 ```text
-Order Confirmed
-  → Preparing
-  → Ready
-  → Out for Delivery
-  → Live Tracking (map, rider location, ETA)
-  → Rider Chat / Call (when backend allows)
-  → Delivered
-  → Review eligible products
+Profile → Orders
+  ├── Active
+  ├── Past
+  └── Cancelled
+
+Order Confirmation → View Order (orderId only) → GET /orders/{id}
+
+Order Detail
+  ├── Timeline (backend history)
+  ├── Track (if trackingAvailable)
+  ├── Rider Chat / Call (if backend flags)
+  ├── Cancel (if cancellation-eligibility.allowed)
+  ├── Invoice (if invoiceAvailable → PDF URL)
+  ├── Reorder (if canReorder) → Cart, never Checkout
+  ├── Write Review (GET reviewable-items + Phase 6 write flow)
+  └── Complaint/Return (if complaintAllowed)
 ```
 
-Pickup path omits rider tracking/chat; shows pickup readiness instead.
+Pickup path omits rider tracking/chat unless the backend still sets those flags.
 
 ---
 
 ## 8. Reorder
 
 ```text
-Past Orders → Order Detail → Reorder
+Past Orders → Reorder
+  → POST /orders/{id}/reorder
   → Backend revalidates availability / price / options / offers
-  → Items added to Cart (with change notices if needed)
-  → Customer reviews Cart → Checkout
+  → GET /cart
+  → Customer reviews Cart (CartChangeBanner)
+  → Checkout only if the customer continues
 ```
 
 ---
@@ -176,11 +186,14 @@ Past Orders → Order Detail → Reorder
 
 ```text
 Active Order → Cancel
-  → Backend eligibility by status
-  → If allowed: pick predefined reason (+ Other text)
-  → Confirm → Cancelled tab / refunds per policy
-  → If not allowed: show ORDER_CANCELLATION_NOT_ALLOWED message → Support
+  → GET /orders/{id}/cancellation-eligibility
+  → If allowed: pick predefined reason (+ Other text) → confirm with backend refund amount if provided
+  → POST /orders/{id}/cancel (same idempotency key on retry)
+  → Invalidate order list/detail
+  → If not allowed: “Cancellation is no longer available.”
 ```
+
+Frontend does not calculate 0–30 / 30–60 minute refund percentages.
 
 ---
 

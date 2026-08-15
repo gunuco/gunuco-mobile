@@ -54,6 +54,45 @@ export function orderConfirmationHref(): Href {
   return '/order-confirmation' as unknown as Href;
 }
 
+export function ordersHref(): Href {
+  return '/orders' as unknown as Href;
+}
+
+export function orderHref(orderId: string): Href {
+  return {
+    pathname: '/orders/[id]',
+    params: { id: orderId },
+  } as unknown as Href;
+}
+
+export function orderTrackingHref(orderId: string): Href {
+  return {
+    pathname: '/orders/[id]/tracking',
+    params: { id: orderId },
+  } as unknown as Href;
+}
+
+export function orderChatHref(orderId: string): Href {
+  return {
+    pathname: '/orders/[id]/rider-chat',
+    params: { id: orderId },
+  } as unknown as Href;
+}
+
+export function orderCancelHref(orderId: string): Href {
+  return {
+    pathname: '/orders/[id]/cancel',
+    params: { id: orderId },
+  } as unknown as Href;
+}
+
+export function orderComplaintHref(orderId: string): Href {
+  return {
+    pathname: '/orders/[id]/complaint',
+    params: { id: orderId },
+  } as unknown as Href;
+}
+
 export function addressBookHref(options?: { select?: boolean }): Href {
   return {
     pathname: '/addresses',

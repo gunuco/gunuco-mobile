@@ -85,6 +85,25 @@ export type {
 } from './payment';
 
 export type { OrderConfirmation } from './order';
+export type {
+  OrderStatusGroup,
+  OrderPresentationStatus,
+  OrderListItem,
+  OrderListResponse,
+  OrderItem,
+  OrderTimelineEvent,
+  OrderDetail,
+  CancellationEligibility,
+  CancelOrderResult,
+  ReorderResult,
+  InvoiceResult,
+} from './order';
+export { CANCELLATION_REASONS } from './order';
+
+export type { OrderTracking, OrderRider, GeoPoint } from './tracking';
+export type { RiderChatMessage, RiderChatThread } from './riderChat';
+export type { EvidencePhoto, CreateComplaintPayload, CreateComplaintResult } from './complaint';
+export { COMPLAINT_REASONS } from './complaint';
 
 export type { StoreCredit, StoreCreditLedgerEntry, ApplyStoreCreditPayload } from './storeCredit';
 

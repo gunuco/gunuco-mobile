@@ -84,7 +84,7 @@ Guest browsing: no auth required for Home/Search/Categories/Product. Checkout re
 | G1 | Checkout | Fulfilment, address or pickup, ASAP/schedule, coupon, store credit, totals, revalidate, create checkout | Cart CTA (`/checkout`). Auth required. | CartItem (compact), AddressCard, FulfilmentSelector, SlotSelector, CouponInput, StoreCreditCard, CartSummary, CartChangeBanner, ServiceabilityMessage, PickupInfoPanel, CheckoutSkeleton | `GET cart`, addresses, serviceability, slots, pickup-info, store-credit, coupon + store-credit cart mutations, `POST cart/revalidate`, `POST checkout` | Empty cart, auth gate, serviceability/slot/checkout errors, cart-updated banner | Continue to Payment (disabled until valid). Does **not** open Razorpay. | `/payment`, Address Book, Address Form, Cart, Auth |
 | G2 | Payment | Order/payment summary, Pay Now, Razorpay hosted UI, backend confirm | Successful `POST /checkout` (`/payment?checkoutId=`) | PaymentSummary, PaymentStatusCard, GButton, ErrorState, EmptyState, GLoader | `POST payments/razorpay/initiate` (if checkout did not return Razorpay order), `POST payments/razorpay/confirm` | IDLE / preparing / Razorpay open / verifying / failed / cancelled / unknown. Amount mismatch returns to Checkout. | Pay Now (double-tap protected). Try Again. Confirm payment (retry verify only). Back to Checkout. | Razorpay UI, Order Confirmation, Checkout |
 | G3 | Payment Processing | Not a separate route. Loading copy lives on Payment (`PaymentStatusCard` preparing / opening / verifying). | — | PaymentStatusCard, GLoader | Same as G2. No status poll. | Verifying after Razorpay success | None (wait) | Order Confirmation or unknown/failed on Payment |
-| G4 | Order Confirmation | Success only after backend `POST /payments/razorpay/confirm` | Verified payment (`router.replace /order-confirmation`) | OrderConfirmationCard, GButton | None (in-memory confirmation from confirm response). No `GET /orders/{id}`. | Missing confirmation after app kill | Continue Shopping → Home. No View Order (Order Detail is a later phase). | Home |
+| G4 | Order Confirmation | Success only after backend `POST /payments/razorpay/confirm` | Verified payment (`router.replace /order-confirmation`) | OrderConfirmationCard, GButton | Confirm response (in-memory). View Order uses `orderId` only. | Missing confirmation after app kill | View Order (if `orderId`), Continue Shopping → Home | Order Detail, Home |
 | G5 | Payment Failed / Cancelled / Unknown | Failure, cancel, and uncertain states on Payment — not separate routes | Razorpay fail/cancel or confirm failure | PaymentStatusCard, ErrorState | Retry initiate (fail/cancel) or retry confirm (unknown). No new checkout. | Failed, cancelled, unknown, checkout expired, amount mismatch | Try Again, Confirm payment, Back to Checkout / Review order | Checkout, Payment retry |
 
 ---
@@ -93,13 +93,13 @@ Guest browsing: no auth required for Home/Search/Categories/Product. Checkout re
 
 | # | Screen | Purpose | Entry | Components | API | States | Actions | Destinations |
 |---|---|---|---|---|---|---|---|---|
-| H1 | Orders Hub | Tabs Active / Past / Cancelled | Profile | Segmented tabs, OrderCard FlashList | Orders list | Empty per tab | Open detail | Order Detail |
-| H2 | Order Detail | Full order info + actions | Orders / deep link | OrderTimeline, Cart-like lines, InvoiceButton, StatusChip | Order detail | — | Track, cancel, reorder, invoice, support, review, chat/call when active delivery | Tracking, Cancel, Cart, Support, Review, Rider Chat |
-| H3 | Live Tracking | Map + ETA + rider | Order Detail when OFD | RiderMap, RiderInfo, TrackingStatus, RiderChat, RiderCall | Tracking + rider | Location loading | Chat, Call, refresh | Rider Chat |
-| H4 | Rider Chat | In-delivery messaging | Tracking / Order Detail | Support-like chat UI adapted for rider | Chat API | Offline | Send message | — |
-| H5 | Cancel Order | Reasons + confirm | Order Detail | Radio reasons, Other text, ConfirmDialog | Cancel eligibility + cancel | Not allowed | Confirm | Order Detail |
-| H6 | Complaint / Return Request | Issue + ≤3 evidence photos | Order Detail | Reason, GInput, ImageUploaderSlots | Create complaint/return | Window closed | Submit | Order Detail / Ticket |
-| H7 | Reorder result / Cart Updated | Show revalidation changes after reorder | Reorder action | Cart change banner | Reorder → cart | Price/availability changes | Review cart | Cart |
+| H1 | Orders Hub | One screen, Active / Past / Cancelled segments | Profile (`/orders`). Auth required. | GSegmentedControl, OrderCard FlashList, OrderListSkeleton, EmptyState, ErrorState | `GET /orders?statusGroup=&page=` | Empty per tab, error+retry | Open detail, Track if allowed, Reorder if allowed | Order Detail, Tracking, Cart |
+| H2 | Order Detail | Backend order fetch by id | Orders, Order Confirmation View Order, future deep link (`/orders/[id]`) | OrderTimeline, OrderItemCard, CartSummary | `GET /orders/{id}`, eligibility, reviewable-items, lazy invoice, rider if call allowed | 403/404 “Order not found”, pull-to-refresh | Track, Chat, Call, Cancel, Reorder, Invoice, Write Review, Complaint — only when backend allows | Tracking, Chat, Cancel, Complaint, Review, Cart |
+| H3 | Live Tracking | Map + ETA + rider | Order Detail / Active card when `trackingAvailable` | RiderMap, TrackingStatus, RiderInfo | `GET /orders/{id}/tracking` (15s poll while focused), `GET /orders/{id}/rider` | Unavailable, delivered, cancelled, stale, rider error isolated | Chat, Call | Rider Chat, Order Detail |
+| H4 | Rider Chat | Delivery-scoped messages | Tracking / Order Detail when `chatAvailable` | FlashList, RiderChatMessage, RiderChatComposer | GET/POST `orders/{id}/rider-chat/messages` (10s poll while focused) | Unavailable, send failure keeps draft | Send | — |
+| H5 | Cancel Order | Predefined reasons + Other + confirm | Order Detail when eligibility.allowed | CancellationReasonSelector, ConfirmDialog | eligibility + `POST /orders/{id}/cancel` | Not allowed | Confirm cancel | Order Detail |
+| H6 | Complaint / Return Request | Issue + ≤3 evidence photos | Order Detail when `complaintAllowed` | CancellationReasonSelector, GInput, ImageUploaderSlots | `POST /support/tickets` + attachments | Not allowed, submit success (no ticket hub) | Submit | Order Detail |
+| H7 | Reorder result | Not a separate route — Cart after backend reorder | Reorder on Past card or Detail | CartChangeBanner on Cart | `POST /orders/{id}/reorder` then `GET /cart` | Changes / failure stay on Orders | Review cart | Cart |
 
 ---
 
@@ -108,7 +108,7 @@ Guest browsing: no auth required for Home/Search/Categories/Product. Checkout re
 | # | Screen | Purpose | Entry | Components | API | States | Actions | Destinations |
 |---|---|---|---|---|---|---|---|---|
 | I1 | Store Credit | Balance + history | Profile / Checkout entry | StoreCreditCard, history list | Store credit ledger | Empty history | Use at checkout | Checkout |
-| I2 | Invoice Viewer / Download | Open/share PDF | Order Detail | InvoiceButton, system share | Invoice URL/PDF | Generating | Download/share | — |
+| I2 | Invoice Viewer / Download | Not a custom PDF renderer. Order Detail opens the backend URL in the system browser. | Order Detail when `invoiceAvailable` | GButton | `GET /orders/{id}/invoice` | Generating / unavailable | Download/view | System browser |
 
 ---
 

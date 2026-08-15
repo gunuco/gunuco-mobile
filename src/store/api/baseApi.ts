@@ -22,7 +22,7 @@ const rawBaseQuery = fetchBaseQuery({
   baseUrl: env.apiBaseUrl,
   prepareHeaders: async (headers, { endpoint }) => {
     headers.set('Accept', 'application/json');
-    headers.set('Content-Type', 'application/json');
+    // Leave Content-Type unset so FormData can set a multipart boundary.
 
     if (isAnonymousEndpointName(endpoint)) {
       return headers;
@@ -137,6 +137,8 @@ export const baseApi = createApi({
     'Cart',
     'Address',
     'Order',
+    'Tracking',
+    'RiderChat',
     'Payment',
     'Offer',
     'Wishlist',

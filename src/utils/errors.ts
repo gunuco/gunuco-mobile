@@ -144,8 +144,25 @@ function mapBusinessErrorCode(code: string): string | undefined {
     case 'REVIEW_INVALID':
     case 'REVIEW_TEXT_INVALID':
       return 'Please check your rating and review, then try again.';
-    case 'REVIEW_REJECTED':
-      return 'This review could not be submitted.';
+    case 'ORDER_NOT_FOUND':
+      return 'Order not found';
+    case 'CANCELLATION_NOT_ALLOWED':
+    case 'CANCEL_NOT_ALLOWED':
+      return 'This order can no longer be cancelled.';
+    case 'REORDER_FAILED':
+    case 'REORDER_UNAVAILABLE':
+      return 'These items could not be added to your cart.';
+    case 'INVOICE_UNAVAILABLE':
+    case 'INVOICE_GENERATING':
+      return 'The invoice is not available yet.';
+    case 'TRACKING_UNAVAILABLE':
+      return 'Live location is temporarily unavailable.';
+    case 'CHAT_UNAVAILABLE':
+      return 'Chat with the rider is not available right now.';
+    case 'CALL_UNAVAILABLE':
+      return 'Calling the rider is not available right now.';
+    case 'COMPLAINT_NOT_ALLOWED':
+      return 'A complaint cannot be submitted for this order.';
     default:
       return undefined;
   }

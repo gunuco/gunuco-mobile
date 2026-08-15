@@ -24,7 +24,7 @@
 | Cart | `cartApi` | Server-persisted |
 | Addresses | `addressApi` | Saved book |
 | Fulfilment / Slots | `fulfilmentApi` | Serviceability, ASAP/slots, pickup info. Implemented in Phase 8. |
-| Orders | `orderApi` | List tabs, detail, cancel, reorder |
+| Orders | `orderApi` | **Phase 10 implemented.** List tabs, detail, cancel, reorder, invoice |
 | Payments | `paymentApi` | Razorpay initiate + confirm. **Phase 9 implemented.** No payment-status GET is documented. |
 | Coupons / Offers | `offerApi` | Codes + auto offers |
 | Store Credit | `storeCreditApi` | Balance + ledger + apply |
@@ -208,12 +208,12 @@ Ledger maintained by backend (refunds, compensation, promos, admin).
 | POST | `payments/razorpay/initiate` | **Phase 9 implemented.** Called from Payment only when checkout did not already return a Razorpay order id + amount. Body: `{ checkoutId, idempotencyKey }`. Amount is **not** sent by the client **[CONFIRM]** if backend requires `amountPaise`. Response normalized: `razorpayOrderId`, `keyId`, `amountPaise`, `currency`. |
 | POST | `payments/razorpay/confirm` | **Phase 9 implemented.** Mandatory backend verification. Body: `{ checkoutId, idempotencyKey, razorpay_payment_id, razorpay_order_id?, razorpay_signature? }` **[CONFIRM]** exact names. Signature is forwarded, never verified on device. Success (`verified` / `success` / `alreadyProcessed`) → Order Confirmation + Cart invalidate + `GET /cart`. |
 | GET | `payments/status` or `payments/{id}` | **Not documented. Not implemented.** Uncertain payment uses UNKNOWN UI and retries confirm only. Do not invent a status poll. |
-| GET | `orders` | `statusGroup=active|past|cancelled` — **not implemented** (later phase) |
-| GET | `orders/{id}` | Full detail + timeline — **not implemented** (later phase) |
-| POST | `orders/{id}/cancel` | reasonCode, otherText?, idempotency |
-| GET | `orders/{id}/cancellation-eligibility` | |
-| POST | `orders/{id}/reorder` | → cart + revalidation result |
-| GET | `orders/{id}/invoice` | PDF URL |
+| GET | `orders` | **Phase 10 implemented.** Query `statusGroup=active\|past\|cancelled` plus `page` (page-based like reviews; cursor remains **[CONFIRM]**). `orderApi.getOrders`. |
+| GET | `orders/{id}` | **Phase 10.** Full detail + timeline + totals + flags. 403/404 shown as “Order not found”. |
+| POST | `orders/{id}/cancel` | **Phase 10.** Body `{ reasonCode, otherText? when OTHER, idempotencyKey }` + `Idempotency-Key` header. Codes from GUNUCO Q37: `ORDERED_BY_MISTAKE`, `CHANGED_MIND`, `DELIVERY_TAKING_TOO_LONG`, `OTHER` **[CONFIRM]**. |
+| GET | `orders/{id}/cancellation-eligibility` | **Phase 10.** `allowed`, optional `refundPaise`, message, deadline/policy labels. Frontend does not calculate 30/60 minute rules. |
+| POST | `orders/{id}/reorder` | **Phase 10.** Idempotency header/body. Backend revalidates; client navigates to Cart only if cart was updated. Changes shown via Cart `CartChangeBanner`. |
+| GET | `orders/{id}/invoice` | **Phase 10.** Lazy fetch. Opens backend PDF URL in the system browser (`expo-web-browser`). URL is not stored or logged. |
 
 Full payment only. No advance/balance endpoints for catalogue.
 
@@ -223,9 +223,9 @@ Full payment only. No advance/balance endpoints for catalogue.
 
 | Method | Logical | Notes |
 |---|---|---|
-| GET | `orders/{id}/tracking` | status, eta, rider lat/lng, polyline? |
-| GET | `orders/{id}/rider` | Rider display info + call number/token |
-| GET/POST | `orders/{id}/rider-chat/messages` | Thread; only when status allows |
+| GET | `orders/{id}/tracking` | **Phase 10.** Isolated `trackingApi`. Poll 15s while the Tracking screen is focused and not delivered/cancelled. Fields: available, status, etaLabel, rider lat/lng, destination, polyline points, updatedAt. Encoded polyline strings are not decoded **[CONFIRM]**. No WebSocket. |
+| GET | `orders/{id}/rider` | **Phase 10.** Display name, photo, rating, `callAllowed`/`chatAllowed`, `callNumber`. Call uses `tel:` when a number is present. Call-token-only behavior **[CONFIRM]**. Number/token not logged. |
+| GET/POST | `orders/{id}/rider-chat/messages` | **Phase 10.** `chatApi`. GET poll 10s while focused. POST `{ text }`. Messages normalized oldest→newest. Page query for older messages **[CONFIRM]**. Hidden unless backend `available`/order flags allow. |
 | Backend rules | Gate chat/call | Client must hide when not allowed |
 
 ---
@@ -248,7 +248,8 @@ Channels: OTP via SMS; order lifecycle mainly Push (FCM/APNs).
 | Method | Logical |
 |---|---|
 | GET | `support/tickets` | |
-| POST | `support/tickets` | orderId?, message, idempotency, attachments |
+| POST | `support/tickets` | **Phase 10 complaint/return only.** Body `{ orderId, message, reasonCode?, idempotencyKey }`. Does **not** implement Support Hub / ticket list / thread. Eligibility flag `complaintAllowed` **[CONFIRM]**. |
+| POST | `support/tickets/{id}/attachments` | **Phase 10.** Up to 3 JPG/PNG/WEBP via FormData after ticket create. |
 | GET | `support/tickets/{id}` | messages |
 | POST | `support/tickets/{id}/messages` | customer reply |
 | POST | `support/tickets/{id}/attachments` | ≤3 images |

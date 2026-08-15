@@ -5,12 +5,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/src/providers';
 import { peekOrderConfirmation } from '@/src/services/orderConfirmation';
 import { GButton, GText, Header, OrderConfirmationCard, EmptyState } from '@/src/components';
+import { orderHref } from '@/src/utils/navigation';
 
 export default function OrderConfirmationScreen() {
   const theme = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const confirmation = peekOrderConfirmation();
+  const orderId = confirmation?.orderId;
 
   const goHome = useCallback(() => {
     router.replace('/(tabs)');
@@ -38,9 +40,19 @@ export default function OrderConfirmationScreen() {
           }}
         >
           <OrderConfirmationCard confirmation={confirmation} />
-          <GText variant="caption" color="secondary">
-            Order details will be available in Orders.
-          </GText>
+          {orderId ? (
+            <GButton
+              title="View Order"
+              size="lg"
+              fullWidth
+              onPress={() => router.replace(orderHref(orderId))}
+              accessibilityLabel="View Order"
+            />
+          ) : (
+            <GText variant="caption" color="secondary">
+              Order details will be available in Orders.
+            </GText>
+          )}
           <GButton
             title="Continue Shopping"
             size="lg"

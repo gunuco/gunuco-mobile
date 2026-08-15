@@ -52,5 +52,8 @@ export type { GChipProps } from './GChip';
 export { ConfirmDialog } from './ConfirmDialog';
 export type { ConfirmDialogProps } from './ConfirmDialog';
 
+export { ImageUploaderSlots } from './ImageUploaderSlots';
+export type { ImageUploaderSlotsProps } from './ImageUploaderSlots';
+
 export { GSegmentedControl } from './GSegmentedControl';
 export type { GSegmentedControlProps, GSegmentedControlOption } from './GSegmentedControl';

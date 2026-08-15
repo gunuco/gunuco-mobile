@@ -15,6 +15,15 @@ module.exports = {
     plugins: [
       ...appJson.expo.plugins,
       [
+        'expo-image-picker',
+        {
+          photosPermission:
+            'GUNUCO uses your photos only when you attach evidence to a complaint or return request.',
+          cameraPermission: false,
+          microphonePermission: false,
+        },
+      ],
+      [
         'react-native-maps',
         {
           androidGoogleMapsApiKey: googleMapsApiKey,

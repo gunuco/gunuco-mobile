@@ -23,6 +23,12 @@ export {
   checkoutHref,
   paymentHref,
   orderConfirmationHref,
+  ordersHref,
+  orderHref,
+  orderTrackingHref,
+  orderChatHref,
+  orderCancelHref,
+  orderComplaintHref,
   addressBookHref,
   addressFormHref,
 } from './navigation';
@@ -62,6 +68,17 @@ export {
   hasCompleteRazorpayPrep,
 } from './payment';
 export { normalizeStoreCredit } from './storeCredit';
+export {
+  toPresentationStatus,
+  customerStatusLabel,
+  normalizeOrderListResponse,
+  normalizeOrderDetail,
+  normalizeCancellationEligibility,
+  minutesSince,
+  formatOrderOptionSummary,
+} from './orders';
+export { normalizeOrderTracking, normalizeOrderRider } from './tracking';
+export { normalizeRiderChatThread } from './riderChat';
 export { createIdempotencyKey } from './idempotency';
 export {
   normalizeProductDetail,
