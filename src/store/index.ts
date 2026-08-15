@@ -17,6 +17,9 @@ export {
   useLogoutMutation,
   useGetMeQuery,
   useLazyGetMeQuery,
+  useUpdateMeMutation,
+  useRequestPhoneChangeMutation,
+  useVerifyPhoneChangeMutation,
 } from './api/authApi';
 export { useGetHomeQuery, useLazyGetHomeQuery } from './api/homeApi';
 export {
@@ -75,4 +78,17 @@ export {
 } from './api/orderApi';
 export { useGetOrderTrackingQuery, useGetOrderRiderQuery } from './api/trackingApi';
 export { useGetRiderChatMessagesQuery, useSendRiderChatMessageMutation } from './api/chatApi';
-export { useCreateComplaintMutation } from './api/supportApi';
+export {
+  useCreateComplaintMutation,
+  useCreateSupportTicketMutation,
+  useGetSupportTicketsQuery,
+  useGetSupportTicketQuery,
+  useSendSupportMessageMutation,
+} from './api/supportApi';
+export {
+  useRegisterPushTokenMutation,
+  useGetNotificationsQuery,
+  useMarkNotificationReadMutation,
+} from './api/notificationApi';
+export { useGetAppConfigQuery, useLazyGetAppConfigQuery } from './api/configApi';
+export { useGetLegalDocumentQuery } from './api/legalApi';

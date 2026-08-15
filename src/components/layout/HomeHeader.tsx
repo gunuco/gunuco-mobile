@@ -59,7 +59,11 @@ function HomeHeaderComponent({
 
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Notifications"
+          accessibilityLabel={
+            unreadNotificationCount > 0
+              ? `Notifications, ${unreadNotificationCount} unread`
+              : 'Notifications'
+          }
           onPress={onNotificationPress}
           hitSlop={8}
           style={{

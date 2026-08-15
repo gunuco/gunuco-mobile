@@ -8,6 +8,13 @@ import type {
   RefreshTokenPayload,
   RefreshTokenResponse,
 } from '@/src/types/auth';
+import type {
+  PhoneChangeRequestPayload,
+  PhoneChangeRequestResponse,
+  PhoneChangeVerifyPayload,
+  UpdateCustomerPayload,
+} from '@/src/types/profile';
+import { normalizeCustomer, normalizePhoneChangeRequest } from '@/src/utils/customer';
 
 /**
  * Auth endpoints from docs/api-requirements.md (logical paths).
@@ -49,6 +56,50 @@ export const authApi = baseApi.injectEndpoints({
       query: () => '/customers/me',
       providesTags: ['Customer'],
     }),
+    updateMe: build.mutation<Customer, UpdateCustomerPayload>({
+      query: (body) => ({
+        url: '/customers/me',
+        method: 'PATCH',
+        body,
+      }),
+      transformResponse: (response: unknown) => {
+        const customer = normalizeCustomer(response);
+        if (!customer) {
+          throw new Error('PROFILE_UPDATE_INVALID');
+        }
+        return customer;
+      },
+      invalidatesTags: ['Customer'],
+    }),
+    requestPhoneChange: build.mutation<PhoneChangeRequestResponse, PhoneChangeRequestPayload>({
+      query: (body) => ({
+        url: '/auth/phone/change/request',
+        method: 'POST',
+        body,
+      }),
+      transformResponse: (response: unknown) => {
+        const result = normalizePhoneChangeRequest(response);
+        if (!result) {
+          throw new Error('PHONE_CHANGE_INVALID');
+        }
+        return result;
+      },
+    }),
+    verifyPhoneChange: build.mutation<Customer, PhoneChangeVerifyPayload>({
+      query: (body) => ({
+        url: '/auth/phone/change/verify',
+        method: 'POST',
+        body,
+      }),
+      transformResponse: (response: unknown) => {
+        const customer = normalizeCustomer(response);
+        if (!customer) {
+          throw new Error('PHONE_CHANGE_INVALID');
+        }
+        return customer;
+      },
+      invalidatesTags: ['Customer', 'Auth'],
+    }),
   }),
   overrideExisting: true,
 });
@@ -60,4 +111,7 @@ export const {
   useLogoutMutation,
   useGetMeQuery,
   useLazyGetMeQuery,
+  useUpdateMeMutation,
+  useRequestPhoneChangeMutation,
+  useVerifyPhoneChangeMutation,
 } = authApi;

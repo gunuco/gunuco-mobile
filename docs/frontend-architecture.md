@@ -120,6 +120,7 @@ supportApi.ts
 offerApi.ts
 notificationApi.ts
 configApi.ts
+legalApi.ts
 ```
 
 `baseApi`: env base URL, auth header, 401 refresh mutex, tag invalidation.
@@ -188,7 +189,7 @@ Checkout → POST /cart/revalidate → POST /checkout
 
 ## 11. Notifications
 
-Expo push; register token after contextual permission grant; map payload → routes.
+Expo Notifications (`getDevicePushTokenAsync`) → FCM/APNs; register token after contextual permission grant + auth; map payload IDs → routes.
 
 ---
 
@@ -200,11 +201,14 @@ Expo push; register token after contextual permission grant; map payload → rou
 
 ## 13. App Config Gate
 
-Root layout fetches `app/config`:
+Root layout fetches `GET /app/config` during bootstrap (after theme restore):
 
-- `forceUpdate` → blocking update screen  
-- `maintenanceMode` → blocking maintenance screen  
-- else continue  
+- fetch failure → fail-open, continue (never assume maintenance)
+- `maintenanceMode` → blocking `MaintenanceScreen`
+- else `forceUpdate` or current < `minVersion` → blocking `ForceUpdateScreen`
+- else continue to session restore / tabs
+
+Remote config is short-lived (`keepUnusedDataFor: 30`, force refetch on bootstrap/retry). Not persisted.  
 
 ---
 
@@ -492,9 +496,9 @@ Phase 9 is **implemented**. Phase 10 (Orders + post-purchase) is **implemented**
 | Rider | Display-safe fields. Call Rider via `tel:` when a number exists. Chat/Call hidden without backend flags. |
 | Chat | FlashList, chronological, 10s poll while focused, send disabled while in flight, draft kept on failure. |
 | Reviews | Reuses Phase 6 `GET /orders/{id}/reviewable-items` + `/review/write`. Real `orderItemId`. |
-| Complaint | Shown only if `complaintAllowed`. `POST /support/tickets` + ≤3 photos. No Support Hub. Eligibility API **[CONFIRM]**. |
-| Auth | Bearer via `baseApi`. `resetApiState()` on logout clears Order/Tracking/RiderChat/Support tags. |
-| Explicitly not implemented | Notifications center, push, Support Hub, Settings, Legal, Force Update, Maintenance, Store Credit standalone screen, Rider/Admin apps, custom cake. |
+| Complaint | Shown only if `complaintAllowed`. `POST /support/tickets` + ≤3 photos. Success navigates to ticket detail when `ticketId` is returned. Eligibility API **[CONFIRM]**. |
+| Auth | Bearer via `baseApi`. `resetApiState()` on logout clears Order/Tracking/RiderChat/Support/Notification/Customer tags. |
+| Explicitly not implemented | Rider/Admin apps, custom cake. |
 
 ### Divergence from earlier analysis
 
@@ -502,7 +506,29 @@ Phase 9 is **implemented**. Phase 10 (Orders + post-purchase) is **implemented**
 2. No WebSocket; conservative polling on Tracking and Chat screens only.
 3. Complaint uses documented support ticket create, not an invented return-window API.
 
-Phase 10 is **implemented**. Do **not** start Phase 11 until requested.
+---
+
+## 28. Phase 11 As-Built (Notifications + Support + Profile + Settings + Legal + Lifecycle)
+
+| Area | Decision |
+|---|---|
+| Push | `expo-notifications` SDK 57. Native FCM/APNs token via `getDevicePushTokenAsync` → `POST /devices/push-token` `{ token, platform }`. No Expo push service. No fake token. Register after auth + permission, not every render. Token delete **[CONFIRM]** — not called on logout; last-token cache cleared so the next customer can re-register. |
+| Permission | Not on first launch. Contextual card on Order Confirmation and Notifications Center. Denied → system settings from Settings. Browsing continues if denied. |
+| Inbox | `/notifications`. Page pagination + FlashList + skeleton. Mark read on open only. `read-all` **[CONFIRM]** not implemented. Home bell uses existing `unreadNotificationCount`. |
+| Deep links | Identifiers only. Order → `/orders/{id}`; OFD/nearby → tracking; support → `/support/{id}`; review → existing write-review. Logged-out → auth `returnTo` then destination. |
+| Support | `/support`, `/support/create`, `/support/[id]`. Extends Phase 10 `supportApi` (no second client). Statuses New/Open/Pending/Closed. Closed hides composer unless `replyAllowed`. Attachments ≤3 on create. |
+| Profile | Hub rows to Orders, Wishlist, Addresses, Store Credit, Notifications, Support, Settings, Legal, Edit Profile, Change Phone, Logout. |
+| Edit profile | `PATCH /customers/me` name/email. Image upload **[CONFIRM]** — display only. |
+| Change phone | In-memory challenge (not URL). Reuses `OtpInput`; length from backend `otpLength` or 6 **[CONFIRM]**. |
+| Settings | Existing `settings.themePreference` + SecureStore. Light/Dark/System. OS notification permission (no server prefs API). About version from Expo metadata. |
+| Legal | `/legal`, `/legal/[type]`. `GET /legal/{type}`. https URL → `expo-web-browser` (no tokens). Text/markdown in `LegalDocumentView`. HTML stripped, not executed. |
+| Config | `GET /app/config` at bootstrap after theme restore so gated screens have tokens. Maintenance then force update. Config failure is fail-open. Semver compare. Store URLs from backend. No optional-update UI. |
+| Client state | `appLifecycleSlice` for the current gate only. Not persisted. Server data stays in RTK Query. `Legal` tag added. |
+| Explicitly not implemented | Referral, i18n, Custom Cake, Rider/Admin, `notifications/read-all`, server notification preferences, profile image multipart, optional update prompt. |
+
+Bootstrap order (existing architecture preserved): Theme restore → Remote config → Auth restore. Theme first so Maintenance/Force Update can use design tokens.
+
+Phase 10 is **implemented**. Phase 11 is **implemented**. Do **not** start Phase 12 until requested.
 
 ---
 

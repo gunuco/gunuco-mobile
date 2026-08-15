@@ -14,10 +14,10 @@ All API-driven screens require: loading, skeleton (where useful), empty, error, 
 | # | Screen | Purpose | Entry | Key components | API | Loading / Empty / Error | Actions | Destinations |
 |---|---|---|---|---|---|---|---|---|
 | A1 | Splash / Bootstrap | Session restore, app config, force-update/maintenance gate | Cold start | Brand, GLoader | Auth restore, app config | Splash; maintenance/force-update takeover | Auto | Onboarding / Auth / Tabs / Force Update / Maintenance |
-| A2 | Force Update | Block outdated app | Config flag | GText, GButton | App version config | Static | Update Now | Store |
-| A3 | Maintenance | Temporary outage | Config flag | Empty/Error composition | App config | Static | Retry later | — |
+| A2 | Force Update | Block outdated app | Config `forceUpdate` or current < minVersion | ForceUpdateScreen | App version config | Static | Update App (backend store URL) | Store |
+| A3 | Maintenance | Temporary outage | Config `maintenanceMode` | MaintenanceScreen | App config | Static | Check again | — |
 | A4 | Onboarding (optional) | Value props | First launch | Carousel, GButton | Local | Instant | Skip / Continue | Phone Auth |
-| A5 | Notification Permission Prompt | Contextual push opt-in | After first order or before tracking | Modal, GButton | Push token register | — | Allow / Not now | System settings / continue |
+| A5 | Notification Permission Prompt | Contextual push opt-in | Order confirmation + Notifications Center (not first launch) | NotificationPermissionCard | Push token register after grant | — | Allow / Not now | System permission / continue |
 
 ---
 
@@ -41,7 +41,7 @@ Guest browsing: no auth required for Home/Search/Categories/Product. Checkout re
 | C2 | Search | Catalogue search | Tab / Home | SearchBar, filters, sort, ProductCard FlashList | Search API | Skeleton, no results, error | Filter, sort, open product, wishlist | Product Detail |
 | C3 | Categories | Main + subcategory browse | Tab | CategoryCard, subcategory list | Categories tree | Empty if none active | Select | Subcategory Products |
 | C4 | Cart | Common cart review | Tab | CartItem, QuantitySelector, PriceDisplay, CartSummary, CouponInput, CartChangeBanner, CartSkeleton, EmptyState, ConfirmDialog | `GET cart`, `PATCH/DELETE cart/items/{id}`, `POST cart/apply-coupon`, `DELETE cart/coupon` | Empty, error+retry, refresh, revalidation banners, guest sign-in | Update qty, remove, apply/remove coupon, open product, Proceed to Checkout | Product Detail, Auth, Checkout (`/checkout`) |
-| C5 | Profile | Account hub | Tab | ListRow, avatar | Customer profile | Skeleton | Navigate sections | Orders, Addresses, Wishlist, Store Credit, Support, Notifications, Settings, Legal, Edit Profile |
+| C5 | Profile | Account hub | Tab | ListRow, GImage | `GET customers/me` | Skeleton via pull refresh | Navigate sections | Orders, Addresses, Wishlist, Store Credit, Support, Notifications, Settings, Legal, Edit Profile, Change Phone |
 
 ---
 
@@ -107,7 +107,7 @@ Guest browsing: no auth required for Home/Search/Categories/Product. Checkout re
 
 | # | Screen | Purpose | Entry | Components | API | States | Actions | Destinations |
 |---|---|---|---|---|---|---|---|---|
-| I1 | Store Credit | Balance + history | Profile / Checkout entry | StoreCreditCard, history list | Store credit ledger | Empty history | Use at checkout | Checkout |
+| I1 | Store Credit | Balance + history | Profile `/store-credit` | GCard, history list | `GET store-credit` | Empty history, error+retry | View only (apply remains Checkout) | Checkout |
 | I2 | Invoice Viewer / Download | Not a custom PDF renderer. Order Detail opens the backend URL in the system browser. | Order Detail when `invoiceAvailable` | GButton | `GET /orders/{id}/invoice` | Generating / unavailable | Download/view | System browser |
 
 ---
@@ -116,7 +116,7 @@ Guest browsing: no auth required for Home/Search/Categories/Product. Checkout re
 
 | # | Screen | Purpose | Entry | Components | API | States | Actions | Destinations |
 |---|---|---|---|---|---|---|---|---|
-| J1 | Notifications Center | Inbox | Home bell / Profile | NotificationItem | Notifications | Empty | Open deep link, mark read | Order, Tracking, Ticket, Review |
+| J1 | Notifications Center | Inbox | Home bell / Profile `/notifications` | NotificationItem, NotificationPermissionCard, FlashList, OrderListSkeleton | `GET notifications`, `POST notifications/{id}/read` | Empty, error+retry, pagination, refresh | Open deep link, mark read | Order, Tracking, Ticket, Review |
 
 ---
 
@@ -124,9 +124,9 @@ Guest browsing: no auth required for Home/Search/Categories/Product. Checkout re
 
 | # | Screen | Purpose | Entry | Components | API | States | Actions | Destinations |
 |---|---|---|---|---|---|---|---|---|
-| K1 | Support Hub / My Tickets | List tickets | Profile / Order | SupportTicketCard | Tickets list | Empty | Create, open | Create Ticket, Ticket Detail |
-| K2 | Create Support Ticket | Message + optional photos | Hub / Order | Composer, ImageUploaderSlots | Create ticket | Validation | Submit | Ticket Detail |
-| K3 | Ticket Detail | Thread: support ↔ customer | List / notification | SupportMessage, SupportComposer | Ticket + messages | — | Reply | — |
+| K1 | Support Hub / My Tickets | List tickets | Profile `/support` | SupportTicketCard, FlashList | `GET support/tickets` | Empty, error+retry, pagination | Create, open | Create Ticket, Ticket Detail |
+| K2 | Create Support Ticket | Message + optional photos + optional order ID | Hub / Order | GInput, ImageUploaderSlots | `POST support/tickets` + attachments | Validation | Submit (idempotent) | Ticket Detail |
+| K3 | Ticket Detail | Thread: support ↔ customer | List / notification `/support/[id]` | SupportMessage, SupportComposer, FlashList | `GET support/tickets/{id}`, `POST .../messages` | Skeleton, error, closed (composer hidden) | Reply, View Order | Order Detail |
 
 ---
 
@@ -134,11 +134,11 @@ Guest browsing: no auth required for Home/Search/Categories/Product. Checkout re
 
 | # | Screen | Purpose | Entry | Components | API | States | Actions | Destinations |
 |---|---|---|---|---|---|---|---|---|
-| L1 | Edit Profile | Name, email, image | Profile | GInput, GImage picker | Update profile | Validation | Save | Profile |
-| L2 | Change Phone | New phone + OTP | Profile | Phone + OTP flow | Request/verify OTP | — | Verify | Profile |
-| L3 | Settings | Theme (Light/Dark/System?), notifications prefs, about | Profile | Switch, ListRow | Local + push prefs | — | Toggle dark mode | — |
-| L4 | Legal Hub | Links to policies | Profile / Settings | ListRow | CMS/static URLs **[CONFIRM]** | — | Open | Legal Document |
-| L5 | Legal Document | Terms / Privacy / Refund / Cancellation | Legal Hub | Scroll GText / WebView | Content URL | Offline | — | — |
+| L1 | Edit Profile | Name, email (image display only) | Profile `/profile/edit` | GInput, GImage | `GET/PATCH customers/me` | Skeleton, validation | Save | Profile |
+| L2 | Change Phone | New phone + OTP | Profile `/profile/change-phone` | Phone + OtpInput | `auth/phone/change/request` + `verify` | Wrong/expired OTP | Verify | Profile |
+| L3 | Settings | Theme Light/Dark/System, OS notification permission, about, logout | Profile `/settings` | RadioRow, ListRow, SettingSection | Local SecureStore theme; no server notification prefs | — | Persist theme | Legal Hub |
+| L4 | Legal Hub | Links to policies | Profile / Settings `/legal` | ListRow | — | — | Open | Legal Document |
+| L5 | Legal Document | Terms / Privacy / Refund / Cancellation | Legal Hub `/legal/[type]` | LegalDocumentView or in-app browser | `GET legal/{type}` | Error+retry | Open URL if provided | — |
 
 ---
 

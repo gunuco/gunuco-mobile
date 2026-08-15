@@ -90,8 +90,19 @@ These are not unresolved product questions, but need OpenAPI confirmation during
 - Wishlist behavior for guests (local vs force login on heart)  
 - Razorpay Expo SDK package choice compatible with Expo version  
 - Rider chat transport (polling vs WebSocket)  
-- Legal content delivery (CMS URL vs in-API markdown)  
-- Theme default: Light vs follow system  
+- Legal content delivery (CMS URL vs in-API markdown) **[CONFIRM]** — Phase 11 accepts either URL or text  
+- Theme default: Light vs follow system — **implemented as System / Light / Dark**, default System  
+- Notification pagination exact envelope **[CONFIRM]**  
+- Notification payload / type enum **[CONFIRM]**  
+- `POST notifications/read-all` **[CONFIRM]** — not implemented  
+- Push token delete / logout unbind **[CONFIRM]**  
+- Notification preference API **[CONFIRM]** — not implemented  
+- Support ticket list pagination envelope **[CONFIRM]**  
+- Support attachment FormData field name **[CONFIRM]** (`file` sent)  
+- Profile image upload contract **[CONFIRM]** — not implemented  
+- Phone-change verify extra fields / OTP length **[CONFIRM]**  
+- `app/config` storeUrls shape **[CONFIRM]**  
+- Complaint eligibility endpoint **[CONFIRM]** (still flag-gated on order detail)  
 
 ---
 

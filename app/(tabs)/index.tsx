@@ -5,7 +5,7 @@ import { useTheme } from '@/src/providers';
 import { useGetHomeQuery } from '@/src/store';
 import { getErrorMessage } from '@/src/utils/errors';
 import type { CategorySummary, HomeBanner, HomeOffer, ProductSummary } from '@/src/types';
-import { categoryHref, productHref } from '@/src/utils/navigation';
+import { categoryHref, notificationsHref, productHref } from '@/src/utils/navigation';
 import {
   CategorySection,
   EmptyState,
@@ -110,8 +110,8 @@ export default function HomeTabScreen() {
   }, []);
 
   const onNotificationPress = useCallback(() => {
-    // Notifications center arrives in a later phase.
-  }, []);
+    router.push(notificationsHref());
+  }, [router]);
 
   const onLocationPress = useCallback(() => {
     // Address book / location picker arrives in a later phase.

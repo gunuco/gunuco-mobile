@@ -6,11 +6,10 @@
  * Addresses: addressApi.ts. Fulfilment: fulfilmentApi.ts. Checkout: checkoutApi.ts.
  * Payments: paymentApi.ts. Store credit balance: storeCreditApi.ts.
  * Orders: orderApi.ts. Tracking: trackingApi.ts. Rider chat: chatApi.ts.
- * Complaint create: supportApi.ts (no Support Hub).
+ * Complaint + Support Hub: supportApi.ts.
+ * Notifications: notificationApi.ts. App lifecycle: configApi.ts. Legal: legalApi.ts.
  * Wishlist: wishlistApi.ts. Reviews: reviewApi.ts.
  */
-
-import { baseApi } from './baseApi';
 
 export { authApi } from './authApi';
 export {
@@ -20,6 +19,9 @@ export {
   useLogoutMutation,
   useGetMeQuery,
   useLazyGetMeQuery,
+  useUpdateMeMutation,
+  useRequestPhoneChangeMutation,
+  useVerifyPhoneChangeMutation,
 } from './authApi';
 
 export { homeApi } from './homeApi';
@@ -112,9 +114,23 @@ export { chatApi } from './chatApi';
 export { useGetRiderChatMessagesQuery, useSendRiderChatMessageMutation } from './chatApi';
 
 export { supportApi } from './supportApi';
-export { useCreateComplaintMutation } from './supportApi';
+export {
+  useCreateComplaintMutation,
+  useCreateSupportTicketMutation,
+  useGetSupportTicketsQuery,
+  useGetSupportTicketQuery,
+  useSendSupportMessageMutation,
+} from './supportApi';
 
-export const notificationApi = baseApi.injectEndpoints({
-  endpoints: () => ({}),
-  overrideExisting: false,
-});
+export { notificationApi } from './notificationApi';
+export {
+  useRegisterPushTokenMutation,
+  useGetNotificationsQuery,
+  useMarkNotificationReadMutation,
+} from './notificationApi';
+
+export { configApi } from './configApi';
+export { useGetAppConfigQuery, useLazyGetAppConfigQuery } from './configApi';
+
+export { legalApi } from './legalApi';
+export { useGetLegalDocumentQuery } from './legalApi';

@@ -108,3 +108,12 @@ export type { WishlistButtonProps } from './WishlistButton';
 
 export { ReviewCard } from './ReviewCard';
 export type { ReviewCardProps } from './ReviewCard';
+
+export { NotificationItem } from './NotificationItem';
+export type { NotificationItemProps } from './NotificationItem';
+
+export { NotificationPermissionCard } from './NotificationPermissionCard';
+export type { NotificationPermissionCardProps } from './NotificationPermissionCard';
+
+export { LegalDocumentView } from './LegalDocumentView';
+export type { LegalDocumentViewProps } from './LegalDocumentView';

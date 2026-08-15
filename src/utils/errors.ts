@@ -163,6 +163,25 @@ function mapBusinessErrorCode(code: string): string | undefined {
       return 'Calling the rider is not available right now.';
     case 'COMPLAINT_NOT_ALLOWED':
       return 'A complaint cannot be submitted for this order.';
+    case 'TICKET_NOT_FOUND':
+    case 'SUPPORT_TICKET_NOT_FOUND':
+      return 'Ticket not found';
+    case 'TICKET_CLOSED':
+    case 'REPLY_NOT_ALLOWED':
+      return 'Replies are not available on this ticket.';
+    case 'NOTIFICATION_NOT_FOUND':
+      return 'That notification is no longer available.';
+    case 'PHONE_CHANGE_INVALID':
+    case 'PHONE_IN_USE':
+    case 'PHONE_CHANGE_FAILED':
+      return 'This phone number could not be updated. Please try again.';
+    case 'OTP_INVALID':
+      return 'That code is not valid. Please try again.';
+    case 'OTP_EXPIRED':
+      return 'That code has expired. Please request a new one.';
+    case 'PROFILE_UPDATE_INVALID':
+    case 'PROFILE_UPDATE_FAILED':
+      return 'Your profile could not be updated. Please try again.';
     default:
       return undefined;
   }

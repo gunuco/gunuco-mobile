@@ -1,11 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Linking } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { AppProviders, useTheme } from '@/src/providers';
-import { useSessionBootstrap } from '@/src/hooks';
+import { useNotificationDeepLinks, usePushRegistration, useSessionBootstrap } from '@/src/hooks';
 import { BootstrapScreen } from '@/src/components/layout/BootstrapScreen';
 import { SessionExpiredModal } from '@/src/components/layout/SessionExpiredModal';
+import { MaintenanceScreen } from '@/src/components/layout/MaintenanceScreen';
+import { ForceUpdateScreen } from '@/src/components/layout/ForceUpdateScreen';
+import { useAppDispatch, useAppSelector } from '@/src/store/hooks';
+import { checkRemoteAppConfig } from '@/src/services/appConfig';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -13,10 +18,62 @@ SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 function RootNavigator() {
   const theme = useTheme();
+  const dispatch = useAppDispatch();
   const { isBootstrapping } = useSessionBootstrap();
+  const gate = useAppSelector((state) => state.appLifecycle.gate);
+  const maintenanceMessage = useAppSelector((state) => state.appLifecycle.maintenanceMessage);
+  const storeUrl = useAppSelector((state) => state.appLifecycle.storeUrl);
+  const [retrying, setRetrying] = useState(false);
+  const ready = !isBootstrapping && gate === 'none';
+
+  usePushRegistration();
+  useNotificationDeepLinks(ready);
 
   if (isBootstrapping) {
     return <BootstrapScreen />;
+  }
+
+  if (gate === 'maintenance') {
+    return (
+      <>
+        <StatusBar style={theme.mode === 'dark' ? 'light' : 'dark'} />
+        <MaintenanceScreen
+          message={maintenanceMessage}
+          retrying={retrying}
+          onRetry={() => {
+            void (async () => {
+              setRetrying(true);
+              try {
+                await checkRemoteAppConfig(dispatch);
+              } finally {
+                setRetrying(false);
+              }
+            })();
+          }}
+        />
+      </>
+    );
+  }
+
+  if (gate === 'force_update') {
+    const storeAvailable = Boolean(storeUrl);
+    return (
+      <>
+        <StatusBar style={theme.mode === 'dark' ? 'light' : 'dark'} />
+        <ForceUpdateScreen
+          storeAvailable={storeAvailable}
+          onUpdate={
+            storeAvailable
+              ? () => {
+                  if (storeUrl) {
+                    void Linking.openURL(storeUrl);
+                  }
+                }
+              : undefined
+          }
+        />
+      </>
+    );
   }
 
   return (
@@ -39,6 +96,12 @@ function RootNavigator() {
         <Stack.Screen name="payment" />
         <Stack.Screen name="order-confirmation" />
         <Stack.Screen name="orders" />
+        <Stack.Screen name="notifications" />
+        <Stack.Screen name="support" />
+        <Stack.Screen name="profile" />
+        <Stack.Screen name="settings" />
+        <Stack.Screen name="legal" />
+        <Stack.Screen name="store-credit" />
         <Stack.Screen
           name="(auth)"
           options={{

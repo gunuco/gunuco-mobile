@@ -1,4 +1,6 @@
 import type { Href } from 'expo-router';
+import type { NotificationDeepLink } from '@/src/types/notification';
+import type { LegalType } from '@/src/types/legal';
 
 /**
  * Typed Expo Router hrefs for catalogue navigation.
@@ -105,4 +107,92 @@ export function addressFormHref(id?: string): Href {
     pathname: '/addresses/form',
     params: id ? { id } : {},
   } as unknown as Href;
+}
+
+export function notificationsHref(): Href {
+  return '/notifications' as unknown as Href;
+}
+
+export function supportHref(): Href {
+  return '/support' as unknown as Href;
+}
+
+export function supportCreateHref(orderId?: string): Href {
+  return {
+    pathname: '/support/create',
+    params: orderId ? { orderId } : {},
+  } as unknown as Href;
+}
+
+export function supportTicketHref(ticketId: string): Href {
+  return {
+    pathname: '/support/[id]',
+    params: { id: ticketId },
+  } as unknown as Href;
+}
+
+export function editProfileHref(): Href {
+  return '/profile/edit' as unknown as Href;
+}
+
+export function changePhoneHref(): Href {
+  return '/profile/change-phone' as unknown as Href;
+}
+
+export function changePhoneOtpHref(): Href {
+  return '/profile/change-phone-otp' as unknown as Href;
+}
+
+export function settingsHref(): Href {
+  return '/settings' as unknown as Href;
+}
+
+export function legalHref(): Href {
+  return '/legal' as unknown as Href;
+}
+
+export function legalDocumentHref(type: LegalType): Href {
+  return {
+    pathname: '/legal/[type]',
+    params: { type },
+  } as unknown as Href;
+}
+
+export function storeCreditHref(): Href {
+  return '/store-credit' as unknown as Href;
+}
+
+export function notificationDestinationHref(link: NotificationDeepLink): Href {
+  switch (link.kind) {
+    case 'order':
+      return orderHref(link.orderId);
+    case 'tracking':
+      return orderTrackingHref(link.orderId);
+    case 'ticket':
+      return supportTicketHref(link.ticketId);
+    case 'review':
+      return writeReviewHref(link.orderItemId, link.productId);
+    default:
+      return notificationsHref();
+  }
+}
+
+export function notificationDestinationPath(link: NotificationDeepLink): string {
+  switch (link.kind) {
+    case 'order':
+      return `/orders/${link.orderId}`;
+    case 'tracking':
+      return `/orders/${link.orderId}/tracking`;
+    case 'ticket':
+      return `/support/${link.ticketId}`;
+    case 'review': {
+      const params = new URLSearchParams({ orderItemId: link.orderItemId });
+      if (link.productId) {
+        params.set('productId', link.productId);
+      }
+      return `/review/write?${params.toString()}`;
+    }
+    default:
+      return '/notifications';
+  }
 }

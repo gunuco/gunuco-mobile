@@ -7,7 +7,7 @@ import { useCreateComplaintMutation, useGetOrderQuery } from '@/src/store';
 import { createIdempotencyKey } from '@/src/utils/idempotency';
 import { getErrorMessage } from '@/src/utils/errors';
 import { COMPLAINT_REASONS, type EvidencePhoto } from '@/src/types/complaint';
-import { ordersHref } from '@/src/utils/navigation';
+import { ordersHref, supportTicketHref } from '@/src/utils/navigation';
 import {
   CancellationReasonSelector,
   EmptyState,
@@ -30,6 +30,7 @@ export default function ComplaintScreen() {
   const [photos, setPhotos] = useState<EvidencePhoto[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [ticketId, setTicketId] = useState<string | null>(null);
   const idempotencyRef = useRef<string | null>(null);
   const [createComplaint, createState] = useCreateComplaintMutation();
 
@@ -61,6 +62,7 @@ export default function ComplaintScreen() {
         setErrorMessage(result.message ?? 'This request could not be submitted.');
         return;
       }
+      setTicketId(result.ticketId ?? null);
       setSuccess(true);
     } catch (error) {
       setErrorMessage(getErrorMessage(error));
@@ -96,9 +98,15 @@ export default function ComplaintScreen() {
         <Header title="Complaint / Return" showBack onBackPress={goBack} />
         <EmptyState
           title="Request submitted"
-          description="GUNUCO will review this request. Support replies will be available in a later update."
-          actionLabel="Back to order"
-          onAction={goBack}
+          description="GUNUCO will review this request. You can follow replies in Support."
+          actionLabel={ticketId ? 'View ticket' : 'Back to order'}
+          onAction={() => {
+            if (ticketId) {
+              router.replace(supportTicketHref(ticketId));
+              return;
+            }
+            goBack();
+          }}
         />
       </View>
     );

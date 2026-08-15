@@ -244,7 +244,7 @@ Cart / Checkout → enter coupon code → Apply
 ## 13. Store Credit
 
 ```text
-Profile → Store Credit (balance + history)
+Profile → Store Credit (`/store-credit`, balance + optional history)
 Checkout → Use Store Credit (`POST /cart/apply-store-credit` `{ max: true }` **[CONFIRM]**)
   → Backend ledger applies credit
   → Remove via `DELETE /cart/store-credit`
@@ -256,10 +256,15 @@ Checkout → Use Store Credit (`POST /cart/apply-store-credit` `{ max: true }` *
 ## 14. Support
 
 ```text
-Order / Support Hub → Create Ticket (+ ≤3 photos if needed)
+Profile → Support Hub (`/support`)
+  → Create Ticket (`/support/create`, message + optional orderId + ≤3 photos)
+  → Ticket Detail (`/support/[id]`)
   → Support replies
-  → Customer replies
-  → Support resolution
+  → Customer replies (composer hidden when Closed unless replyAllowed)
+
+Order Detail → Complaint / Return
+  → POST /support/tickets (same infrastructure)
+  → Ticket Detail when ticketId is returned
 ```
 
 ---
@@ -267,11 +272,19 @@ Order / Support Hub → Create Ticket (+ ≤3 photos if needed)
 ## 15. Notifications
 
 ```text
-Push received → tap deep link → Order Detail / Live Tracking / Ticket / Review
-In-app Notifications Center → same
+Home bell / Profile → Notifications Center (`/notifications`)
+  → Open item → mark read → deep link
+       ├── Order → `/orders/{id}`
+       ├── Out for Delivery / Rider Nearby → `/orders/{id}/tracking`
+       ├── Support → `/support/{id}`
+       └── Review reminder → existing `/review/write`
+
+Push tap (FCM/APNs via Expo Notifications)
+  → If logged out: Phone OTP (`returnTo` destination) → destination
+  → Destination screen fetches backend data by ID
 ```
 
-Permission asked contextually (e.g. after explaining order updates).
+Permission asked contextually (order confirmation + notifications inbox), not on first launch.
 
 ---
 
@@ -287,8 +300,10 @@ Order Detail → Download Invoice
 ## 17. Theme
 
 ```text
-Settings → Light / Dark (and system if offered)
-  → Design-system theme tokens switch app-wide
+Settings → Appearance
+  → System / Light / Dark
+  → Persist via existing SecureStore theme preference
+  → Design-system tokens switch app-wide
 ```
 
 ---
@@ -296,10 +311,30 @@ Settings → Light / Dark (and system if offered)
 ## 18. Force Update / Maintenance
 
 ```text
-Bootstrap → fetch app config
-  → Force update → blocking Update screen
-  → Maintenance → blocking Maintenance screen
-  → Else continue
+Bootstrap → restore theme tokens
+  → GET /app/config (force refetch)
+  → If fetch fails: continue (fail-open, not maintenance)
+  → If maintenanceMode: MaintenanceScreen (Check again)
+  → Else if forceUpdate or current < minVersion: ForceUpdateScreen (Update App via storeUrls)
+  → Else restore session → Tabs
+```
+
+---
+
+## 19. Profile hub
+
+```text
+Profile
+├── Edit Profile (`/profile/edit`)
+├── Change Phone (`/profile/change-phone` → OTP in memory)
+├── Orders
+├── Wishlist
+├── Addresses
+├── Store Credit
+├── Notifications
+├── Support
+├── Settings (`/settings`)
+└── Legal (`/legal` → terms | privacy | refund | cancellation)
 ```
 
 ---

@@ -43,7 +43,9 @@
 | `StatusChip` | Order/payment/delivery statuses |
 | `ConfirmDialog` | Destructive/financial confirms |
 | `ImageUploaderSlots` | Max 3 JPG/PNG/WEBP slots |
-| `ListRow` | Profile/settings rows |
+| `ListRow` | Profile/settings rows — **implemented** |
+| `RadioRow` | Theme / exclusive settings choice — **implemented** |
+| `SettingSection` | Settings grouping — **implemented** |
 | `OfflineBanner` | Connectivity / store closed messaging |
 | `OtpInput` | OTP digit group |
 | `CouponInput` | Code field + Apply / applied + Remove |
@@ -108,9 +110,9 @@ Call is a labeled `GButton` (“Call Rider”), not an icon-only control. Visibl
 
 | Component | Purpose |
 |---|---|
-| `SupportTicketCard` | Ticket list row |
-| `SupportMessage` | Message bubble |
-| `SupportComposer` | Reply input + optional attachments |
+| `SupportTicketCard` | Ticket list row — **implemented** |
+| `SupportMessage` | Customer vs Support bubbles — **implemented** (separate from Rider Chat) |
+| `SupportComposer` | Reply input + Send — **implemented** |
 
 ---
 
@@ -124,9 +126,11 @@ Call is a labeled `GButton` (“Call Rider”), not an icon-only control. Visibl
 | `CheckoutSkeleton` | Checkout |
 | `OrderListSkeleton` | Orders |
 | `OnboardingSlide` | Onboarding |
-| `ForceUpdateView` | Force Update |
-| `MaintenanceView` | Maintenance |
-| `LegalDocumentView` | Legal |
+| `ForceUpdateScreen` | Force Update — **implemented** |
+| `MaintenanceScreen` | Maintenance — **implemented** |
+| `LegalDocumentView` | Legal text — **implemented** |
+| `NotificationItem` | Inbox row — **implemented** |
+| `NotificationPermissionCard` | Contextual permission — **implemented** |
 
 Promote when a second screen needs the same UI.
 

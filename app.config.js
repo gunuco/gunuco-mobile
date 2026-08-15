@@ -18,9 +18,17 @@ module.exports = {
         'expo-image-picker',
         {
           photosPermission:
-            'GUNUCO uses your photos only when you attach evidence to a complaint or return request.',
+            'GUNUCO uses your photos only when you attach evidence to a support ticket or complaint.',
           cameraPermission: false,
           microphonePermission: false,
+        },
+      ],
+      [
+        'expo-notifications',
+        {
+          icon: './assets/images/icon.png',
+          color: '#5C3A2E',
+          defaultChannel: 'default',
         },
       ],
       [

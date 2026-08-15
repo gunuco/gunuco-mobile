@@ -1,56 +1,65 @@
 import { baseApi } from './baseApi';
-import type { CreateComplaintPayload, CreateComplaintResult } from '@/src/types/complaint';
+import type {
+  CreateSupportTicketPayload,
+  CreateSupportTicketResult,
+  SendSupportMessagePayload,
+  SupportTicketDetail,
+  SupportTicketListArgs,
+  SupportTicketListResponse,
+} from '@/src/types/support';
+import {
+  mergeTicketListPages,
+  normalizeTicketCreateResult,
+  normalizeTicketDetail,
+  normalizeTicketList,
+  ticketsListCacheKey,
+} from '@/src/utils/support';
 
-function asRecord(value: unknown): Record<string, unknown> | null {
-  if (value && typeof value === 'object' && !Array.isArray(value)) {
-    return value as Record<string, unknown>;
-  }
-  return null;
-}
-
-function asString(value: unknown): string | undefined {
-  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
-}
-
-function asBoolean(value: unknown): boolean | undefined {
-  return typeof value === 'boolean' ? value : undefined;
-}
-
-function normalizeTicket(response: unknown): CreateComplaintResult {
-  const root = asRecord(response) ?? {};
-  const data = asRecord(root.data) ?? asRecord(root.ticket) ?? root;
-  const ticketId = asString(data.id) ?? asString(data.ticketId);
-  return {
-    success: asBoolean(data.success) ?? Boolean(ticketId),
-    ticketId,
-    message: asString(data.message) ?? null,
-  };
-}
+const supportListTag = { type: 'Support' as const, id: 'LIST' };
 
 /**
- * Minimal complaint/return create — POST /support/tickets.
- * Does not implement Support Hub, ticket list, or ticket thread.
- * Eligibility API remains [CONFIRM]. Attachments: POST /support/tickets/{id}/attachments.
+ * Support tickets — GET/POST list/create, GET detail, POST messages.
+ * Attachments: POST support/tickets/{id}/attachments (Phase 10 complaint + create ticket).
  */
 export const supportApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
-    createComplaint: build.mutation<CreateComplaintResult, CreateComplaintPayload>({
+    getSupportTickets: build.query<SupportTicketListResponse, SupportTicketListArgs | void>({
+      query: (args) => ({
+        url: '/support/tickets',
+        params: typeof args?.page === 'number' && args.page > 0 ? { page: args.page } : {},
+      }),
+      transformResponse: (response: unknown, _meta, arg) =>
+        normalizeTicketList(response, arg?.page),
+      providesTags: (result) => [
+        supportListTag,
+        ...(result?.items.map((item) => ({ type: 'Support' as const, id: item.id })) ?? []),
+      ],
+      serializeQueryArgs: ({ queryArgs }) => ticketsListCacheKey(queryArgs ?? {}),
+      merge: (currentCache, newItems) => mergeTicketListPages(currentCache, newItems),
+      forceRefetch: ({ currentArg, previousArg }) => currentArg?.page !== previousArg?.page,
+    }),
+    getSupportTicket: build.query<SupportTicketDetail | null, string>({
+      query: (ticketId) => `/support/tickets/${ticketId}`,
+      transformResponse: (response: unknown) => normalizeTicketDetail(response),
+      providesTags: (_result, _error, ticketId) => [{ type: 'Support', id: ticketId }],
+    }),
+    createSupportTicket: build.mutation<CreateSupportTicketResult, CreateSupportTicketPayload>({
       async queryFn(payload, _api, _extra, baseQuery) {
         const created = await baseQuery({
           url: '/support/tickets',
           method: 'POST',
           headers: { 'Idempotency-Key': payload.idempotencyKey },
           body: {
-            orderId: payload.orderId,
             message: payload.message,
             idempotencyKey: payload.idempotencyKey,
+            ...(payload.orderId ? { orderId: payload.orderId } : {}),
             ...(payload.reasonCode ? { reasonCode: payload.reasonCode } : {}),
           },
         });
         if (created.error) {
           return { error: created.error };
         }
-        const ticket = normalizeTicket(created.data);
+        const ticket = normalizeTicketCreateResult(created.data);
         if (!ticket.ticketId || payload.photos.length === 0) {
           return { data: ticket };
         }
@@ -72,10 +81,32 @@ export const supportApi = baseApi.injectEndpoints({
         }
         return { data: ticket };
       },
-      invalidatesTags: [{ type: 'Support', id: 'LIST' }],
+      invalidatesTags: (result) => [
+        supportListTag,
+        ...(result?.ticketId ? [{ type: 'Support' as const, id: result.ticketId }] : []),
+      ],
+    }),
+    sendSupportMessage: build.mutation<{ ok: boolean }, SendSupportMessagePayload>({
+      query: ({ ticketId, message }) => ({
+        url: `/support/tickets/${ticketId}/messages`,
+        method: 'POST',
+        body: { message },
+      }),
+      invalidatesTags: (_result, _error, { ticketId }) => [
+        { type: 'Support', id: ticketId },
+        supportListTag,
+      ],
     }),
   }),
   overrideExisting: true,
 });
 
-export const { useCreateComplaintMutation } = supportApi;
+export const {
+  useGetSupportTicketsQuery,
+  useGetSupportTicketQuery,
+  useCreateSupportTicketMutation,
+  useSendSupportMessageMutation,
+} = supportApi;
+
+/** Phase 10 complaint create uses the same ticket mutation. */
+export const useCreateComplaintMutation = useCreateSupportTicketMutation;

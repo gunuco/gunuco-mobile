@@ -61,8 +61,8 @@
 | POST | `auth/otp/verify` | challengeId, otp, phone | accessToken, refreshToken, customer, isNewUser | No |
 | POST | `auth/token/refresh` | refreshToken | tokens | Refresh |
 | POST | `auth/logout` | refreshToken? | ok | Yes |
-| POST | `auth/phone/change/request` | newPhone | challengeId | Yes |
-| POST | `auth/phone/change/verify` | challengeId, otp | customer | Yes |
+| POST | `auth/phone/change/request` | newPhone | challengeId, expiresIn, otpLength? **[CONFIRM]**. Challenge in memory, not URL. Phase 11. | Yes |
+| POST | `auth/phone/change/verify` | challengeId, otp | customer. Extra required fields **[CONFIRM]**. Phase 11. | Yes |
 
 ---
 
@@ -71,7 +71,7 @@
 | Method | Logical | Notes |
 |---|---|---|
 | GET | `customers/me` | Profile |
-| PATCH | `customers/me` | name, email, profileImage |
+| PATCH | `customers/me` | **Phase 11.** Body `{ name?, email? }`. Profile image upload is **[CONFIRM]** — not implemented (display URL only if returned). |
 
 Referenced by orders, cart, addresses, wishlist, reviews, store credit, notifications, tickets.
 
@@ -232,12 +232,16 @@ Full payment only. No advance/balance endpoints for catalogue.
 
 ## 17. Notifications
 
-| Method | Logical |
-|---|---|
-| POST | `devices/push-token` | token, platform (ios/android) |
-| GET | `notifications` | page |
-| POST | `notifications/{id}/read` | |
-| POST | `notifications/read-all` | **[CONFIRM]** |
+| Method | Logical | Notes |
+|---|---|---|
+| POST | `devices/push-token` | **Phase 11.** `{ token, platform: ios\|android }`. Native FCM/APNs token via `expo-notifications` `getDevicePushTokenAsync`. No fake token. Device-token delete **[CONFIRM]** — not called on logout. |
+| GET | `notifications` | **Phase 11.** Page pagination (same merge/dedupe pattern as orders). Cursor **[CONFIRM]** — not used. Envelope field names **[CONFIRM]**. |
+| POST | `notifications/{id}/read` | **Phase 11.** Called when a notification is opened, not when the inbox opens. Invalidates list + Home unread badge. |
+| POST | `notifications/read-all` | **[CONFIRM]** — **not implemented**. |
+
+Notification preference API: **[CONFIRM]** — not implemented. Settings shows OS permission only.
+
+Deep-link payload uses identifiers only (`orderId`, `ticketId`, `orderItemId`). Destination screens fetch authoritative data.
 
 Channels: OTP via SMS; order lifecycle mainly Push (FCM/APNs).
 
@@ -245,16 +249,15 @@ Channels: OTP via SMS; order lifecycle mainly Push (FCM/APNs).
 
 ## 18. Support Tickets
 
-| Method | Logical |
-|---|---|
-| GET | `support/tickets` | |
-| POST | `support/tickets` | **Phase 10 complaint/return only.** Body `{ orderId, message, reasonCode?, idempotencyKey }`. Does **not** implement Support Hub / ticket list / thread. Eligibility flag `complaintAllowed` **[CONFIRM]**. |
-| POST | `support/tickets/{id}/attachments` | **Phase 10.** Up to 3 JPG/PNG/WEBP via FormData after ticket create. |
-| GET | `support/tickets/{id}` | messages |
-| POST | `support/tickets/{id}/messages` | customer reply |
-| POST | `support/tickets/{id}/attachments` | ≤3 images |
+| Method | Logical | Notes |
+|---|---|---|
+| GET | `support/tickets` | **Phase 11.** Customer tickets only. Page pagination. Envelope **[CONFIRM]**. |
+| POST | `support/tickets` | **Phase 11 + Phase 10 complaint.** `{ message, orderId?, reasonCode?, idempotencyKey }`. Same idempotency key on retry. |
+| GET | `support/tickets/{id}` | **Phase 11.** Ticket + messages. 403/404 → ticket not found. |
+| POST | `support/tickets/{id}/messages` | **Phase 11.** `{ message }`. No optimistic insert. Closed tickets hide composer unless `replyAllowed`/`canReply` is true. |
+| POST | `support/tickets/{id}/attachments` | **Phase 10/11.** Up to 3 JPG/PNG/WEBP via FormData after create. Upload mechanics **[CONFIRM]** (`file` field). |
 
-Complaint/return evidence: max 3 JPG/PNG/WEBP; size limit backend-enforced.
+Complaint/return evidence: max 3 JPG/PNG/WEBP; size limit backend-enforced. Complaint success navigates to ticket detail when `ticketId` is returned.
 
 ---
 
@@ -262,9 +265,9 @@ Complaint/return evidence: max 3 JPG/PNG/WEBP; size limit backend-enforced.
 
 | Method | Logical | Response |
 |---|---|---|
-| GET | `app/config` | minVersion, latestVersion, forceUpdate, maintenanceMode, maintenanceMessage, storeUrls |
+| GET | `app/config` | **Phase 11.** minVersion, latestVersion, forceUpdate, maintenanceMode, maintenanceMessage, storeUrls. Fetched at bootstrap with `forceRefetch`. `keepUnusedDataFor: 30`. Failure is **fail-open** (does not assume maintenance). |
 
-Client blocks UI accordingly at bootstrap.
+Version compare is numeric semver (`1.10.0` > `1.9.0`). App version comes from Expo metadata. Optional-update UI is not implemented. Store URLs are backend-provided **[CONFIRM]** shape (`android`/`ios` or `playStore`/`appStore`).
 
 ---
 
@@ -272,7 +275,7 @@ Client blocks UI accordingly at bootstrap.
 
 | Method | Logical | Notes |
 |---|---|---|
-| GET | `legal/{type}` | terms, privacy, refund, cancellation — URL or markdown **[CONFIRM]** |
+| GET | `legal/{type}` | **Phase 11.** types: terms, privacy, refund, cancellation. URL (https, opened in in-app browser, no auth tokens) or markdown/text **[CONFIRM]**. HTML is displayed as stripped text, not executed. |
 
 ---
 

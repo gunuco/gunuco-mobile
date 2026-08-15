@@ -14,6 +14,8 @@ export type ImageUploaderSlotsProps = {
   photos: EvidencePhoto[];
   onChange: (next: EvidencePhoto[]) => void;
   max?: number;
+  label?: string;
+  helperText?: string;
 };
 
 function mimeFromUri(uri: string, reported?: string | null): string {
@@ -34,6 +36,8 @@ export function ImageUploaderSlots({
   photos,
   onChange,
   max = MAX_PHOTOS,
+  label = 'Evidence photos',
+  helperText,
 }: ImageUploaderSlotsProps) {
   const theme = useTheme();
   const slots = Array.from({ length: max });
@@ -69,9 +73,9 @@ export function ImageUploaderSlots({
 
   return (
     <View style={{ gap: theme.spacing.sm }}>
-      <GText variant="label">Evidence photos</GText>
+      <GText variant="label">{label}</GText>
       <GText variant="caption" color="secondary">
-        Up to {max} JPG, PNG, or WEBP photos. File size is checked by the server.
+        {helperText ?? `Up to ${max} JPG, PNG, or WEBP photos. File size is checked by the server.`}
       </GText>
       <View style={{ flexDirection: 'row', gap: theme.spacing.sm }}>
         {slots.map((_, index) => {

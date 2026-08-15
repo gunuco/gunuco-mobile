@@ -4,11 +4,14 @@ import { useAppSelector } from '@/src/store/hooks';
 import { useAuth } from './useAuth';
 
 /**
- * Restores theme + session once on cold start and hides splash when both are ready.
+ * Restores theme + remote config + session once on cold start and hides splash when ready.
+ * Theme is restored first so maintenance/force-update screens can use design tokens.
+ * Config failure is fail-open and never assumes maintenance.
  */
 export function useSessionBootstrap() {
   const { status, bootstrap } = useAuth();
   const themeHydrated = useAppSelector((state) => state.settings.themeHydrated);
+  const configChecked = useAppSelector((state) => state.appLifecycle.configChecked);
   const started = useRef(false);
 
   useEffect(() => {
@@ -19,7 +22,7 @@ export function useSessionBootstrap() {
     void bootstrap();
   }, [bootstrap]);
 
-  const isBootstrapping = status === 'unknown' || !themeHydrated;
+  const isBootstrapping = status === 'unknown' || !themeHydrated || !configChecked;
 
   useEffect(() => {
     if (!isBootstrapping) {

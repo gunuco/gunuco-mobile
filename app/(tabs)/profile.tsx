@@ -1,22 +1,42 @@
-import React, { useState } from 'react';
-import { ScrollView, View } from 'react-native';
-import { router } from 'expo-router';
+import React, { useCallback, useState } from 'react';
+import { RefreshControl, ScrollView, View } from 'react-native';
+import { router, useFocusEffect, type Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { GButton, GCard, GText, Header } from '@/src/components';
-import { persistThemePreference } from '@/src/services/themePreference';
+import { GButton, GCard, GImage, GText, Header, ListRow } from '@/src/components';
 import { useAuth } from '@/src/hooks';
-import { useAppDispatch, useAppSelector } from '@/src/store';
+import { useGetMeQuery } from '@/src/store';
 import { useTheme } from '@/src/providers';
 import { formatPhoneDisplay } from '@/src/utils';
-import { addressBookHref, ordersHref } from '@/src/utils/navigation';
+import { setAuthIntent } from '@/src/services/authIntent';
+import {
+  addressBookHref,
+  changePhoneHref,
+  editProfileHref,
+  legalHref,
+  notificationsHref,
+  ordersHref,
+  settingsHref,
+  storeCreditHref,
+  supportHref,
+} from '@/src/utils/navigation';
 
 export default function ProfileTabScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const dispatch = useAppDispatch();
-  const preference = useAppSelector((state) => state.settings.themePreference);
   const { isAuthenticated, name, phone, logout } = useAuth();
   const [loggingOut, setLoggingOut] = useState(false);
+  const meQuery = useGetMeQuery(undefined, { skip: !isAuthenticated });
+  const refetch = meQuery.refetch;
+  const displayName = meQuery.data?.name?.trim() || name?.trim() || 'GUNUCO customer';
+  const displayPhone = meQuery.data?.phone ?? phone;
+
+  useFocusEffect(
+    useCallback(() => {
+      if (isAuthenticated) {
+        void refetch();
+      }
+    }, [isAuthenticated, refetch]),
+  );
 
   const onLogout = async () => {
     setLoggingOut(true);
@@ -25,6 +45,15 @@ export default function ProfileTabScreen() {
     } finally {
       setLoggingOut(false);
     }
+  };
+
+  const requireAuth = (href: Href, returnTo: string) => {
+    if (!isAuthenticated) {
+      setAuthIntent({ returnTo });
+      router.push('/(auth)/phone');
+      return;
+    }
+    router.push(href);
   };
 
   return (
@@ -36,25 +65,46 @@ export default function ProfileTabScreen() {
           paddingBottom: insets.bottom + theme.spacing['3xl'],
           gap: theme.spacing.lg,
         }}
+        refreshControl={
+          isAuthenticated ? (
+            <RefreshControl
+              refreshing={meQuery.isFetching}
+              onRefresh={() => void refetch()}
+              tintColor={theme.colors.brand.primary}
+              colors={[theme.colors.brand.primary]}
+            />
+          ) : undefined
+        }
       >
         <GCard style={{ gap: theme.spacing.sm }}>
           {isAuthenticated ? (
             <>
-              <GText variant="titleMd">{name?.trim() ? name : 'GUNUCO customer'}</GText>
-              {phone ? (
-                <GText variant="bodyMd" color="secondary">
-                  {formatPhoneDisplay(phone)}
-                </GText>
-              ) : null}
-              <GText variant="caption" color="secondary">
-                You’re signed in. Account details expand in later phases.
-              </GText>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md }}>
+                <GImage
+                  uri={meQuery.data?.profileImage}
+                  width={56}
+                  height={56}
+                  borderRadius={28}
+                  accessibilityLabel="Profile photo"
+                />
+                <View style={{ flex: 1, gap: 2 }}>
+                  <GText variant="titleMd">{displayName}</GText>
+                  {displayPhone ? (
+                    <GText variant="bodyMd" color="secondary">
+                      {formatPhoneDisplay(displayPhone)}
+                    </GText>
+                  ) : null}
+                </View>
+              </View>
               <GButton
                 title="Log out"
                 variant="danger"
                 fullWidth
                 loading={loggingOut}
-                onPress={onLogout}
+                onPress={() => {
+                  void onLogout();
+                }}
+                accessibilityLabel="Log out"
               />
             </>
           ) : (
@@ -73,63 +123,31 @@ export default function ProfileTabScreen() {
           )}
         </GCard>
 
-        <GCard style={{ gap: theme.spacing.sm }}>
-          <GText variant="label">Account</GText>
-          <GButton
-            title="Wishlist"
-            variant="secondary"
-            fullWidth
-            onPress={() => router.push('/wishlist')}
-          />
-          {isAuthenticated ? (
-            <>
-              <GButton
-                title="Orders"
-                variant="secondary"
-                fullWidth
-                onPress={() => router.push(ordersHref())}
-                accessibilityLabel="Orders"
-              />
-              <GButton
-                title="Addresses"
-                variant="secondary"
-                fullWidth
-                onPress={() => router.push(addressBookHref())}
-              />
-            </>
-          ) : null}
-        </GCard>
-
-        <GCard style={{ gap: theme.spacing.sm }}>
-          <GText variant="label">Appearance</GText>
-          <GText variant="caption" color="secondary">
-            Current preference: {preference}
-          </GText>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.sm }}>
-            <GButton
-              title="Light"
-              size="sm"
-              variant="secondary"
-              onPress={() => {
-                void persistThemePreference(dispatch, 'light');
-              }}
+        <GCard padded={false}>
+          <View style={{ paddingHorizontal: theme.spacing.md }}>
+            {isAuthenticated ? (
+              <>
+                <ListRow title="Edit Profile" onPress={() => router.push(editProfileHref())} />
+                <ListRow title="Change Phone" onPress={() => router.push(changePhoneHref())} />
+              </>
+            ) : null}
+            <ListRow title="Orders" onPress={() => requireAuth(ordersHref(), '/orders')} />
+            <ListRow title="Wishlist" onPress={() => router.push('/wishlist')} />
+            <ListRow
+              title="Addresses"
+              onPress={() => requireAuth(addressBookHref(), '/addresses')}
             />
-            <GButton
-              title="Dark"
-              size="sm"
-              variant="secondary"
-              onPress={() => {
-                void persistThemePreference(dispatch, 'dark');
-              }}
+            <ListRow
+              title="Store Credit"
+              onPress={() => requireAuth(storeCreditHref(), '/store-credit')}
             />
-            <GButton
-              title="System"
-              size="sm"
-              variant="ghost"
-              onPress={() => {
-                void persistThemePreference(dispatch, 'system');
-              }}
+            <ListRow
+              title="Notifications"
+              onPress={() => requireAuth(notificationsHref(), '/notifications')}
             />
+            <ListRow title="Support" onPress={() => requireAuth(supportHref(), '/support')} />
+            <ListRow title="Settings" onPress={() => router.push(settingsHref())} />
+            <ListRow title="Legal" onPress={() => router.push(legalHref())} />
           </View>
         </GCard>
 

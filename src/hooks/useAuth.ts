@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '@/src/store/hooks';
 import { applyAuthenticatedSession, logoutSession, restoreSession } from '@/src/services/session';
+import { checkRemoteAppConfig } from '@/src/services/appConfig';
 import { clearOtpChallenge } from '@/src/services/otpChallenge';
 import { restoreThemePreference } from '@/src/services/themePreference';
 import { dismissSessionExpired } from '@/src/store/slices/authSlice';
@@ -25,6 +26,7 @@ export function useAuth() {
 
   const bootstrap = useCallback(async () => {
     await restoreThemePreference(dispatch);
+    await checkRemoteAppConfig(dispatch);
     await restoreSession(dispatch);
   }, [dispatch]);
 

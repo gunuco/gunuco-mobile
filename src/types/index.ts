@@ -116,3 +116,38 @@ export type {
   CreateReviewPayload,
   CreateReviewResponse,
 } from './review';
+
+export type {
+  PushPlatform,
+  PushTokenPayload,
+  NotificationDeepLink,
+  CustomerNotification,
+  NotificationListArgs,
+  NotificationListResponse,
+  PushPermissionState,
+} from './notification';
+
+export type {
+  SupportTicketStatus,
+  SupportActor,
+  SupportMessage,
+  SupportTicketSummary,
+  SupportTicketDetail,
+  SupportTicketListArgs,
+  SupportTicketListResponse,
+  CreateSupportTicketPayload,
+  CreateSupportTicketResult,
+  SendSupportMessagePayload,
+} from './support';
+
+export type { LegalType, LegalDocument } from './legal';
+export { LEGAL_TYPES } from './legal';
+
+export type { AppStoreUrls, AppConfig, AppGate, AppGateResult } from './appConfig';
+
+export type {
+  UpdateCustomerPayload,
+  PhoneChangeRequestPayload,
+  PhoneChangeRequestResponse,
+  PhoneChangeVerifyPayload,
+} from './profile';

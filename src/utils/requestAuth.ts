@@ -1,6 +1,12 @@
 import type { FetchArgs } from '@reduxjs/toolkit/query';
 
-const ANONYMOUS_ENDPOINTS = new Set(['requestOtp', 'verifyOtp', 'refreshToken']);
+const ANONYMOUS_ENDPOINTS = new Set([
+  'requestOtp',
+  'verifyOtp',
+  'refreshToken',
+  'getAppConfig',
+  'getLegalDocument',
+]);
 
 function requestUrl(args: string | FetchArgs): string {
   const raw = typeof args === 'string' ? args : args.url;
@@ -23,7 +29,9 @@ export function isAnonymousAuthRequest(args: string | FetchArgs, endpoint?: stri
   return (
     url.startsWith('/auth/otp/') ||
     url.startsWith('/auth/token/refresh') ||
-    url === '/auth/token/refresh'
+    url === '/auth/token/refresh' ||
+    url === '/app/config' ||
+    url.startsWith('/legal/')
   );
 }
 
@@ -36,7 +44,13 @@ export function isPublicBrowseRequest(args: string | FetchArgs): boolean {
     return false;
   }
   const url = requestUrl(args);
-  return url === '/customer/home' || url.startsWith('/categories') || url.startsWith('/products/');
+  return (
+    url === '/customer/home' ||
+    url === '/app/config' ||
+    url.startsWith('/legal/') ||
+    url.startsWith('/categories') ||
+    url.startsWith('/products/')
+  );
 }
 
 export function isAnonymousEndpointName(endpoint: string | undefined): boolean {

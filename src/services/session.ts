@@ -5,6 +5,10 @@ import { setAuthenticated, setUnauthenticated } from '@/src/store/slices/authSli
 import { secureStorage } from '@/src/services/secureStorage';
 import { clearPaymentSession } from '@/src/services/paymentSession';
 import { clearOrderConfirmation } from '@/src/services/orderConfirmation';
+import {
+  clearRegisteredPushToken,
+  registerPushTokenIfAllowed,
+} from '@/src/services/pushNotifications';
 import type { Customer, OtpVerifyResponse } from '@/src/types/auth';
 
 function mapCustomer(customer: Customer) {
@@ -34,11 +38,13 @@ export async function applyAuthenticatedSession(
     refreshToken: payload.refreshToken,
   });
   dispatch(setAuthenticated(mapCustomer(payload.customer)));
+  void registerPushTokenIfAllowed();
 }
 
 export async function clearSession(dispatch: AppDispatch): Promise<void> {
   clearPaymentSession();
   clearOrderConfirmation();
+  clearRegisteredPushToken();
   await secureStorage.clearAuthTokens();
   dispatch(setUnauthenticated());
   dispatch(baseApi.util.resetApiState());
@@ -79,6 +85,7 @@ export async function restoreSession(dispatch: AppDispatch): Promise<void> {
     }
 
     dispatch(setAuthenticated(mapCustomer(meResult.data)));
+    void registerPushTokenIfAllowed();
   } catch {
     await clearSession(dispatch);
   }

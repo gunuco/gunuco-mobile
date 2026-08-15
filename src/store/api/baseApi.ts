@@ -147,6 +147,7 @@ export const baseApi = createApi({
     'Support',
     'StoreCredit',
     'Config',
+    'Legal',
   ],
   endpoints: () => ({}),
 });

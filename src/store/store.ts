@@ -3,11 +3,13 @@ import { setupListeners } from '@reduxjs/toolkit/query';
 import { baseApi } from './api/baseApi';
 import { authReducer } from './slices/authSlice';
 import { settingsReducer } from './slices/settingsSlice';
+import { appLifecycleReducer } from './slices/appLifecycleSlice';
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
     settings: settingsReducer,
+    appLifecycle: appLifecycleReducer,
     [baseApi.reducerPath]: baseApi.reducer,
   },
   middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(baseApi.middleware),
