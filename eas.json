@@ -1,0 +1,45 @@
+{
+  "cli": {
+    "version": ">= 16.17.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "development",
+        "EXPO_PUBLIC_ENABLE_LOGGING": "true",
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.dev.gunuco.local"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "staging",
+        "EXPO_PUBLIC_ENABLE_LOGGING": "true",
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.staging.gunuco.com"
+      }
+    },
+    "production": {
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "production",
+        "EXPO_PUBLIC_ENABLE_LOGGING": "false",
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.gunuco.com"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

@@ -35,6 +35,20 @@ Production builds should still set `EXPO_PUBLIC_API_BASE_URL` explicitly. The pr
 
 ---
 
+## EAS profile mapping
+
+`eas.json` sets non-secret `EXPO_PUBLIC_*` values per profile. Razorpay public key and Maps key stay empty in git and must be supplied in EAS Environment (or gitignored `.env*.local`). They are client-visible; never put Razorpay secret there.
+
+| EAS profile | `EXPO_PUBLIC_APP_ENV` | `EXPO_PUBLIC_API_BASE_URL` | Logging |
+|---|---|---|---|
+| `development` | `development` | `https://api.dev.gunuco.local` | `true` |
+| `preview` | `staging` | `https://api.staging.gunuco.com` | `true` |
+| `production` | `production` | `https://api.gunuco.com` | `false` |
+
+A physical device cannot resolve `api.dev.gunuco.local`. Override `EXPO_PUBLIC_API_BASE_URL` in EAS for the development profile to a reachable HTTPS API before device testing.
+
+---
+
 ## Not used / not present
 
 | Item | Notes |
