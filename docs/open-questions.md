@@ -82,27 +82,56 @@ UI will show a tax line from API totals. Exact GST/rules are a business/CA decis
 ### Q52 — Full error message catalogue
 Example codes exist in decisions doc; product/backend/mobile should agree final copy for each code before production hardening.
 
-### Ancillary confirmations (implementation contracts, not product ambiguity)
+## Phase 12 classification (do not delete unresolved items)
 
-These are not unresolved product questions, but need OpenAPI confirmation during Phase 2+:
+### Resolved (implementation)
 
-- Guest local cart → server cart **merge** algorithm after OTP login  
-- Wishlist behavior for guests (local vs force login on heart)  
-- Razorpay Expo SDK package choice compatible with Expo version  
-- Rider chat transport (polling vs WebSocket)  
-- Legal content delivery (CMS URL vs in-API markdown) **[CONFIRM]** — Phase 11 accepts either URL or text  
-- Theme default: Light vs follow system — **implemented as System / Light / Dark**, default System  
-- Notification pagination exact envelope **[CONFIRM]**  
-- Notification payload / type enum **[CONFIRM]**  
-- `POST notifications/read-all` **[CONFIRM]** — not implemented  
-- Push token delete / logout unbind **[CONFIRM]**  
-- Notification preference API **[CONFIRM]** — not implemented  
-- Support ticket list pagination envelope **[CONFIRM]**  
-- Support attachment FormData field name **[CONFIRM]** (`file` sent)  
-- Profile image upload contract **[CONFIRM]** — not implemented  
-- Phone-change verify extra fields / OTP length **[CONFIRM]**  
-- `app/config` storeUrls shape **[CONFIRM]**  
-- Complaint eligibility endpoint **[CONFIRM]** (still flag-gated on order detail)  
+| Topic | Resolution |
+|---|---|
+| Theme default | System / Light / Dark; persisted in SecureStore |
+| Guest wishlist | Force login on heart; no local wishlist |
+| Guest cart | Force login; no local cart |
+| Razorpay package | `react-native-razorpay` ^3.0.0 (native build; not Expo Go) |
+| Rider chat transport | Polling while focused (no WebSocket documented) |
+| 401 cache isolation | Phase 12: `dropInvalidSession` resets RTK + in-memory customer state |
+
+### Confirmed product decisions that remain backend-contract [CONFIRM]
+
+These are not product ambiguity. OpenAPI still required:
+
+- Guest local cart → server cart **merge** algorithm after OTP (`POST /cart/merge` not called)
+- Checkout / payment / store-credit `{ max: true }` field names
+- No payment-status GET (frontend does not call one)
+- Razorpay public key and Maps key supplied at build time (templates empty)
+- Chat/tracking pagination vs realtime
+- Cancel reason codes
+- Invoice payload fields
+- Rider call token
+- Complaint eligibility endpoint (still flag-gated on order detail)
+- Notification pagination envelope / payload type enum
+- `POST notifications/read-all` — not implemented
+- Push token delete / logout unbind — not implemented
+- Notification preference API — not implemented
+- Support ticket list pagination envelope
+- Support attachment FormData field name (`file` sent)
+- Profile image upload — not implemented
+- Legal URL vs markdown
+- Phone-change extra fields / OTP length
+- `app/config` `storeUrls` shape
+- `POST /products/quote` — not called
+- Checkout idempotency header vs body field names
+- Food/cake refund window (product **and** backend) — see Q34
+
+### Still Open — product / business
+
+| ID | Topic | Status |
+|---|---|---|
+| Q34 | Return/refund window | **STILL OPEN** |
+| Q46 | Brand assets | **STILL OPEN** |
+| Q50 | Tax rates / treatment | **STILL OPEN** (display line PASS; rates backend/CA) |
+| Q52 | Full error message catalogue | **STILL OPEN** (mapping approach FINAL; catalogue incomplete) |
+
+---  
 
 ---
 

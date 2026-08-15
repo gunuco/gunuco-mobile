@@ -4,6 +4,9 @@
 > Backend is authoritative for prices, availability, offers/stacking, slots, production-house assignment, tax, payment verification, tracking, and eligibility.
 > Amounts: **integer paise**.
 > Paths below are contract-discussion names.
+>
+> Implemented client inventory (Phase 12): `docs/final-api-inventory.md`.
+> Customer profile + phone change live in `authApi`, not a separate `userApi`. Search lives in `productApi`. There is no `offerApi` or `searchApi` module.
 
 **[CONFIRM]** = confirm exact path/shape with backend OpenAPI.
 

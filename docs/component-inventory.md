@@ -165,4 +165,48 @@ Reusable `ImageUploaderSlots` remains for support/complaint evidence only.
 
 ---
 
+## 9. Hooks
+
+| Hook | Purpose |
+|---|---|
+| `useAuth` | Session, login complete, logout, bootstrap |
+| `useSessionBootstrap` | Theme → config → session; splash hide |
+| `usePushRegistration` | Register token after auth + gate none |
+| `useNotificationDeepLinks` | Tap handling after bootstrap |
+| `useDebouncedValue` | Search |
+| `useCatalogSelection` | Listing filters/sort |
+| `useProductConfiguration` | PDP option selection |
+| `useThemeColors` | Token access |
+
+---
+
+## 10. Utilities
+
+| Module | Purpose |
+|---|---|
+| `money.ts` | `formatPaise` display only |
+| `errors.ts` | Safe customer messages |
+| `semver.ts` | Numeric version compare |
+| `urls.ts` | HTTPS / store-scheme guards (Phase 12) |
+| `navigation.ts` | Typed href helpers (IDs only) |
+| `idempotency.ts` | UUID keys |
+| Domain normalizers | cart, checkout, payment, orders, tracking, support, notifications, legal, product |
+
+---
+
+## 11. API modules
+
+All inject into `baseApi`. List: `docs/final-api-inventory.md`.
+
+---
+
+## 12. Phase 12 services
+
+| Service | Purpose |
+|---|---|
+| `clearCustomerState.ts` | In-memory teardown on logout/401 |
+| `pushTokenCache.ts` | Last registered push token (no store import) |
+
+---
+
 *End of component inventory.*

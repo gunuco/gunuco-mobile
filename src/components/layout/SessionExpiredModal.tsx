@@ -5,6 +5,7 @@ import { GModal } from '@/src/components/ui/GModal';
 import { GText } from '@/src/components/ui/GText';
 import { useAuth } from '@/src/hooks';
 import { useTheme } from '@/src/providers';
+import { clearAuthIntent } from '@/src/services/authIntent';
 
 export function SessionExpiredModal() {
   const theme = useTheme();
@@ -12,6 +13,7 @@ export function SessionExpiredModal() {
 
   const handleSignIn = () => {
     dismissExpired();
+    clearAuthIntent();
     router.push('/(auth)/phone');
   };
 

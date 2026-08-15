@@ -1,6 +1,7 @@
 # GUNUCO Customer App — User Flows (Final)
 
 > Final flows from `GUNUCO_PRODUCT_DECISIONS.md`. Custom-cake / advance-payment flows are **excluded**.
+> Phase 12 did not change these flows. Route map: `docs/final-route-inventory.md`.
 
 ---
 

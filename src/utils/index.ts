@@ -1,5 +1,6 @@
 export { formatPaise, paiseToRupees } from './money';
 export { getErrorMessage, getErrorCode, isNetworkQueryError, isNotFoundError } from './errors';
+export { isHttpsUrl, isSafeStoreUrl } from './urls';
 export {
   formatPhoneDisplay,
   isValidIndianMobile,

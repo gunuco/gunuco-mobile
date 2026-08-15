@@ -1,7 +1,11 @@
 import * as WebBrowser from 'expo-web-browser';
 import { Linking } from 'react-native';
+import { isHttpsUrl } from '@/src/utils/urls';
 
 export async function openInvoiceUrl(url: string): Promise<void> {
+  if (!isHttpsUrl(url)) {
+    throw new Error('INVOICE_UNAVAILABLE');
+  }
   await WebBrowser.openBrowserAsync(url);
 }
 

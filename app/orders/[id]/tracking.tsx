@@ -26,7 +26,6 @@ export default function OrderTrackingScreen() {
   const [focused, setFocused] = useState(false);
   const params = useLocalSearchParams<{ id?: string }>();
   const orderId = typeof params.id === 'string' ? params.id : '';
-  const [polling, setPolling] = useState(true);
   const [callMessage, setCallMessage] = useState<string | null>(null);
 
   useFocusEffect(
@@ -38,23 +37,22 @@ export default function OrderTrackingScreen() {
 
   const trackingQuery = useGetOrderTrackingQuery(orderId, {
     skip: !orderId || !focused,
-    pollingInterval: focused && polling ? TRACKING_POLL_MS : 0,
+    pollingInterval: 0,
     refetchOnFocus: true,
+  });
+  const tracking = trackingQuery.data;
+  const trackingComplete =
+    tracking?.delivered === true || tracking?.cancelled === true || tracking?.available === false;
+  useGetOrderTrackingQuery(orderId, {
+    skip: !orderId || !focused || !tracking || trackingComplete,
+    pollingInterval: TRACKING_POLL_MS,
   });
   const riderQuery = useGetOrderRiderQuery(orderId, {
     skip: !orderId || !focused,
     refetchOnFocus: true,
   });
 
-  const tracking = trackingQuery.data;
   const rider = riderQuery.data;
-  if (
-    polling &&
-    tracking &&
-    (tracking.delivered === true || tracking.cancelled === true || tracking.available === false)
-  ) {
-    setPolling(false);
-  }
 
   const goBack = useCallback(() => {
     if (router.canGoBack()) {

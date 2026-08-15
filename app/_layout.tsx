@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Linking } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { AppState, Linking } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
@@ -11,6 +11,7 @@ import { MaintenanceScreen } from '@/src/components/layout/MaintenanceScreen';
 import { ForceUpdateScreen } from '@/src/components/layout/ForceUpdateScreen';
 import { useAppDispatch, useAppSelector } from '@/src/store/hooks';
 import { checkRemoteAppConfig } from '@/src/services/appConfig';
+import { isSafeStoreUrl } from '@/src/utils/urls';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -28,6 +29,20 @@ function RootNavigator() {
 
   usePushRegistration();
   useNotificationDeepLinks(ready);
+
+  useEffect(() => {
+    if (isBootstrapping) {
+      return;
+    }
+    const subscription = AppState.addEventListener('change', (next) => {
+      if (next === 'active') {
+        void checkRemoteAppConfig(dispatch);
+      }
+    });
+    return () => {
+      subscription.remove();
+    };
+  }, [dispatch, isBootstrapping]);
 
   if (isBootstrapping) {
     return <BootstrapScreen />;
@@ -56,7 +71,7 @@ function RootNavigator() {
   }
 
   if (gate === 'force_update') {
-    const storeAvailable = Boolean(storeUrl);
+    const storeAvailable = Boolean(storeUrl && isSafeStoreUrl(storeUrl));
     return (
       <>
         <StatusBar style={theme.mode === 'dark' ? 'light' : 'dark'} />
@@ -65,7 +80,7 @@ function RootNavigator() {
           onUpdate={
             storeAvailable
               ? () => {
-                  if (storeUrl) {
+                  if (storeUrl && isSafeStoreUrl(storeUrl)) {
                     void Linking.openURL(storeUrl);
                   }
                 }

@@ -7,7 +7,7 @@ import { useAuth } from '@/src/hooks';
 import { useGetMeQuery } from '@/src/store';
 import { useTheme } from '@/src/providers';
 import { formatPhoneDisplay } from '@/src/utils';
-import { setAuthIntent } from '@/src/services/authIntent';
+import { clearAuthIntent, setAuthIntent } from '@/src/services/authIntent';
 import {
   addressBookHref,
   changePhoneHref,
@@ -117,7 +117,10 @@ export default function ProfileTabScreen() {
               <GButton
                 title="Sign in with phone"
                 fullWidth
-                onPress={() => router.push('/(auth)/phone')}
+                onPress={() => {
+                  clearAuthIntent();
+                  router.push('/(auth)/phone');
+                }}
               />
             </>
           )}

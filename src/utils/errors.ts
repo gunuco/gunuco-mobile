@@ -40,8 +40,16 @@ export function getErrorMessage(error: unknown, fallback = GENERIC_MESSAGE): str
     return 'Your session has expired. Please sign in again.';
   }
 
-  if (queryError.status === 404) {
+  if (queryError.status === 403 || queryError.status === 404) {
     return 'We could not find what you were looking for.';
+  }
+
+  if (queryError.status === 409) {
+    return 'This action could not be completed. Please try again.';
+  }
+
+  if (queryError.status === 422) {
+    return 'Please check the details and try again.';
   }
 
   if (typeof queryError.status === 'number' && queryError.status >= 500) {

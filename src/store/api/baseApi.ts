@@ -13,13 +13,18 @@ import {
 } from '@/src/utils/requestAuth';
 import { env } from '@/src/config';
 import { secureStorage } from '@/src/services/secureStorage';
+import { clearInMemoryCustomerState } from '@/src/services/clearCustomerState';
 import { markSessionExpired, setUnauthenticated } from '../slices/authSlice';
 import type { RefreshTokenResponse } from '@/src/types/auth';
 
 const mutex = new Mutex();
 
+/** Mobile-network friendly; surfaces as TIMEOUT_ERROR rather than hanging forever. */
+const REQUEST_TIMEOUT_MS = 30_000;
+
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: env.apiBaseUrl,
+  timeout: REQUEST_TIMEOUT_MS,
   prepareHeaders: async (headers, { endpoint }) => {
     headers.set('Accept', 'application/json');
     // Leave Content-Type unset so FormData can set a multipart boundary.
@@ -50,12 +55,16 @@ async function dropInvalidSession(
   api: Parameters<BaseQueryFn>[1],
   showExpiredModal: boolean,
 ): Promise<void> {
+  clearInMemoryCustomerState();
   await secureStorage.clearAuthTokens();
   if (showExpiredModal) {
     api.dispatch(markSessionExpired());
   } else {
     api.dispatch(setUnauthenticated());
   }
+  // reducerPath is 'api'. Must run on 401 expiry, not only explicit logout,
+  // so Customer B never reads Customer A RTK cache.
+  api.dispatch({ type: 'api/resetApiState' });
 }
 
 export const baseQueryWithReauth: BaseQueryFn<

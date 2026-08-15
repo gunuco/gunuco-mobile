@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '@/src/providers';
@@ -41,13 +41,18 @@ export function ImageUploaderSlots({
 }: ImageUploaderSlotsProps) {
   const theme = useTheme();
   const slots = Array.from({ length: max });
+  const [permissionMessage, setPermissionMessage] = useState<string | null>(null);
 
   const addPhoto = async () => {
     if (photos.length >= max) {
       return;
     }
+    setPermissionMessage(null);
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
+      setPermissionMessage(
+        'Photo access is needed to attach evidence. You can enable Photos for GUNUCO in your device settings.',
+      );
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -61,6 +66,7 @@ export function ImageUploaderSlots({
     const asset = result.assets[0];
     const mimeType = mimeFromUri(asset.uri, asset.mimeType);
     if (!ALLOWED.has(mimeType) && mimeType !== 'image/jpeg') {
+      setPermissionMessage('Use JPG, PNG, or WEBP photos.');
       return;
     }
     const name = asset.fileName?.trim() || `evidence-${photos.length + 1}.jpg`;
@@ -77,6 +83,11 @@ export function ImageUploaderSlots({
       <GText variant="caption" color="secondary">
         {helperText ?? `Up to ${max} JPG, PNG, or WEBP photos. File size is checked by the server.`}
       </GText>
+      {permissionMessage ? (
+        <GText variant="caption" color="danger" accessibilityLiveRegion="polite">
+          {permissionMessage}
+        </GText>
+      ) : null}
       <View style={{ flexDirection: 'row', gap: theme.spacing.sm }}>
         {slots.map((_, index) => {
           const photo = photos[index];

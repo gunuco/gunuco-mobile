@@ -88,7 +88,7 @@ Screens compose shared components only.
 | UI local | component state |
 | Server | RTK Query |
 | Auth session | `authSlice` + SecureStore |
-| Theme preference | `settingsSlice` / SecureStore or AsyncStorage |
+| Theme preference | `settingsSlice` + SecureStore (`themePreference.ts`). Not AsyncStorage. |
 | Guest cart draft | Not implemented. Guest cart mutations go to phone auth. `POST /cart/merge` remains **[CONFIRM]**. |
 | Cart (logged-in) | RTK Query `cartApi` |
 | Checkout UI | Local component state (fulfilment, addressId, slot, schedule). Address pick handoff is in-memory, not persisted. |
@@ -117,13 +117,14 @@ paymentApi.ts
 trackingApi.ts
 chatApi.ts
 supportApi.ts
-offerApi.ts
 notificationApi.ts
 configApi.ts
 legalApi.ts
 ```
 
-`baseApi`: env base URL, auth header, 401 refresh mutex, tag invalidation.
+There is **no** `offerApi`. Offers arrive on Home (`GET /customer/home`) and render through `OfferSection`.
+
+`baseApi`: env base URL, 30s timeout, auth header, 401 refresh mutex, tag invalidation. On refresh failure, tokens, in-memory customer state, and RTK cache are cleared (`dropInvalidSession`).
 
 ---
 
@@ -208,7 +209,7 @@ Root layout fetches `GET /app/config` during bootstrap (after theme restore):
 - else `forceUpdate` or current < `minVersion` → blocking `ForceUpdateScreen`
 - else continue to session restore / tabs
 
-Remote config is short-lived (`keepUnusedDataFor: 30`, force refetch on bootstrap/retry). Not persisted.  
+Remote config is short-lived (`keepUnusedDataFor: 30`, force refetch on bootstrap/retry/foreground). Not persisted. Store URLs are opened only if the scheme is `https`, `market`, `itms`, or `itms-apps`.  
 
 ---
 
@@ -289,7 +290,7 @@ Suggested later phase order remains master-aligned, with additions:
 | Auth UI | `/(auth)/phone`, `/(auth)/otp` (modal presentation) |
 | Tabs | Home / Search / Categories / Cart / Profile (feature placeholders except Profile session actions) |
 | Session restore | Cold start refresh → `customers/me` |
-| 401 handling | Public catalogue GETs retry as guest after a failed refresh; private 401s refresh once then clear session. Waiters never replay a dead token. |
+| 401 handling | Public catalogue GETs retry as guest after a failed refresh; private 401s refresh once then clear session **including RTK cache and in-memory customer state**. Waiters never replay a dead token. |
 | Logout | Calls logout API then clears SecureStore + RTK cache |
 | Entry | `/` redirects to `/(tabs)` |
 | Design gallery | Moved to `/design-system` (dev validation) |
@@ -528,7 +529,27 @@ Phase 9 is **implemented**. Phase 10 (Orders + post-purchase) is **implemented**
 
 Bootstrap order (existing architecture preserved): Theme restore → Remote config → Auth restore. Theme first so Maintenance/Force Update can use design tokens.
 
-Phase 10 is **implemented**. Phase 11 is **implemented**. Do **not** start Phase 12 until requested.
+Phase 10 is **implemented**. Phase 11 is **implemented**. Phase 12 (hardening) is **implemented**. Do **not** start a Phase 13.
+
+---
+
+## 29. Phase 12 As-Built (Production hardening)
+
+| Area | Decision |
+|---|---|
+| Feature freeze | No Custom Cake, Referral, i18n, Rider/Admin, new payment methods, or new workflows |
+| 401 isolation | `dropInvalidSession` now matches logout: in-memory customer state + `api/resetApiState` |
+| Auth intent | Cleared on Profile guest sign-in and Session Expired “Sign in” so a leftover wishlist/review intent cannot fire |
+| API URL | Missing `EXPO_PUBLIC_API_BASE_URL` never falls back to `.local` in staging/production |
+| Timeout | `fetchBaseQuery` 30s |
+| Store / invoice / legal URLs | HTTPS (store also market/itms); no auth headers |
+| Photo permission | Denied library access shows an explanation; no crash |
+| Tracking | Stop polling via `useEffect` (no `setState` during render) |
+| Config | Fail-open preserved; recheck on AppState `active` |
+| Inventories | `docs/final-api-inventory.md`, `docs/final-route-inventory.md`, `docs/environment-variables.md` |
+| Audits | `docs/phase-12-security-audit.md`, `docs/phase-12-performance-audit.md`, `docs/phase-12-qa-matrix.md`, `docs/phase-12-final-gunoco-compliance-audit.md` |
+
+Phase 12 did **not** run Android/iOS/payment/push device tests in the hardening environment.
 
 ---
 

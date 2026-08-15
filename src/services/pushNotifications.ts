@@ -3,8 +3,14 @@ import * as Notifications from 'expo-notifications';
 import type { PushPermissionState, PushPlatform } from '@/src/types/notification';
 import { store } from '@/src/store/store';
 import { notificationApi } from '@/src/store/api/notificationApi';
+import {
+  clearRegisteredPushToken,
+  getLastRegisteredPushToken,
+  setLastRegisteredPushToken,
+} from '@/src/services/pushTokenCache';
 
-let lastRegisteredToken: string | null = null;
+export { clearRegisteredPushToken };
+
 let registering = false;
 
 if (Platform.OS === 'ios' || Platform.OS === 'android') {
@@ -106,11 +112,11 @@ export async function registerPushTokenIfAllowed(): Promise<void> {
     if (store.getState().appLifecycle.gate !== 'none') {
       return;
     }
-    if (lastRegisteredToken === token) {
+    if (getLastRegisteredPushToken() === token) {
       return;
     }
     await store.dispatch(notificationApi.endpoints.registerPushToken.initiate({ token, platform }));
-    lastRegisteredToken = token;
+    setLastRegisteredPushToken(token);
   } catch {
     // Token unavailable (simulator / missing native creds) — do not fake a token.
   } finally {
@@ -118,13 +124,9 @@ export async function registerPushTokenIfAllowed(): Promise<void> {
   }
 }
 
-export function clearRegisteredPushToken(): void {
-  lastRegisteredToken = null;
-}
-
 export function subscribeToPushTokenRefresh(): { remove: () => void } {
   const subscription = Notifications.addPushTokenListener(() => {
-    lastRegisteredToken = null;
+    clearRegisteredPushToken();
     void registerPushTokenIfAllowed();
   });
   return subscription;

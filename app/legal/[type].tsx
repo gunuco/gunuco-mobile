@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/src/providers';
 import { useGetLegalDocumentQuery } from '@/src/store';
 import { isLegalType, legalTitle } from '@/src/utils/legal';
+import { isHttpsUrl } from '@/src/utils/urls';
 import { getErrorMessage } from '@/src/utils/errors';
 import { legalHref } from '@/src/utils/navigation';
 import {
@@ -52,7 +53,7 @@ export default function LegalDocumentScreen() {
 
   const openUrl = async () => {
     const url = query.data?.url;
-    if (!url || !/^https:\/\//i.test(url)) {
+    if (!url || !isHttpsUrl(url)) {
       return;
     }
     await WebBrowser.openBrowserAsync(url);
@@ -90,7 +91,7 @@ export default function LegalDocumentScreen() {
       ) : content ? (
         <View style={{ flex: 1, paddingBottom: insets.bottom }}>
           <LegalDocumentView title={title} content={content} />
-          {query.data.url && /^https:\/\//i.test(query.data.url) ? (
+          {query.data.url && isHttpsUrl(query.data.url) ? (
             <View style={{ padding: theme.spacing.lg }}>
               <GButton
                 title="Open original document"
