@@ -37,7 +37,9 @@ Production builds should still set `EXPO_PUBLIC_API_BASE_URL` explicitly. The pr
 
 ## EAS profile mapping
 
-`eas.json` sets non-secret `EXPO_PUBLIC_*` values per profile. Razorpay public key and Maps key stay empty in git and must be supplied in EAS Environment (or gitignored `.env*.local`). They are client-visible; never put Razorpay secret there.
+`eas.json` sets non-secret `EXPO_PUBLIC_*` values per **build profile**, and each profile is linked to the matching **EAS Environment** (`development` / `preview` / `production`).
+
+Razorpay public key and Maps key stay empty in git. Add them with `eas env:set` (plaintext is acceptable because they are client-visible). Never put Razorpay secret there.
 
 | EAS profile | `EXPO_PUBLIC_APP_ENV` | `EXPO_PUBLIC_API_BASE_URL` | Logging |
 |---|---|---|---|

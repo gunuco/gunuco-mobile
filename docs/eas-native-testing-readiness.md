@@ -16,7 +16,7 @@ The app can be prepared for EAS **development** and **preview** builds. Identifi
 
 Cannot claim **READY FOR DEVELOPMENT BUILD** until:
 
-- Expo/EAS account is logged in and the project is linked (`projectId` is missing)
+- Expo/EAS account is logged in and the project is linked
 - `EXPO_PUBLIC_API_BASE_URL` for a **device-reachable HTTPS** API is set (development profile currently uses `api.dev.gunuco.local`)
 
 Cannot claim **READY FOR PREVIEW BUILD** until the same EAS link exists, plus staging API / test Razorpay / Maps keys in EAS Environment.
@@ -40,8 +40,8 @@ Cannot claim **READY FOR PREVIEW BUILD** until the same EAS link exists, plus st
 | newArchEnabled | **true** | `app.json` |
 | splash | plugin: splash-icon, `#F7F3EE` | `app.json` plugins |
 | experiments.typedRoutes | true | `app.json` |
-| extra.eas.projectId | **missing** | Do not invent |
-| owner | **missing** | Do not invent |
+| extra.eas.projectId | `d2281969-bca1-42de-b2b5-20ae43b0902b` | `app.json` extra.eas (written after `eas init` could not patch `app.config.js`) |
+| owner | `gunuco` | Matches `@gunuco/gunuco-mobile` |
 | runtimeVersion / updates | **not configured** | No EAS Update in this step |
 | platforms | ios, android, web | Expo default |
 
@@ -171,7 +171,7 @@ Secret scan of source + config: **no backend secrets found**. Proceed.
 | Credential | Status |
 |---|---|
 | Expo/EAS login | Needs developer action |
-| EAS `projectId` | **missing** — run `eas init` after login. Do not invent an id |
+| EAS `projectId` | `d2281969-bca1-42de-b2b5-20ae43b0902b` (`@gunuco/gunuco-mobile`) |
 | Android keystore | Needs EAS setup |
 | iOS distribution / push | **NOT CONFIGURED** |
 | Firebase / FCM V1 | **NOT CONFIGURED** |
@@ -232,7 +232,7 @@ iOS preview uses internal (ad hoc) distribution and needs Apple credentials + de
 
 ## 13. Build Commands
 
-Do **not** run production until explicitly requested. Prerequisites: `eas login`, `eas init` (creates `projectId`).
+Do **not** run production until explicitly requested. Prerequisites: Expo login (already done) and EAS Environment keys.
 
 ### Windows (PowerShell)
 
@@ -271,7 +271,7 @@ iOS all profiles: Apple Developer account required.
 
 | Blocker | Blocks | Notes |
 |---|---|---|
-| No EAS `projectId` | All EAS builds | `eas init` after login |
+| No EAS `projectId` | Resolved | Written to `app.json` extra.eas after `eas init` could not patch `app.config.js` |
 | Razorpay key **NOT CONFIGURED** | Payment native test | Set public key in EAS Environment |
 | Maps key **NOT CONFIGURED** | Address pin + tracking map tiles | Restricted public key |
 | FCM config missing | Android push | google-services.json or EAS FCM V1 |
@@ -285,7 +285,7 @@ iOS all profiles: Apple Developer account required.
 ## 15. Required Manual Setup
 
 1. Expo account login (`npx eas-cli login`)
-2. Link this repo (`npx eas-cli init`) — do not invent `projectId`
+2. Link this repo — **done** (`@gunuco/gunuco-mobile`)
 3. EAS Environment (or secrets) for:
    - reachable `EXPO_PUBLIC_API_BASE_URL` on development if not using `.local`
    - `EXPO_PUBLIC_RAZORPAY_KEY_ID` (test key for preview)
@@ -318,8 +318,8 @@ iOS all profiles: Apple Developer account required.
 
 | Area | Status | Evidence | Action |
 |---|---|---|---|
-| Android EAS | BLOCKED | No `projectId`; `eas.json` present | `eas login` + `eas init` then development/preview APK |
-| iOS EAS | BLOCKED | No `projectId`; Apple credentials NOT CONFIGURED | Same + Apple setup |
+| Android EAS | READY WITH CONDITIONS | `projectId` + `eas.json`; credentials/keys still needed | development/preview APK after EAS env keys |
+| iOS EAS | BLOCKED | `projectId` present; Apple credentials NOT CONFIGURED | Apple setup then development/preview |
 | Razorpay | NOT TESTED | Native module + empty public key | Configure test key; first native build |
 | FCM | BLOCKED | No google-services / FCM V1 | Firebase + EAS credentials |
 | APNs | BLOCKED | No Apple push credentials | EAS iOS credentials |

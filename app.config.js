@@ -5,6 +5,9 @@ const googleMapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ?? '';
 module.exports = {
   expo: {
     ...appJson.expo,
+    extra: {
+      ...(appJson.expo.extra ?? {}),
+    },
     ios: {
       ...appJson.expo.ios,
       infoPlist: {

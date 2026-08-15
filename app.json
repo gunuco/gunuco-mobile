@@ -2,6 +2,7 @@
   "expo": {
     "name": "GUNUCO",
     "slug": "gunuco-mobile",
+    "owner": "gunuco",
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -42,6 +43,11 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "d2281969-bca1-42de-b2b5-20ae43b0902b"
+      }
     }
   }
 }
