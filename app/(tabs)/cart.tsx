@@ -182,7 +182,17 @@ export default function CartTabScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.bg.canvas }}>
-      <Header title="Cart" />
+      <Header
+        title="Cart"
+        showBack
+        onBackPress={() => {
+          if (router.canGoBack()) {
+            router.back();
+            return;
+          }
+          router.replace('/(tabs)');
+        }}
+      />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

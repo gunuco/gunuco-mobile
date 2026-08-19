@@ -1,10 +1,16 @@
-import React, { useCallback, useRef, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { Pressable, ScrollView, Share, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/src/providers';
 import { useAuth, useProductConfiguration } from '@/src/hooks';
-import { useAddCartItemMutation, useGetProductOptionsQuery, useGetProductQuery } from '@/src/store';
+import {
+  useAddCartItemMutation,
+  useGetCategoryProductsQuery,
+  useGetProductOptionsQuery,
+  useGetProductQuery,
+} from '@/src/store';
+import { APP_NAME } from '@/src/constants';
 import { getErrorMessage, isNotFoundError } from '@/src/utils/errors';
 import {
   getAvailabilityMessage,
@@ -12,22 +18,27 @@ import {
   getProductOffer,
   toCartOptions,
 } from '@/src/utils/productDetail';
-import { productReviewsHref } from '@/src/utils/navigation';
+import { productHref, productReviewsHref } from '@/src/utils/navigation';
+import type { ProductSummary } from '@/src/types';
 import {
+  AccordionSection,
   EmptyState,
   ErrorState,
   GBadge,
   GButton,
-  GDivider,
+  GImage,
   GText,
   Header,
+  IconCircleButton,
   PriceDisplay,
+  ProductCarousel,
   ProductDetailSkeleton,
   ProductImageGallery,
   ProductOptionRenderer,
   QuantitySelector,
   RatingView,
   Skeleton,
+  StickyCartBar,
   WishlistButton,
 } from '@/src/components';
 
@@ -44,6 +55,7 @@ export default function ProductDetailScreen() {
   const scrollRef = useRef<ScrollView>(null);
   const optionsOffsetY = useRef(0);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+  const [compactHeader, setCompactHeader] = useState(false);
   const [cartMessage, setCartMessage] = useState<{
     tone: 'success' | 'danger';
     text: string;
@@ -56,6 +68,10 @@ export default function ProductDetailScreen() {
   const optionsQuery = useGetProductOptionsQuery(productId, {
     skip: !productId || !productReady,
   });
+  const relatedQuery = useGetCategoryProductsQuery(
+    { categoryId: product?.category?.id ?? '', page: 1 },
+    { skip: !product?.category?.id },
+  );
   const [addCartItem, addCartState] = useAddCartItemMutation();
 
   const optionsUnavailable = isNotFoundError(optionsQuery.error);
@@ -64,6 +80,11 @@ export default function ProductDetailScreen() {
 
   const configuration = useProductConfiguration(productId, product, optionsResponse);
   const optionsPending = optionsQuery.isLoading && !configuration.groups.length;
+
+  const relatedProducts = useMemo(
+    () => (relatedQuery.data?.items ?? []).filter((item) => item.id !== productId).slice(0, 8),
+    [productId, relatedQuery.data?.items],
+  );
 
   const goBack = useCallback(() => {
     if (router.canGoBack()) {
@@ -76,6 +97,19 @@ export default function ProductDetailScreen() {
   const continueShopping = useCallback(() => {
     router.replace('/(tabs)');
   }, [router]);
+
+  const onShare = useCallback(async () => {
+    if (!product) {
+      return;
+    }
+    try {
+      await Share.share({
+        message: `Have a look at ${product.name} on ${APP_NAME}.`,
+      });
+    } catch {
+      setCartMessage({ tone: 'danger', text: 'Unable to share this product right now.' });
+    }
+  }, [product]);
 
   const onAddToCart = useCallback(async () => {
     if (!product || addCartState.isLoading || optionsPending) {
@@ -147,6 +181,13 @@ export default function ProductDetailScreen() {
     theme.spacing.lg,
   ]);
 
+  const onRelatedPress = useCallback(
+    (item: ProductSummary) => {
+      router.push(productHref(item.id));
+    },
+    [router],
+  );
+
   if (!productId) {
     return (
       <View style={{ flex: 1, backgroundColor: theme.colors.bg.canvas }}>
@@ -164,12 +205,6 @@ export default function ProductDetailScreen() {
   if (productQuery.isLoading && !product) {
     return (
       <View style={{ flex: 1, backgroundColor: theme.colors.bg.canvas }}>
-        <Header
-          title="Product"
-          showBack
-          onBackPress={goBack}
-          rightSlot={<WishlistButton productId={productId} onError={setWishlistError} />}
-        />
         <ProductDetailSkeleton />
       </View>
     );
@@ -228,56 +263,168 @@ export default function ProductDetailScreen() {
   const adding = addCartState.isLoading;
   const ctaDisabled = adding || !purchasable || optionsPending;
   const showOptionsSection = optionsPending || optionsFailed || configuration.groups.length > 0;
+  const statusMessage = wishlistError ?? cartMessage?.text ?? null;
+  const statusTone = wishlistError ? 'danger' : (cartMessage?.tone ?? 'danger');
 
-  return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.bg.canvas }}>
-      <Header
-        title={product.name}
-        showBack
-        onBackPress={goBack}
-        rightSlot={
+  const overlayControls = (
+    <View
+      pointerEvents="box-none"
+      style={{
+        flex: 1,
+        paddingTop: insets.top + theme.spacing.sm,
+        paddingHorizontal: theme.spacing.md,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+      }}
+    >
+      <IconCircleButton iconName="chevron-back" accessibilityLabel="Go back" onPress={goBack} />
+      <View style={{ flexDirection: 'row', gap: theme.spacing.sm }}>
+        <IconCircleButton
+          iconName="search-outline"
+          accessibilityLabel="Search"
+          onPress={() => router.push('/(tabs)/search')}
+        />
+        <IconCircleButton
+          iconName="share-outline"
+          accessibilityLabel="Share product"
+          onPress={() => {
+            void onShare();
+          }}
+        />
+        <View
+          style={{
+            backgroundColor: theme.colors.bg.surface,
+            borderRadius: theme.radius.pill,
+            ...theme.shadows.sm,
+          }}
+        >
           <WishlistButton
             productId={product.id}
             initialWishlisted={product.isWishlisted}
             onError={setWishlistError}
           />
-        }
-      />
+        </View>
+      </View>
+    </View>
+  );
+
+  return (
+    <View style={{ flex: 1, backgroundColor: theme.colors.bg.canvas }}>
+      {compactHeader ? (
+        <View
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 4,
+            paddingTop: insets.top,
+            paddingHorizontal: theme.spacing.md,
+            paddingBottom: theme.spacing.sm,
+            backgroundColor: theme.colors.bg.surface,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: theme.spacing.sm,
+            ...theme.shadows.sm,
+          }}
+        >
+          <IconCircleButton
+            iconName="chevron-back"
+            accessibilityLabel="Go back"
+            onPress={goBack}
+            overlay={false}
+          />
+          <GImage
+            uri={product.imageUrl}
+            width={36}
+            height={36}
+            borderRadius={theme.radius.md}
+            accessibilityLabel={product.name}
+          />
+          <View style={{ flex: 1 }}>
+            <GText variant="label" numberOfLines={1}>
+              {product.name}
+            </GText>
+            <PriceDisplay
+              pricePaise={configuration.displayedPrice.pricePaise}
+              compareAtPricePaise={configuration.displayedPrice.compareAtPricePaise}
+              size="sm"
+            />
+          </View>
+          <IconCircleButton
+            iconName="search-outline"
+            accessibilityLabel="Search"
+            onPress={() => router.push('/(tabs)/search')}
+            overlay={false}
+          />
+          <IconCircleButton
+            iconName="share-outline"
+            accessibilityLabel="Share product"
+            onPress={() => {
+              void onShare();
+            }}
+            overlay={false}
+          />
+        </View>
+      ) : null}
 
       <ScrollView
         ref={scrollRef}
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: theme.spacing.lg }}
+        contentContainerStyle={{ paddingBottom: theme.spacing['2xl'] }}
         keyboardShouldPersistTaps="handled"
+        scrollEventThrottle={16}
+        onScroll={(event) => {
+          const next = event.nativeEvent.contentOffset.y > 240;
+          if (next !== compactHeader) {
+            setCompactHeader(next);
+          }
+        }}
       >
-        <ProductImageGallery images={images} productName={product.name} />
+        <ProductImageGallery images={images} productName={product.name} overlay={overlayControls} />
 
         <View
           style={{
+            marginTop: -theme.spacing.lg,
+            backgroundColor: theme.colors.bg.canvas,
+            borderTopLeftRadius: theme.radius['2xl'],
+            borderTopRightRadius: theme.radius['2xl'],
             paddingHorizontal: theme.spacing.lg,
-            paddingTop: theme.spacing.lg,
+            paddingTop: theme.spacing.xl,
             gap: theme.spacing.sm,
           }}
         >
-          {product.isPremium ? <GBadge label="GUNUCO PREMIUM" variant="premium" /> : null}
+          {product.availabilityLabel ? (
+            <GText variant="caption" color="secondary">
+              {product.availabilityLabel}
+            </GText>
+          ) : null}
           {product.category?.name ? (
             <GText variant="caption" color="secondary">
               {product.category.name}
             </GText>
           ) : null}
           <GText variant="titleMd">{product.name}</GText>
+          {product.weightLabel ? (
+            <GText variant="bodySm" color="secondary">
+              Net quantity: {product.weightLabel}
+            </GText>
+          ) : null}
+
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="See product reviews"
             onPress={() => router.push(productReviewsHref(product.id))}
             hitSlop={8}
-            style={{ gap: theme.spacing.xs }}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm }}
           >
             {showRating ? (
               <RatingView
                 value={product.ratingAverage ?? 0}
                 count={product.ratingCount}
                 size="md"
+                compact
               />
             ) : null}
             <GText variant="label" color="brand">
@@ -297,10 +444,12 @@ export default function ProductDetailScreen() {
               pricePaise={configuration.displayedPrice.pricePaise}
               compareAtPricePaise={configuration.displayedPrice.compareAtPricePaise}
               size="lg"
+              pill
             />
             {configuration.displayedPrice.discountLabel ? (
               <GBadge label={configuration.displayedPrice.discountLabel} variant="discount" />
             ) : null}
+            {product.isPremium ? <GBadge label="GUNUCO PREMIUM" variant="premium" /> : null}
           </View>
 
           {offer ? (
@@ -328,6 +477,39 @@ export default function ProductDetailScreen() {
               {availabilityMessage}
             </GText>
           ) : null}
+
+          <View
+            style={{ flexDirection: 'row', gap: theme.spacing.sm, marginTop: theme.spacing.sm }}
+          >
+            <View
+              style={{
+                flex: 1,
+                backgroundColor: theme.colors.bg.surface,
+                borderRadius: theme.radius.xl,
+                padding: theme.spacing.md,
+                gap: theme.spacing.xs,
+              }}
+            >
+              <GText variant="label">Made to order</GText>
+              <GText variant="caption" color="secondary">
+                Fresh bake with your customisation.
+              </GText>
+            </View>
+            <View
+              style={{
+                flex: 1,
+                backgroundColor: theme.colors.bg.surface,
+                borderRadius: theme.radius.xl,
+                padding: theme.spacing.md,
+                gap: theme.spacing.xs,
+              }}
+            >
+              <GText variant="label">GUNUCO bakery</GText>
+              <GText variant="caption" color="secondary">
+                HITEC City, Hyderabad
+              </GText>
+            </View>
+          </View>
         </View>
 
         {showOptionsSection ? (
@@ -380,12 +562,15 @@ export default function ProductDetailScreen() {
 
         <View
           style={{
-            paddingHorizontal: theme.spacing.lg,
+            marginHorizontal: theme.spacing.lg,
             marginTop: theme.spacing.xl,
+            backgroundColor: theme.colors.bg.surface,
+            borderRadius: theme.radius.xl,
+            padding: theme.spacing.lg,
             gap: theme.spacing.sm,
           }}
         >
-          <GText variant="label">Quantity</GText>
+          <GText variant="titleSm">HOW MANY</GText>
           <QuantitySelector
             value={configuration.quantity}
             onChange={configuration.setQuantity}
@@ -409,8 +594,10 @@ export default function ProductDetailScreen() {
               gap: theme.spacing.sm,
             }}
           >
-            <GText variant="label">Description</GText>
-            <GText variant="bodyMd">{descriptionText}</GText>
+            <GText variant="titleSm">Description</GText>
+            <GText variant="bodyMd" color="secondary">
+              {descriptionText}
+            </GText>
             {descriptionCollapsible ? (
               <Pressable
                 accessibilityRole="button"
@@ -428,85 +615,68 @@ export default function ProductDetailScreen() {
           </View>
         ) : null}
 
-        {infoSections.length ? (
-          <View
-            style={{
-              paddingHorizontal: theme.spacing.lg,
-              marginTop: theme.spacing.xl,
-              gap: theme.spacing.md,
-            }}
-          >
-            <GText variant="label">Product information</GText>
-            {infoSections.map((section, index) => (
-              <View
-                key={section.id ?? `${section.title}-${index}`}
-                style={{ gap: theme.spacing.xs }}
-              >
-                {index > 0 ? <GDivider /> : null}
-                <GText variant="label">{section.title}</GText>
-                <GText variant="bodyMd" color="secondary">
-                  {section.body}
-                </GText>
-              </View>
-            ))}
+        <View
+          style={{
+            paddingHorizontal: theme.spacing.lg,
+            marginTop: theme.spacing.xl,
+            gap: theme.spacing.md,
+          }}
+        >
+          {product.highlights?.length ? (
+            <AccordionSection title="Highlights" rows={product.highlights} defaultOpen />
+          ) : null}
+          {infoSections.map((section) => (
+            <AccordionSection
+              key={section.id ?? section.title}
+              title={section.title}
+              body={section.body}
+            />
+          ))}
+        </View>
+
+        {relatedProducts.length ? (
+          <View style={{ marginTop: theme.spacing['2xl'] }}>
+            <ProductCarousel
+              title="You might also like"
+              products={relatedProducts}
+              onProductPress={onRelatedPress}
+              showAddButton={false}
+              showWishlist={false}
+            />
+          </View>
+        ) : null}
+
+        {cartMessage?.tone === 'success' ? (
+          <View style={{ paddingHorizontal: theme.spacing.lg, marginTop: theme.spacing.lg }}>
+            <GButton
+              title="View cart"
+              variant="ghost"
+              fullWidth
+              onPress={() => router.push('/(tabs)/cart')}
+            />
           </View>
         ) : null}
       </ScrollView>
 
-      <View
-        style={{
-          borderTopWidth: 1,
-          borderTopColor: theme.colors.border.default,
-          backgroundColor: theme.colors.bg.surface,
-          paddingHorizontal: theme.spacing.lg,
-          paddingTop: theme.spacing.md,
-          paddingBottom: insets.bottom + theme.spacing.md,
-          gap: theme.spacing.sm,
-          ...theme.shadows.sm,
+      <StickyCartBar
+        title="Add to Cart"
+        loading={adding}
+        disabled={ctaDisabled}
+        onAddPress={() => {
+          void onAddToCart();
         }}
-      >
-        <PriceDisplay
-          pricePaise={configuration.displayedPrice.pricePaise}
-          compareAtPricePaise={configuration.displayedPrice.compareAtPricePaise}
-          size="md"
-        />
-        {wishlistError ? (
-          <GText variant="bodySm" color="danger">
-            {wishlistError}
-          </GText>
-        ) : null}
-        {cartMessage ? (
-          <GText variant="bodySm" color={cartMessage.tone === 'success' ? 'success' : 'danger'}>
-            {cartMessage.text}
-          </GText>
-        ) : null}
-        <GButton
-          title="Add to Cart"
-          size="lg"
-          fullWidth
-          loading={adding}
-          disabled={ctaDisabled}
-          onPress={() => {
-            void onAddToCart();
-          }}
-          accessibilityLabel={`Add ${product.name} to cart`}
-          accessibilityHint={
-            !purchasable
-              ? 'This product cannot be purchased right now'
-              : configuration.missingRequired.length
-                ? 'Required options must be selected first'
-                : undefined
-          }
-        />
-        {cartMessage?.tone === 'success' ? (
-          <GButton
-            title="View cart"
-            variant="ghost"
-            fullWidth
-            onPress={() => router.push('/(tabs)/cart')}
-          />
-        ) : null}
-      </View>
+        onCartPress={() => router.push('/(tabs)/cart')}
+        message={statusMessage}
+        messageTone={statusTone}
+        accessibilityLabel={`Add ${product.name} to cart`}
+        accessibilityHint={
+          !purchasable
+            ? 'This product cannot be purchased right now'
+            : configuration.missingRequired.length
+              ? 'Required options must be selected first'
+              : undefined
+        }
+      />
     </View>
   );
 }

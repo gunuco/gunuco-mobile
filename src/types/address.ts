@@ -17,6 +17,8 @@ export type Address = {
   lat: number;
   lng: number;
   isDefault?: boolean;
+  /** Optional distance from the current pin, in kilometres. */
+  distanceKm?: number | null;
 };
 
 export type AddressPayload = {

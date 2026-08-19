@@ -1,13 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { useTheme } from '@/src/providers';
 import type { CatalogFilterGroup, CatalogSelectionState, CategoryNode } from '@/src/types/catalog';
-import { formatPaise } from '@/src/utils/money';
 import { BottomSheet } from '../ui/BottomSheet';
 import { GButton } from '../ui/GButton';
 import { GChip } from '../ui/GChip';
-import { GInput } from '../ui/GInput';
 import { GText } from '../ui/GText';
+import { PriceRangeSlider } from '../ui/PriceRangeSlider';
 
 export type FilterSheetProps = {
   visible: boolean;
@@ -16,27 +15,24 @@ export type FilterSheetProps = {
   filterGroups?: CatalogFilterGroup[];
   subcategories?: CategoryNode[];
   showSubcategoryFilter?: boolean;
+  resultCount?: number;
+  initialPane?: string;
   onApply: (next: CatalogSelectionState) => void;
   onClear: () => void;
 };
 
-function parsePaiseInput(value: string): number | undefined {
-  const trimmed = value.trim();
-  if (!trimmed) {
-    return undefined;
-  }
-  const rupees = Number(trimmed);
-  if (!Number.isFinite(rupees) || rupees < 0) {
-    return undefined;
-  }
-  return Math.round(rupees * 100);
-}
+type FilterPane = {
+  id: string;
+  label: string;
+};
 
 function FilterSheetBody({
   selection,
   filterGroups,
   subcategories,
   showSubcategoryFilter,
+  resultCount,
+  initialPane,
   onApply,
   onClear,
   onClose,
@@ -45,6 +41,8 @@ function FilterSheetBody({
   filterGroups: CatalogFilterGroup[];
   subcategories: CategoryNode[];
   showSubcategoryFilter: boolean;
+  resultCount?: number;
+  initialPane?: string;
   onApply: (next: CatalogSelectionState) => void;
   onClear: () => void;
   onClose: () => void;
@@ -54,30 +52,100 @@ function FilterSheetBody({
     ...selection,
     filters: { ...selection.filters },
   });
-  const [priceMinText, setPriceMinText] = useState(
-    typeof selection.priceMin === 'number' ? String(selection.priceMin / 100) : '',
-  );
-  const [priceMaxText, setPriceMaxText] = useState(
-    typeof selection.priceMax === 'number' ? String(selection.priceMax / 100) : '',
-  );
 
   const priceGroup = useMemo(
     () => filterGroups.find((group) => group.type === 'range' || group.id === 'price'),
     [filterGroups],
   );
-
   const optionGroups = useMemo(
     () => filterGroups.filter((group) => group.type !== 'range' && group.id !== 'price'),
     [filterGroups],
   );
 
+  const minBound = priceGroup?.minPaise ?? 0;
+  const maxBound = Math.max(priceGroup?.maxPaise ?? 100000, minBound + 100);
+  const lowPaise = draft.priceMin ?? minBound;
+  const highPaise = draft.priceMax ?? maxBound;
+
+  const panes = useMemo<FilterPane[]>(() => {
+    const next: FilterPane[] = [];
+    if (showSubcategoryFilter && subcategories.length > 0) {
+      next.push({ id: 'subcategory', label: 'Category' });
+    }
+    next.push({ id: 'price', label: priceGroup?.label ?? 'Price' });
+    for (const group of optionGroups) {
+      next.push({ id: group.id, label: group.label });
+    }
+    return next;
+  }, [optionGroups, priceGroup?.label, showSubcategoryFilter, subcategories.length]);
+
+  const fallbackPane = panes[0]?.id ?? 'price';
+  const [activePane, setActivePane] = useState(
+    panes.some((pane) => pane.id === initialPane) ? initialPane : fallbackPane,
+  );
+  const pane = panes.some((item) => item.id === activePane) ? activePane : fallbackPane;
+  const activeGroup = optionGroups.find((group) => group.id === pane);
+
+  const applyLabel =
+    typeof resultCount === 'number' ? `Show ${resultCount} products` : 'Show products';
+
   return (
     <>
-      <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 420 }}>
-        <View style={{ gap: theme.spacing.xl }}>
-          {showSubcategoryFilter && subcategories.length > 0 ? (
-            <View style={{ gap: theme.spacing.sm }}>
-              <GText variant="label">Subcategory</GText>
+      <View
+        style={{
+          flexDirection: 'row',
+          minHeight: 360,
+          maxHeight: 460,
+          marginHorizontal: -theme.spacing.lg,
+          borderTopWidth: 1,
+          borderBottomWidth: 1,
+          borderColor: theme.colors.border.default,
+        }}
+      >
+        <ScrollView
+          style={{
+            width: 132,
+            backgroundColor: theme.colors.bg.surfaceMuted,
+          }}
+          showsVerticalScrollIndicator={false}
+        >
+          {panes.map((item) => {
+            const selected = item.id === pane;
+            return (
+              <Pressable
+                key={item.id}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                onPress={() => setActivePane(item.id)}
+                style={{
+                  minHeight: theme.dimensions.touchMin,
+                  paddingHorizontal: theme.spacing.md,
+                  paddingVertical: theme.spacing.md,
+                  justifyContent: 'center',
+                  backgroundColor: selected ? theme.colors.bg.surface : 'transparent',
+                  borderLeftWidth: 3,
+                  borderLeftColor: selected ? theme.colors.brand.primary : 'transparent',
+                }}
+              >
+                <GText variant="label" color={selected ? 'primary' : 'secondary'}>
+                  {item.label}
+                </GText>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
+        <ScrollView
+          style={{ flex: 1, backgroundColor: theme.colors.bg.surface }}
+          contentContainerStyle={{
+            padding: theme.spacing.lg,
+            gap: theme.spacing.md,
+          }}
+          showsVerticalScrollIndicator={false}
+        >
+          {pane === 'subcategory' ? (
+            <>
+              <GText variant="label">Select category</GText>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.sm }}>
                 {subcategories.map((sub) => (
                   <GChip
@@ -93,46 +161,34 @@ function FilterSheetBody({
                   />
                 ))}
               </View>
-            </View>
+            </>
           ) : null}
 
-          <View style={{ gap: theme.spacing.sm }}>
-            <GText variant="label">Price (₹)</GText>
-            {priceGroup?.minPaise != null || priceGroup?.maxPaise != null ? (
-              <GText variant="caption" color="secondary">
-                Available range{' '}
-                {priceGroup.minPaise != null ? formatPaise(priceGroup.minPaise) : '—'} –{' '}
-                {priceGroup.maxPaise != null ? formatPaise(priceGroup.maxPaise) : '—'}
-              </GText>
-            ) : null}
-            <View style={{ flexDirection: 'row', gap: theme.spacing.md }}>
-              <View style={{ flex: 1 }}>
-                <GInput
-                  label="Min"
-                  value={priceMinText}
-                  onChangeText={setPriceMinText}
-                  keyboardType="numeric"
-                  placeholder="0"
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <GInput
-                  label="Max"
-                  value={priceMaxText}
-                  onChangeText={setPriceMaxText}
-                  keyboardType="numeric"
-                  placeholder="Any"
-                />
-              </View>
-            </View>
-          </View>
+          {pane === 'price' ? (
+            <>
+              <GText variant="label">Select price range</GText>
+              <PriceRangeSlider
+                minPaise={minBound}
+                maxPaise={maxBound}
+                lowPaise={lowPaise}
+                highPaise={highPaise}
+                onChange={(nextLow, nextHigh) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    priceMin: nextLow,
+                    priceMax: nextHigh,
+                  }))
+                }
+              />
+            </>
+          ) : null}
 
-          {optionGroups.map((group) => (
-            <View key={group.id} style={{ gap: theme.spacing.sm }}>
-              <GText variant="label">{group.label}</GText>
+          {activeGroup ? (
+            <>
+              <GText variant="label">{`Select ${activeGroup.label.toLowerCase()}`}</GText>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.sm }}>
-                {(group.options ?? []).map((option) => {
-                  const selected = draft.filters[group.id] === option.value;
+                {(activeGroup.options ?? []).map((option) => {
+                  const selected = draft.filters[activeGroup.id] === option.value;
                   return (
                     <GChip
                       key={option.id}
@@ -142,9 +198,9 @@ function FilterSheetBody({
                         setDraft((prev) => {
                           const filters = { ...prev.filters };
                           if (selected) {
-                            delete filters[group.id];
+                            delete filters[activeGroup.id];
                           } else {
-                            filters[group.id] = option.value;
+                            filters[activeGroup.id] = option.value;
                           }
                           return { ...prev, filters };
                         })
@@ -153,37 +209,42 @@ function FilterSheetBody({
                   );
                 })}
               </View>
-            </View>
-          ))}
-
-          {optionGroups.length === 0 && !showSubcategoryFilter ? (
-            <GText variant="bodySm" color="secondary">
-              More product option filters appear when the catalogue provides them.
-            </GText>
+            </>
           ) : null}
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </View>
 
       <View style={{ flexDirection: 'row', gap: theme.spacing.md }}>
         <View style={{ flex: 1 }}>
           <GButton
-            title="Clear"
-            variant="secondary"
+            title="Clear All"
+            variant="tertiary"
             onPress={() => {
+              setDraft({
+                sort: draft.sort,
+                filters: {},
+              });
               onClear();
-              onClose();
             }}
             fullWidth
+            style={{
+              borderColor: theme.colors.brand.primary,
+              borderWidth: 1,
+            }}
           />
         </View>
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1.4 }}>
           <GButton
-            title="Apply"
+            title={applyLabel}
             onPress={() => {
+              const nextMin =
+                draft.priceMin != null && draft.priceMin > minBound ? draft.priceMin : undefined;
+              const nextMax =
+                draft.priceMax != null && draft.priceMax < maxBound ? draft.priceMax : undefined;
               onApply({
                 ...draft,
-                priceMin: parsePaiseInput(priceMinText),
-                priceMax: parsePaiseInput(priceMaxText),
+                priceMin: nextMin,
+                priceMax: nextMax,
               });
               onClose();
             }}
@@ -202,6 +263,8 @@ export function FilterSheet({
   filterGroups = [],
   subcategories = [],
   showSubcategoryFilter = false,
+  resultCount,
+  initialPane,
   onApply,
   onClear,
 }: FilterSheetProps) {
@@ -210,15 +273,17 @@ export function FilterSheet({
       visible={visible}
       onClose={onClose}
       title="Filters"
-      contentStyle={{ maxHeight: '85%' }}
+      contentStyle={{ maxHeight: '90%' }}
     >
       {visible ? (
         <FilterSheetBody
-          key={`filter-${selection.sort}-${selection.subcategory ?? ''}-${selection.priceMin ?? ''}-${selection.priceMax ?? ''}-${JSON.stringify(selection.filters)}`}
+          key={`filter-${initialPane ?? 'default'}-${selection.sort}-${selection.subcategory ?? ''}-${selection.priceMin ?? ''}-${selection.priceMax ?? ''}-${JSON.stringify(selection.filters)}`}
           selection={selection}
           filterGroups={filterGroups}
           subcategories={subcategories}
           showSubcategoryFilter={showSubcategoryFilter}
+          resultCount={resultCount}
+          initialPane={initialPane}
           onApply={onApply}
           onClear={onClear}
           onClose={onClose}

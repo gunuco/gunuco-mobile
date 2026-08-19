@@ -37,6 +37,7 @@ export function toAddressSummary(address: Address): AddressSummary {
     city: address.city,
     pincode: address.pincode,
     isDefault: address.isDefault,
+    distanceKm: address.distanceKm,
   };
 }
 
@@ -72,6 +73,7 @@ export function normalizeAddress(raw: unknown): Address | null {
     lat,
     lng,
     isDefault: asBoolean(nested.isDefault),
+    distanceKm: asNumber(nested.distanceKm),
   };
 }
 

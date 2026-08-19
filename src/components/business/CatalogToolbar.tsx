@@ -19,7 +19,7 @@ export type CatalogToolbarProps = {
   filterGroups?: CatalogFilterGroup[];
   subcategories?: CategoryNode[];
   onOpenSort: () => void;
-  onOpenFilter: () => void;
+  onOpenFilter: (paneId?: string) => void;
   onClearFilters: () => void;
   onClearSubcategory?: () => void;
   onClearFilterKey?: (key: string) => void;
@@ -42,6 +42,11 @@ export function CatalogToolbar({
   const theme = useTheme();
 
   const sortLabel = sortOptions.find((option) => option.id === selection.sort)?.label ?? 'Sort';
+  const optionGroups = filterGroups.filter(
+    (group) => group.type !== 'range' && group.id !== 'price',
+  );
+  const hasPrice = filterGroups.some((group) => group.type === 'range' || group.id === 'price');
+  const hasPriceFilter = selection.priceMin != null || selection.priceMax != null;
 
   const activeChips = useMemo(() => {
     const chips: { id: string; label: string; onClear?: () => void }[] = [];
@@ -50,12 +55,12 @@ export function CatalogToolbar({
       const sub = subcategories.find((item) => item.id === selection.subcategory);
       chips.push({
         id: 'subcategory',
-        label: sub?.name ?? 'Subcategory',
+        label: sub?.name ?? 'Category',
         onClear: onClearSubcategory,
       });
     }
 
-    if (selection.priceMin != null || selection.priceMax != null) {
+    if (hasPriceFilter) {
       const min = selection.priceMin != null ? formatPaise(selection.priceMin) : 'Any';
       const max = selection.priceMax != null ? formatPaise(selection.priceMax) : 'Any';
       chips.push({
@@ -76,33 +81,68 @@ export function CatalogToolbar({
     }
 
     return chips;
-  }, [selection, subcategories, filterGroups, onClearSubcategory, onClearPrice, onClearFilterKey]);
+  }, [
+    selection,
+    subcategories,
+    filterGroups,
+    onClearSubcategory,
+    onClearPrice,
+    onClearFilterKey,
+    hasPriceFilter,
+  ]);
 
   const hasFilters = activeChips.length > 0;
 
   return (
     <View style={{ gap: theme.spacing.sm }}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: theme.spacing.lg,
+          gap: theme.spacing.sm,
+          alignItems: 'center',
+        }}
+      >
+        <GChip
+          label="Filters"
+          iconName="options-outline"
+          selected={hasFilters}
+          onPress={() => onOpenFilter()}
+        />
+        <GChip
+          label={sortLabel}
+          iconName="swap-vertical-outline"
+          trailingIconName="chevron-down"
+          onPress={onOpenSort}
+        />
+        {optionGroups.map((group) => (
+          <GChip
+            key={group.id}
+            label={group.label}
+            trailingIconName="chevron-down"
+            selected={Boolean(selection.filters[group.id])}
+            onPress={() => onOpenFilter(group.id)}
+          />
+        ))}
+        {hasPrice ? (
+          <GChip
+            label="Price"
+            trailingIconName="chevron-down"
+            selected={hasPriceFilter}
+            onPress={() => onOpenFilter('price')}
+          />
+        ) : null}
+      </ScrollView>
+
       <View
         style={{
           paddingHorizontal: theme.spacing.lg,
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: theme.spacing.md,
         }}
       >
-        <GText variant="caption" color="secondary" style={{ flex: 1 }} numberOfLines={1}>
+        <GText variant="caption" color="secondary" numberOfLines={1}>
           {typeof resultCount === 'number' ? `${resultCount} products` : ' '}
         </GText>
-        <View style={{ flexDirection: 'row', gap: theme.spacing.sm }}>
-          <GChip label={sortLabel} iconName="swap-vertical-outline" onPress={onOpenSort} />
-          <GChip
-            label="Filter"
-            iconName="options-outline"
-            selected={hasFilters}
-            onPress={onOpenFilter}
-          />
-        </View>
       </View>
 
       {hasFilters ? (

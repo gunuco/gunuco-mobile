@@ -12,6 +12,7 @@ export type RatingViewProps = {
   interactive?: boolean;
   onChange?: (value: number) => void;
   max?: number;
+  compact?: boolean;
 };
 
 export function RatingView({
@@ -22,11 +23,35 @@ export function RatingView({
   interactive = false,
   onChange,
   max = 5,
+  compact = false,
 }: RatingViewProps) {
   const theme = useTheme();
   const iconSize = size === 'md' ? 'md' : 'sm';
   const stars = Array.from({ length: max }, (_, index) => index + 1);
   const isInput = mode === 'input' || interactive;
+
+  if (compact && !isInput) {
+    const countLabel =
+      typeof count === 'number'
+        ? `(${count > 999 ? `${Math.round(count / 100) / 10}k` : count})`
+        : '';
+    return (
+      <View
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+        accessibilityRole="text"
+        accessibilityLabel={
+          typeof count === 'number'
+            ? `Rated ${value} out of ${max} from ${count} reviews`
+            : `Rated ${value} out of ${max}`
+        }
+      >
+        <GIcon name="star" size="sm" color={theme.colors.badge.premium} />
+        <GText variant="caption" color="secondary">
+          {value.toFixed(1)} {countLabel}
+        </GText>
+      </View>
+    );
+  }
 
   return (
     <View

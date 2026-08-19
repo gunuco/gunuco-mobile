@@ -1,8 +1,5 @@
 import { Tabs } from 'expo-router';
 import { useTheme } from '@/src/providers';
-import { useAuth } from '@/src/hooks';
-import { useGetCartQuery } from '@/src/store';
-import { getCartBadgeCount } from '@/src/utils/cart';
 import { GIcon, type GIconName } from '@/src/components';
 
 function TabIcon({ name, color, size }: { name: GIconName; color: string; size: number }) {
@@ -11,9 +8,6 @@ function TabIcon({ name, color, size }: { name: GIconName; color: string; size: 
 
 export default function TabsLayout() {
   const theme = useTheme();
-  const { isAuthenticated } = useAuth();
-  const cartQuery = useGetCartQuery(undefined, { skip: !isAuthenticated });
-  const cartBadge = getCartBadgeCount(cartQuery.data);
 
   return (
     <Tabs
@@ -23,13 +17,15 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: theme.colors.text.secondary,
         tabBarLabelStyle: {
           ...theme.typography.caption,
+          fontWeight: '700',
         },
         tabBarStyle: {
           backgroundColor: theme.colors.bg.surface,
           borderTopColor: theme.colors.border.default,
-          height: theme.dimensions.bottomNavHeight + 8,
-          paddingBottom: 6,
-          paddingTop: 6,
+          borderTopWidth: 0.5,
+          height: theme.dimensions.bottomNavHeight + 10,
+          paddingBottom: 8,
+          paddingTop: 8,
         },
       }}
     >
@@ -37,17 +33,8 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon name="home-outline" color={String(color)} size={size} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="search"
-        options={{
-          title: 'Search',
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon name="search-outline" color={String(color)} size={size} />
+          tabBarIcon: ({ color, size, focused }) => (
+            <TabIcon name={focused ? 'home' : 'home-outline'} color={String(color)} size={size} />
           ),
         }}
       />
@@ -55,34 +42,36 @@ export default function TabsLayout() {
         name="categories"
         options={{
           title: 'Categories',
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon name="grid-outline" color={String(color)} size={size} />
+          tabBarIcon: ({ color, size, focused }) => (
+            <TabIcon
+              name={focused ? 'storefront' : 'storefront-outline'}
+              color={String(color)}
+              size={size}
+            />
           ),
         }}
       />
       <Tabs.Screen
-        name="cart"
+        name="reorder"
         options={{
-          title: 'Cart',
-          tabBarBadge: cartBadge > 0 ? cartBadge : undefined,
-          tabBarBadgeStyle: {
-            backgroundColor: theme.colors.brand.primary,
-            color: theme.colors.text.inverse,
-          },
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon name="cart-outline" color={String(color)} size={size} />
+          title: 'Reorder',
+          tabBarIcon: ({ color, size, focused }) => (
+            <TabIcon name={focused ? 'cafe' : 'cafe-outline'} color={String(color)} size={size} />
           ),
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name="my-orders"
         options={{
-          title: 'Profile',
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon name="person-outline" color={String(color)} size={size} />
+          title: 'Orders',
+          tabBarIcon: ({ color, size, focused }) => (
+            <TabIcon name={focused ? 'time' : 'time-outline'} color={String(color)} size={size} />
           ),
         }}
       />
+      <Tabs.Screen name="search" options={{ href: null, title: 'Search' }} />
+      <Tabs.Screen name="cart" options={{ href: null, title: 'Cart' }} />
+      <Tabs.Screen name="profile" options={{ href: null, title: 'Profile' }} />
     </Tabs>
   );
 }

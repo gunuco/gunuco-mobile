@@ -1,44 +1,49 @@
 import React, { memo } from 'react';
-import { Pressable } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { useTheme } from '@/src/providers';
 import type { CategorySummary } from '@/src/types';
-import { GCard } from '../ui/GCard';
 import { GImage } from '../ui/GImage';
 import { GText } from '../ui/GText';
 
 export type CategoryCardProps = {
   category: CategorySummary;
   onPress?: () => void;
+  width?: number;
+  featured?: boolean;
 };
 
-function CategoryCardComponent({ category, onPress }: CategoryCardProps) {
+function CategoryCardComponent({ category, onPress, width, featured = false }: CategoryCardProps) {
   const theme = useTheme();
+  const cardWidth = width ?? theme.dimensions.categoryCard.width;
+  const imageHeight = featured ? Math.round(cardWidth * 0.72) : Math.round(cardWidth * 0.92);
 
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={category.name} onPress={onPress}>
-      <GCard
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={category.name}
+      onPress={onPress}
+      style={{ width: cardWidth }}
+    >
+      <View
         style={{
-          width: theme.dimensions.categoryCard.width,
-          alignItems: 'center',
+          backgroundColor: theme.colors.bg.surfaceMuted,
+          borderRadius: theme.radius.xl,
+          overflow: 'hidden',
+          padding: theme.spacing.xs,
           gap: theme.spacing.sm,
         }}
       >
         <GImage
           uri={category.imageUrl}
-          width={theme.dimensions.categoryCard.image}
-          height={theme.dimensions.categoryCard.image}
-          borderRadius={theme.radius.md}
+          width={cardWidth - theme.spacing.xs * 2}
+          height={imageHeight}
+          borderRadius={theme.radius.lg}
           accessibilityLabel={category.name}
         />
-        <GText variant="label" align="center" numberOfLines={2}>
+        <GText variant="label" align="center" numberOfLines={2} style={{ paddingHorizontal: 4 }}>
           {category.name}
         </GText>
-        {typeof category.productCount === 'number' ? (
-          <GText variant="caption" color="secondary">
-            {category.productCount} items
-          </GText>
-        ) : null}
-      </GCard>
+      </View>
     </Pressable>
   );
 }

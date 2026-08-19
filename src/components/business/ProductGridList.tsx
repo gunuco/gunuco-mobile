@@ -23,6 +23,7 @@ export type ProductGridListProps = {
   onEndReached?: () => void;
   onProductPress?: (product: ProductSummary) => void;
   onAddPress?: (product: ProductSummary) => void;
+  onNotifyPress?: (product: ProductSummary) => void;
   ListHeaderComponent?: React.ReactElement | null;
 };
 
@@ -41,6 +42,7 @@ function ProductGridListComponent({
   onEndReached,
   onProductPress,
   onAddPress,
+  onNotifyPress,
   ListHeaderComponent,
 }: ProductGridListProps) {
   const theme = useTheme();
@@ -55,10 +57,11 @@ function ProductGridListComponent({
           showAddButton={showAddButton}
           onPress={() => onProductPress?.(item)}
           onAddPress={() => onAddPress?.(item)}
+          onNotifyPress={() => onNotifyPress?.(item)}
         />
       </View>
     ),
-    [onAddPress, onProductPress, showAddButton, showWishlist, theme.spacing.sm],
+    [onAddPress, onNotifyPress, onProductPress, showAddButton, showWishlist, theme.spacing.sm],
   );
 
   if (errorMessage && products.length === 0) {

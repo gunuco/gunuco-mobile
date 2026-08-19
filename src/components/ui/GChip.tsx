@@ -11,6 +11,7 @@ export type GChipProps = {
   onPress?: () => void;
   onClear?: () => void;
   iconName?: GIconName;
+  trailingIconName?: GIconName;
   accessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
 };
@@ -22,6 +23,7 @@ export function GChip({
   onPress,
   onClear,
   iconName,
+  trailingIconName,
   accessibilityLabel,
   style,
 }: GChipProps) {
@@ -78,6 +80,12 @@ export function GChip({
             color={selected ? theme.colors.text.inverse : theme.colors.text.secondary}
           />
         </Pressable>
+      ) : trailingIconName ? (
+        <GIcon
+          name={trailingIconName}
+          size="sm"
+          color={selected ? theme.colors.text.inverse : theme.colors.text.secondary}
+        />
       ) : null}
     </Pressable>
   );

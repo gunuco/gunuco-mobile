@@ -25,11 +25,12 @@ import { getErrorMessage } from '@/src/utils/errors';
 import { collectCartChangeMessages, isCartCheckoutReady } from '@/src/utils/cart';
 import { createIdempotencyKey } from '@/src/utils/idempotency';
 import { todayDateParam } from '@/src/utils/fulfilment';
-import { paymentHref, addressBookHref, addressFormHref } from '@/src/utils/navigation';
+import { paymentHref, addressFormHref } from '@/src/utils/navigation';
 import type { FulfilmentType, ServiceabilityResult } from '@/src/types/fulfilment';
 import type { ScheduleMode } from '@/src/components/business/SlotSelector';
 import {
   AddressCard,
+  AddressSheet,
   CartChangeBanner,
   CartItem,
   CartSummary,
@@ -58,6 +59,7 @@ export default function CheckoutScreen() {
 
   const [fulfilment, setFulfilment] = useState<FulfilmentType>('DELIVERY');
   const [addressId, setAddressId] = useState<string | null>(null);
+  const [addressSheetOpen, setAddressSheetOpen] = useState(false);
   const [scheduleMode, setScheduleMode] = useState<ScheduleMode>('ASAP');
   const [selectedDate, setSelectedDate] = useState(todayDateParam());
   const [slotSelection, setSlotSelection] = useState<{ key: string; id: string | null }>({
@@ -354,7 +356,11 @@ export default function CheckoutScreen() {
         {fulfilment === 'DELIVERY' ? (
           <>
             {selectedAddress ? (
-              <AddressCard address={toAddressSummary(selectedAddress)} selected />
+              <AddressCard
+                address={toAddressSummary(selectedAddress)}
+                selected
+                onPress={() => setAddressSheetOpen(true)}
+              />
             ) : (
               <GCard>
                 <GText variant="bodySm" color="secondary">
@@ -366,7 +372,7 @@ export default function CheckoutScreen() {
               <GButton
                 title="Change"
                 variant="secondary"
-                onPress={() => router.push(addressBookHref({ select: true }))}
+                onPress={() => setAddressSheetOpen(true)}
                 accessibilityLabel="Change address"
               />
               <GButton
@@ -376,6 +382,16 @@ export default function CheckoutScreen() {
                 accessibilityLabel="Add new address"
               />
             </View>
+            <AddressSheet
+              visible={addressSheetOpen}
+              selectedId={selectedAddress?.id}
+              onClose={() => setAddressSheetOpen(false)}
+              onSelect={(address) => {
+                setAddressId(address.id);
+                setAddressSheetOpen(false);
+              }}
+              onAddNew={() => router.push(addressFormHref())}
+            />
             <ServiceabilityMessage
               loading={serviceabilityState.isLoading}
               result={serviceability}

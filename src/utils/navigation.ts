@@ -57,7 +57,23 @@ export function orderConfirmationHref(): Href {
 }
 
 export function ordersHref(): Href {
-  return '/orders' as unknown as Href;
+  return '/(tabs)/my-orders' as unknown as Href;
+}
+
+export function cartHref(): Href {
+  return '/(tabs)/cart' as unknown as Href;
+}
+
+export function searchHref(): Href {
+  return '/(tabs)/search' as unknown as Href;
+}
+
+export function profileHref(): Href {
+  return '/(tabs)/profile' as unknown as Href;
+}
+
+export function reorderHref(): Href {
+  return '/(tabs)/reorder' as unknown as Href;
 }
 
 export function orderHref(orderId: string): Href {
@@ -145,6 +161,10 @@ export function changePhoneOtpHref(): Href {
 
 export function settingsHref(): Href {
   return '/settings' as unknown as Href;
+}
+
+export function uiTestHref(): Href {
+  return '/ui-test' as unknown as Href;
 }
 
 export function legalHref(): Href {

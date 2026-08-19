@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { Dimensions, Pressable, View } from 'react-native';
+import { Pressable, useWindowDimensions, View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useTheme } from '@/src/providers';
 import type { HomeBanner } from '@/src/types';
@@ -13,11 +13,10 @@ export type HomeBannerCarouselProps = {
   onBannerPress?: (banner: HomeBanner) => void;
 };
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
-
 function HomeBannerCarouselComponent({ banners, loading, onBannerPress }: HomeBannerCarouselProps) {
   const theme = useTheme();
-  const bannerWidth = SCREEN_WIDTH - theme.spacing.lg * 2;
+  const { width: screenWidth } = useWindowDimensions();
+  const bannerWidth = screenWidth - theme.spacing.lg * 2;
   const bannerHeight = Math.round(bannerWidth * 0.42);
 
   if (loading) {

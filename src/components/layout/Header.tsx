@@ -11,9 +11,21 @@ export type HeaderProps = {
   onBackPress?: () => void;
   rightSlot?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
+  titleAlign?: 'left' | 'center';
+  bordered?: boolean;
+  transparent?: boolean;
 };
 
-export function Header({ title, showBack, onBackPress, rightSlot, style }: HeaderProps) {
+export function Header({
+  title,
+  showBack,
+  onBackPress,
+  rightSlot,
+  style,
+  titleAlign = 'left',
+  bordered = true,
+  transparent = false,
+}: HeaderProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
 
@@ -25,8 +37,8 @@ export function Header({ title, showBack, onBackPress, rightSlot, style }: Heade
           paddingBottom: theme.spacing.sm,
           paddingHorizontal: theme.spacing.lg,
           minHeight: theme.dimensions.headerHeight + insets.top,
-          backgroundColor: theme.colors.bg.canvas,
-          borderBottomWidth: 1,
+          backgroundColor: transparent ? 'transparent' : theme.colors.bg.canvas,
+          borderBottomWidth: bordered ? 1 : 0,
           borderBottomColor: theme.colors.border.default,
           flexDirection: 'row',
           alignItems: 'center',
@@ -51,7 +63,7 @@ export function Header({ title, showBack, onBackPress, rightSlot, style }: Heade
           <GIcon name="chevron-back" />
         </Pressable>
       ) : null}
-      <GText variant="titleMd" style={{ flex: 1 }} numberOfLines={1}>
+      <GText variant="titleMd" style={{ flex: 1, textAlign: titleAlign }} numberOfLines={1}>
         {title}
       </GText>
       {rightSlot}

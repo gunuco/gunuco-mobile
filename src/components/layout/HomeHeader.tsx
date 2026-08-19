@@ -4,25 +4,17 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/src/providers';
 import { GText } from '../ui/GText';
 import { GIcon } from '../ui/GIcon';
-import { GBadge } from '../ui/GBadge';
 import { SearchBar } from '../ui/SearchBar';
+import { HeaderActions } from './HeaderActions';
 import { APP_NAME } from '@/src/constants';
 
 export type HomeHeaderProps = {
   locationLabel: string;
-  unreadNotificationCount?: number;
   onLocationPress?: () => void;
-  onNotificationPress?: () => void;
   onSearchPress?: () => void;
 };
 
-function HomeHeaderComponent({
-  locationLabel,
-  unreadNotificationCount = 0,
-  onLocationPress,
-  onNotificationPress,
-  onSearchPress,
-}: HomeHeaderProps) {
+function HomeHeaderComponent({ locationLabel, onLocationPress, onSearchPress }: HomeHeaderProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
 
@@ -33,8 +25,7 @@ function HomeHeaderComponent({
         paddingBottom: theme.spacing.md,
         paddingHorizontal: theme.spacing.lg,
         backgroundColor: theme.colors.bg.canvas,
-        borderBottomWidth: 1,
-        borderBottomColor: theme.colors.border.default,
+        borderBottomWidth: 0,
         gap: theme.spacing.md,
       }}
     >
@@ -57,32 +48,7 @@ function HomeHeaderComponent({
           </View>
         </Pressable>
 
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={
-            unreadNotificationCount > 0
-              ? `Notifications, ${unreadNotificationCount} unread`
-              : 'Notifications'
-          }
-          onPress={onNotificationPress}
-          hitSlop={8}
-          style={{
-            width: theme.dimensions.touchMin,
-            height: theme.dimensions.touchMin,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <GIcon name="notifications-outline" />
-          {unreadNotificationCount > 0 ? (
-            <View style={{ position: 'absolute', top: 4, right: 4 }}>
-              <GBadge
-                label={unreadNotificationCount > 9 ? '9+' : String(unreadNotificationCount)}
-                variant="danger"
-              />
-            </View>
-          ) : null}
-        </Pressable>
+        <HeaderActions showProfile showNotifications showCart />
       </View>
 
       <SearchBar

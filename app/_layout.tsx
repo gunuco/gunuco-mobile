@@ -12,6 +12,7 @@ import { ForceUpdateScreen } from '@/src/components/layout/ForceUpdateScreen';
 import { useAppDispatch, useAppSelector } from '@/src/store/hooks';
 import { checkRemoteAppConfig } from '@/src/services/appConfig';
 import { isSafeStoreUrl } from '@/src/utils/urls';
+import { UiTestBadge } from '@/src/mocks/UiTestBadge';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -66,6 +67,7 @@ function RootNavigator() {
             })();
           }}
         />
+        <UiTestBadge />
       </>
     );
   }
@@ -87,6 +89,7 @@ function RootNavigator() {
               : undefined
           }
         />
+        <UiTestBadge />
       </>
     );
   }
@@ -125,9 +128,11 @@ function RootNavigator() {
           }}
         />
         <Stack.Screen name="design-system" />
+        <Stack.Screen name="ui-test" />
         <Stack.Screen name="+not-found" />
       </Stack>
       <SessionExpiredModal />
+      <UiTestBadge />
     </>
   );
 }

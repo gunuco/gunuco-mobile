@@ -59,6 +59,8 @@ function normalizeWishlistProduct(raw: unknown): ProductSummary | null {
     discountLabel: asString(product.discountLabel) ?? null,
     isWishlisted: true,
     hasRequiredOptions: normalizeHasRequiredOptions(product),
+    weightLabel: asString(product.weightLabel) ?? asString(product.weight) ?? null,
+    badgeLabel: asString(product.badgeLabel) ?? asString(product.badge) ?? null,
   };
 }
 

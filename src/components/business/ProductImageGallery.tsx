@@ -16,9 +16,10 @@ import { GModal } from '../ui/GModal';
 export type ProductImageGalleryProps = {
   images: ProductImage[];
   productName: string;
+  overlay?: React.ReactNode;
 };
 
-function ProductImageGalleryComponent({ images, productName }: ProductImageGalleryProps) {
+function ProductImageGalleryComponent({ images, productName, overlay }: ProductImageGalleryProps) {
   const theme = useTheme();
   const { width: windowWidth } = useWindowDimensions();
   const [index, setIndex] = useState(0);
@@ -106,10 +107,13 @@ function ProductImageGalleryComponent({ images, productName }: ProductImageGalle
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
           style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: theme.spacing.md,
             flexDirection: 'row',
             justifyContent: 'center',
             gap: theme.spacing.xs,
-            marginTop: theme.spacing.sm,
           }}
         >
           {images.map((image, imageIndex) => (
@@ -120,10 +124,25 @@ function ProductImageGalleryComponent({ images, productName }: ProductImageGalle
                 height: theme.spacing.xs,
                 borderRadius: theme.radius.pill,
                 backgroundColor:
-                  imageIndex === index ? theme.colors.brand.primary : theme.colors.border.default,
+                  imageIndex === index ? theme.colors.brand.primary : theme.colors.bg.surface,
               }}
             />
           ))}
+        </View>
+      ) : null}
+
+      {overlay ? (
+        <View
+          pointerEvents="box-none"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+          }}
+        >
+          {overlay}
         </View>
       ) : null}
 

@@ -2,14 +2,18 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/src/providers';
-import { useGetHomeQuery } from '@/src/store';
+import { store, useAddCartItemMutation, useGetHomeQuery } from '@/src/store';
 import { getErrorMessage } from '@/src/utils/errors';
+import { readCachedWishlistCartSources, resolveWishlistCartAdd } from '@/src/utils/wishlist';
+import type { Address } from '@/src/types/address';
 import type { CategorySummary, HomeBanner, HomeOffer, ProductSummary } from '@/src/types';
-import { categoryHref, notificationsHref, productHref } from '@/src/utils/navigation';
+import { categoryHref, productHref, searchHref } from '@/src/utils/navigation';
 import {
+  AddressSheet,
   CategorySection,
   EmptyState,
   ErrorState,
+  GText,
   HomeBannerCarousel,
   HomeHeader,
   HomeSkeleton,
@@ -49,15 +53,22 @@ export default function HomeTabScreen() {
   const theme = useTheme();
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
+  const [addressSheetOpen, setAddressSheetOpen] = useState(false);
+  const [locationOverride, setLocationOverride] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [addCartItem, addCartState] = useAddCartItemMutation();
 
   const { data, error, isLoading, isFetching, isError, refetch } = useGetHomeQuery();
 
   const locationLabel = useMemo(() => {
+    if (locationOverride) {
+      return locationOverride;
+    }
     if (data?.deliveryContext?.label) {
       return data.deliveryContext.label;
     }
     return 'Select delivery location';
-  }, [data?.deliveryContext?.label]);
+  }, [data?.deliveryContext?.label, locationOverride]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -69,7 +80,7 @@ export default function HomeTabScreen() {
   }, [refetch]);
 
   const goSearch = useCallback(() => {
-    router.push('/(tabs)/search');
+    router.push(searchHref());
   }, [router]);
 
   const goCategories = useCallback(() => {
@@ -109,12 +120,37 @@ export default function HomeTabScreen() {
     // Offer detail arrives in a later phase.
   }, []);
 
-  const onNotificationPress = useCallback(() => {
-    router.push(notificationsHref());
-  }, [router]);
-
   const onLocationPress = useCallback(() => {
-    // Address book / location picker arrives in a later phase.
+    setAddressSheetOpen(true);
+  }, []);
+
+  const onAddPress = useCallback(
+    async (product: ProductSummary) => {
+      if (addCartState.isLoading || product.isAvailable === false) {
+        return;
+      }
+      const decision = resolveWishlistCartAdd({
+        product,
+        ...readCachedWishlistCartSources(store.getState(), product.id),
+      });
+      if (decision.action === 'configure') {
+        router.push(productHref(product.id));
+        return;
+      }
+      try {
+        await addCartItem(decision.payload).unwrap();
+        setActionMessage('Added to cart.');
+      } catch (error) {
+        setActionMessage(getErrorMessage(error));
+      }
+    },
+    [addCartItem, addCartState.isLoading, router],
+  );
+
+  const onAddressSelect = useCallback((address: Address) => {
+    const label = [address.addressType, address.area || address.city].filter(Boolean).join(' · ');
+    setLocationOverride(label || address.street);
+    setAddressSheetOpen(false);
   }, []);
 
   const showInitialSkeleton = isLoading && !data;
@@ -125,9 +161,7 @@ export default function HomeTabScreen() {
     <View style={{ flex: 1, backgroundColor: theme.colors.bg.canvas }}>
       <HomeHeader
         locationLabel={locationLabel}
-        unreadNotificationCount={data?.unreadNotificationCount ?? 0}
         onLocationPress={onLocationPress}
-        onNotificationPress={onNotificationPress}
         onSearchPress={goSearch}
       />
 
@@ -182,6 +216,14 @@ export default function HomeTabScreen() {
             />
           ) : (
             <>
+              {actionMessage ? (
+                <View style={{ paddingHorizontal: theme.spacing.lg }}>
+                  <GText variant="bodySm" color="success">
+                    {actionMessage}
+                  </GText>
+                </View>
+              ) : null}
+
               <HomeBannerCarousel
                 banners={data?.banners ?? []}
                 loading={isFetching && !data?.banners}
@@ -196,7 +238,7 @@ export default function HomeTabScreen() {
               />
 
               <CategorySection
-                title="Explore"
+                title="Explore flavours"
                 categories={data?.subcategories ?? []}
                 onCategoryPress={onCategoryPress}
                 onSeeAllPress={goCategories}
@@ -212,26 +254,41 @@ export default function HomeTabScreen() {
                 title="Featured"
                 products={data?.featuredProducts ?? []}
                 onProductPress={onProductPress}
-                showAddButton={false}
+                onAddPress={(product) => {
+                  void onAddPress(product);
+                }}
+                showAddButton
               />
 
               <ProductCarousel
                 title="Best sellers"
                 products={data?.bestSellers ?? []}
                 onProductPress={onProductPress}
-                showAddButton={false}
+                onAddPress={(product) => {
+                  void onAddPress(product);
+                }}
+                showAddButton
               />
 
               <ProductCarousel
                 title="Recommended"
                 products={data?.recommendedProducts ?? []}
                 onProductPress={onProductPress}
-                showAddButton={false}
+                onAddPress={(product) => {
+                  void onAddPress(product);
+                }}
+                showAddButton
               />
             </>
           )}
         </ScrollView>
       ) : null}
+
+      <AddressSheet
+        visible={addressSheetOpen}
+        onClose={() => setAddressSheetOpen(false)}
+        onSelect={onAddressSelect}
+      />
     </View>
   );
 }

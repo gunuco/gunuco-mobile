@@ -20,6 +20,10 @@ export type ProductSummary = {
    * do not assume the product can be added with empty options.
    */
   hasRequiredOptions?: boolean;
+  /** Optional display weight such as `500 g`. Omitted by APIs that do not send it. */
+  weightLabel?: string | null;
+  /** Optional merchandising label such as `Bestseller` or `New`. */
+  badgeLabel?: string | null;
 };
 
 export type CategorySummary = {
@@ -39,6 +43,8 @@ export type AddressSummary = {
   city: string;
   pincode?: string;
   isDefault?: boolean;
+  /** Optional distance from the current pin, in kilometres. */
+  distanceKm?: number | null;
 };
 
 export type CartLineSummary = {

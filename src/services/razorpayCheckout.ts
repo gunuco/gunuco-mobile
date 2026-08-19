@@ -1,4 +1,6 @@
 import RazorpayCheckout from 'react-native-razorpay';
+import { env } from '@/src/config';
+import { openUiTestRazorpayCheckout } from '@/src/mocks/razorpay';
 
 export type RazorpayOpenOptions = {
   keyId: string;
@@ -56,6 +58,9 @@ function classifyRazorpayError(error: unknown): RazorpayAttemptResult {
 export async function openRazorpayCheckout(
   options: RazorpayOpenOptions,
 ): Promise<RazorpayAttemptResult> {
+  if (env.uiTestMode) {
+    return openUiTestRazorpayCheckout(options);
+  }
   try {
     const data = await RazorpayCheckout.open({
       key: options.keyId,

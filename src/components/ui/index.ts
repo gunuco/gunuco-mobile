@@ -43,11 +43,20 @@ export type { GModalProps } from './GModal';
 export { BottomSheet } from './BottomSheet';
 export type { BottomSheetProps } from './BottomSheet';
 
+export { AccordionSection } from './AccordionSection';
+export type { AccordionSectionProps, AccordionRow } from './AccordionSection';
+
+export { IconCircleButton } from './IconCircleButton';
+export type { IconCircleButtonProps } from './IconCircleButton';
+
 export { OtpInput } from './OtpInput';
 export type { OtpInputProps } from './OtpInput';
 
 export { GChip } from './GChip';
 export type { GChipProps } from './GChip';
+
+export { PriceRangeSlider } from './PriceRangeSlider';
+export type { PriceRangeSliderProps } from './PriceRangeSlider';
 
 export { ConfirmDialog } from './ConfirmDialog';
 export type { ConfirmDialogProps } from './ConfirmDialog';

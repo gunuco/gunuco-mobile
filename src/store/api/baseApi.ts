@@ -12,6 +12,7 @@ import {
   isPublicBrowseRequest,
 } from '@/src/utils/requestAuth';
 import { env } from '@/src/config';
+import { uiTestBaseQuery } from '@/src/mocks/transport';
 import { secureStorage } from '@/src/services/secureStorage';
 import { clearInMemoryCustomerState } from '@/src/services/clearCustomerState';
 import { markSessionExpired, setUnauthenticated } from '../slices/authSlice';
@@ -22,7 +23,7 @@ const mutex = new Mutex();
 /** Mobile-network friendly; surfaces as TIMEOUT_ERROR rather than hanging forever. */
 const REQUEST_TIMEOUT_MS = 30_000;
 
-const rawBaseQuery = fetchBaseQuery({
+const networkBaseQuery = fetchBaseQuery({
   baseUrl: env.apiBaseUrl,
   timeout: REQUEST_TIMEOUT_MS,
   prepareHeaders: async (headers, { endpoint }) => {
@@ -43,6 +44,9 @@ const rawBaseQuery = fetchBaseQuery({
     return headers;
   },
 });
+
+/** UI test mode replaces only the fetch transport. Endpoint slices stay unchanged. */
+const rawBaseQuery = env.uiTestMode ? uiTestBaseQuery : networkBaseQuery;
 
 async function persistTokens(tokens: RefreshTokenResponse): Promise<void> {
   await Promise.all([

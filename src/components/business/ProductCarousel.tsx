@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { View } from 'react-native';
+import { useWindowDimensions, View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useTheme } from '@/src/providers';
 import type { ProductSummary } from '@/src/types';
@@ -31,7 +31,8 @@ function ProductCarouselComponent({
   showAddButton = false,
 }: ProductCarouselProps) {
   const theme = useTheme();
-  const cardWidth = theme.dimensions.productImage.card + theme.spacing.md * 2;
+  const { width } = useWindowDimensions();
+  const cardWidth = Math.round((width - theme.spacing.lg * 2 - theme.spacing.md) / 2.2);
 
   if (!loading && products.length === 0) {
     return null;
@@ -69,6 +70,7 @@ function ProductCarouselComponent({
                 <ProductCard
                   product={item}
                   variant="grid"
+                  width={cardWidth}
                   showWishlist={showWishlist}
                   showAddButton={showAddButton}
                   onPress={() => onProductPress?.(item)}

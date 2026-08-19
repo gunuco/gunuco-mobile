@@ -3,6 +3,7 @@ import { Linking, Platform, ScrollView, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/src/providers';
+import { env } from '@/src/config';
 import { useAuth } from '@/src/hooks';
 import { useAppSelector } from '@/src/store';
 import { persistThemePreference } from '@/src/services/themePreference';
@@ -15,7 +16,7 @@ import {
   registerPushTokenIfAllowed,
   requestPushPermission,
 } from '@/src/services/pushNotifications';
-import { legalHref } from '@/src/utils/navigation';
+import { legalHref, uiTestHref } from '@/src/utils/navigation';
 import { GButton, GText, Header, ListRow, RadioRow, SettingSection } from '@/src/components';
 import type { ThemePreference } from '@/src/store/slices/settingsSlice';
 
@@ -151,6 +152,16 @@ export default function SettingsScreen() {
             />
           ) : null}
         </SettingSection>
+
+        {env.uiTestMode ? (
+          <SettingSection title="UI Test Mode">
+            <ListRow
+              title="UI Test controls"
+              subtitle="Mock scenarios and test customers"
+              onPress={() => router.push(uiTestHref())}
+            />
+          </SettingSection>
+        ) : null}
 
         <SettingSection title="About">
           <ListRow title={APP_NAME} subtitle={`Version ${version}`} showChevron={false} />

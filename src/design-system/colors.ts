@@ -1,7 +1,6 @@
 /**
  * GUNUCO semantic color tokens.
- * Brand hex values are provisional until final brand assets arrive (Q46).
- * Cocoa / cream commerce palette — not BigBasket colors.
+ * Brand pair from the company logo: burgundy `#6F022B` + white `#FFFFFF`.
  */
 
 export type ColorTokens = {
@@ -51,30 +50,37 @@ export type ColorTokens = {
   };
 };
 
+/** Sampled from the GUNUCO logo circle (most common non-white pixel). */
+const BRAND_BURGUNDY = '#6F022B';
+const BRAND_BURGUNDY_PRESSED = '#54021F';
+const BRAND_ROSE = '#A64B63';
+const LOGO_WHITE = '#FFFFFF';
+const INK = '#2A0A14';
+
 export const lightColors: ColorTokens = {
   bg: {
-    canvas: '#F7F3EE',
-    surface: '#FFFFFF',
-    surfaceMuted: '#EFE8E0',
-    inverse: '#2A1F18',
+    canvas: LOGO_WHITE,
+    surface: LOGO_WHITE,
+    surfaceMuted: '#F7F1F3',
+    inverse: INK,
   },
   text: {
-    primary: '#2A1F18',
-    secondary: '#6B5B4F',
-    disabled: '#A8988C',
-    inverse: '#FFFFFF',
+    primary: INK,
+    secondary: '#6B4450',
+    disabled: '#A88A92',
+    inverse: LOGO_WHITE,
   },
   brand: {
-    primary: '#5C3A2E',
-    primaryPressed: '#472C23',
-    secondary: '#C4A484',
+    primary: BRAND_BURGUNDY,
+    primaryPressed: BRAND_BURGUNDY_PRESSED,
+    secondary: BRAND_ROSE,
   },
   accent: {
-    offer: '#B85C38',
+    offer: '#B01040',
   },
   border: {
-    default: '#E2D6CB',
-    focus: '#5C3A2E',
+    default: '#E8D4DA',
+    focus: BRAND_BURGUNDY,
   },
   semantic: {
     success: '#2F6B4F',
@@ -83,45 +89,45 @@ export const lightColors: ColorTokens = {
     info: '#2F5D8A',
   },
   overlay: {
-    scrim: 'rgba(42, 31, 24, 0.48)',
+    scrim: 'rgba(42, 10, 20, 0.48)',
   },
   skeleton: {
-    base: '#E8DFD6',
-    highlight: '#F5F0EA',
+    base: '#F0E2E6',
+    highlight: '#FAF6F7',
   },
   badge: {
     premium: '#8A6A2F',
-    discount: '#B85C38',
+    discount: '#B01040',
   },
   map: {
-    route: '#5C3A2E',
+    route: BRAND_BURGUNDY,
   },
 };
 
 export const darkColors: ColorTokens = {
   bg: {
-    canvas: '#161210',
-    surface: '#221B17',
-    surfaceMuted: '#2C241F',
-    inverse: '#F7F3EE',
+    canvas: '#12060A',
+    surface: '#1C0C12',
+    surfaceMuted: '#2A1218',
+    inverse: '#FAF6F7',
   },
   text: {
-    primary: '#F7F3EE',
-    secondary: '#C9B8AA',
-    disabled: '#7A6C62',
-    inverse: '#2A1F18',
+    primary: '#FAF6F7',
+    secondary: '#D4B8C0',
+    disabled: '#7A5C64',
+    inverse: INK,
   },
   brand: {
-    primary: '#D4B59A',
-    primaryPressed: '#E2C9B3',
-    secondary: '#8B6B52',
+    primary: BRAND_BURGUNDY,
+    primaryPressed: '#8B0A38',
+    secondary: '#8B4A5C',
   },
   accent: {
-    offer: '#E08A62',
+    offer: '#E05A7A',
   },
   border: {
-    default: '#3A302A',
-    focus: '#D4B59A',
+    default: '#3A1C24',
+    focus: '#C45A74',
   },
   semantic: {
     success: '#5FBF93',
@@ -133,14 +139,14 @@ export const darkColors: ColorTokens = {
     scrim: 'rgba(0, 0, 0, 0.64)',
   },
   skeleton: {
-    base: '#2C241F',
-    highlight: '#3A302A',
+    base: '#2A1218',
+    highlight: '#3A1C24',
   },
   badge: {
     premium: '#D4B56A',
-    discount: '#E08A62',
+    discount: '#E05A7A',
   },
   map: {
-    route: '#D4B59A',
+    route: '#C45A74',
   },
 };

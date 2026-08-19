@@ -14,7 +14,8 @@
       "env": {
         "EXPO_PUBLIC_APP_ENV": "development",
         "EXPO_PUBLIC_ENABLE_LOGGING": "true",
-        "EXPO_PUBLIC_API_BASE_URL": "https://api.dev.gunuco.local"
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.dev.gunuco.local",
+        "EXPO_PUBLIC_UI_TEST_MODE": "false"
       }
     },
     "preview": {
@@ -26,7 +27,8 @@
       "env": {
         "EXPO_PUBLIC_APP_ENV": "staging",
         "EXPO_PUBLIC_ENABLE_LOGGING": "true",
-        "EXPO_PUBLIC_API_BASE_URL": "https://api.staging.gunuco.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.staging.gunuco.com",
+        "EXPO_PUBLIC_UI_TEST_MODE": "false"
       }
     },
     "production": {
@@ -38,7 +40,20 @@
       "env": {
         "EXPO_PUBLIC_APP_ENV": "production",
         "EXPO_PUBLIC_ENABLE_LOGGING": "false",
-        "EXPO_PUBLIC_API_BASE_URL": "https://api.gunuco.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.gunuco.com",
+        "EXPO_PUBLIC_UI_TEST_MODE": "false"
+      }
+    },
+    "native-test": {
+      "distribution": "internal",
+      "environment": "development",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "development",
+        "EXPO_PUBLIC_ENABLE_LOGGING": "true",
+        "EXPO_PUBLIC_UI_TEST_MODE": "true"
       }
     }
   },

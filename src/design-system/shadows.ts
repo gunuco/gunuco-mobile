@@ -11,7 +11,7 @@ const makeShadow = (
   opacity: number,
   elevation: number,
 ): ShadowToken => ({
-  shadowColor: '#2A1F18',
+  shadowColor: '#2A0A14',
   shadowOffset: { width: 0, height: offsetY },
   shadowOpacity: Platform.OS === 'ios' ? opacity : 0,
   shadowRadius: radiusValue,

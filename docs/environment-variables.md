@@ -16,12 +16,15 @@
 | `EXPO_PUBLIC_ENABLE_LOGGING` | Reserved flag (`true` to enable). No debug logger is wired in production. | No | `false` | Leave `false` in production |
 | `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY` | Public Maps SDK key for `react-native-maps` (address pin + tracking map). Injected in `app.config.js` plugins. | Yes for maps | *(empty in templates)* | Maps console restricted key (Android package + iOS bundle). Not a backend secret. |
 | `EXPO_PUBLIC_RAZORPAY_KEY_ID` | Razorpay **public** key id passed to the hosted checkout SDK. | Yes for payment | *(empty in templates)* | Razorpay dashboard publishable key. **Never** the key secret. |
+| `EXPO_PUBLIC_UI_TEST_MODE` | Temporary mock API transport for UI/native testing. Must be the string `true` to enable. Default / all other values: **off**. Never inferred from a missing API URL or failed requests. | No | `false` | Must stay `false` on development, preview, and production profiles. Only `native-test` sets `true`. |
 
 ---
 
 ## Last-resort API URL fallback (`src/config/env.ts`)
 
-If `EXPO_PUBLIC_API_BASE_URL` is missing:
+If `EXPO_PUBLIC_UI_TEST_MODE=true`, `apiBaseUrl` is `https://ui-test.invalid` and is never called. Requests are intercepted in `baseApi` before fetch.
+
+If `EXPO_PUBLIC_API_BASE_URL` is missing and UI test mode is off:
 
 | `EXPO_PUBLIC_APP_ENV` / inferred env | Fallback host |
 |---|---|
@@ -41,11 +44,12 @@ Production builds should still set `EXPO_PUBLIC_API_BASE_URL` explicitly. The pr
 
 Razorpay public key and Maps key stay empty in git. Add them with `eas env:set` (plaintext is acceptable because they are client-visible). Never put Razorpay secret there.
 
-| EAS profile | `EXPO_PUBLIC_APP_ENV` | `EXPO_PUBLIC_API_BASE_URL` | Logging |
-|---|---|---|---|
-| `development` | `development` | `https://api.dev.gunuco.local` | `true` |
-| `preview` | `staging` | `https://api.staging.gunuco.com` | `true` |
-| `production` | `production` | `https://api.gunuco.com` | `false` |
+| EAS profile | `EXPO_PUBLIC_APP_ENV` | `EXPO_PUBLIC_API_BASE_URL` | `EXPO_PUBLIC_UI_TEST_MODE` | Logging |
+|---|---|---|---|---|
+| `development` | `development` | `https://api.dev.gunuco.local` | `false` | `true` |
+| `preview` | `staging` | `https://api.staging.gunuco.com` | `false` | `true` |
+| `production` | `production` | `https://api.gunuco.com` | `false` | `false` |
+| `native-test` | `development` | *(not set — mock transport)* | `true` | `true` |
 
 A physical device cannot resolve `api.dev.gunuco.local`. Override `EXPO_PUBLIC_API_BASE_URL` in EAS for the development profile to a reachable HTTPS API before device testing.
 

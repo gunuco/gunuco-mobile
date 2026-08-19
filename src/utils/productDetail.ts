@@ -1,6 +1,7 @@
 import type {
   DisplayedProductPrice,
   ProductDetail,
+  ProductHighlight,
   ProductImage,
   ProductInfoSection,
   ProductOfferInfo,
@@ -151,6 +152,26 @@ function normalizeInfoSections(raw: unknown, attributes: unknown): ProductInfoSe
   }
 
   return sections;
+}
+
+function normalizeHighlights(raw: unknown): ProductHighlight[] | undefined {
+  if (!Array.isArray(raw) || raw.length === 0) {
+    return undefined;
+  }
+  const highlights: ProductHighlight[] = [];
+  for (const item of raw) {
+    const rec = asRecord(item);
+    if (!rec) {
+      continue;
+    }
+    const label = asString(rec.label) ?? asString(rec.title);
+    const value = asString(rec.value) ?? asString(rec.body);
+    if (!label || !value) {
+      continue;
+    }
+    highlights.push({ label, value });
+  }
+  return highlights.length ? highlights : undefined;
 }
 
 function normalizeOptionValue(raw: unknown): ProductOptionValue | null {
@@ -309,6 +330,9 @@ export function normalizeProductDetail(response: unknown): ProductDetail {
         }
       : null,
     isWishlisted: asBoolean(payload.isWishlisted),
+    weightLabel: asString(payload.weightLabel) ?? null,
+    badgeLabel: asString(payload.badgeLabel) ?? null,
+    highlights: normalizeHighlights(payload.highlights),
   };
 }
 

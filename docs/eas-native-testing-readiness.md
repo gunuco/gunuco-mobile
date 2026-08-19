@@ -389,6 +389,16 @@ Also: Android 13+ notification permission, back button, keyboard, navigation bar
 
 ---
 
+## UI test profile (backend not required)
+
+`eas build --profile native-test --platform android` sets `EXPO_PUBLIC_UI_TEST_MODE=true` and does not call a real API.
+
+This exercises the **same screens and RTK hooks** with mock transport. It is **not** backend integration testing.
+
+See `docs/ui-test-mode.md`. Production / preview / development profiles keep `EXPO_PUBLIC_UI_TEST_MODE=false`.
+
+---
+
 ## iOS device test checklist
 
 Same 1–23, plus: APNs, iOS permission dialogs, swipe back, safe areas, keyboard, VoiceOver.

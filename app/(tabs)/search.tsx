@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/src/providers';
@@ -13,11 +13,11 @@ import {
   CatalogToolbar,
   EmptyState,
   FilterSheet,
+  GIcon,
   ProductGridList,
   ProductListSkeleton,
   SearchBar,
   SortSheet,
-  GText,
 } from '@/src/components';
 
 const MIN_QUERY_LENGTH = 2;
@@ -31,6 +31,7 @@ export default function SearchTabScreen() {
   const debouncedQuery = useDebouncedValue(query.trim(), 350);
   const [sortOpen, setSortOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [filterPane, setFilterPane] = useState<string | undefined>();
   const [refreshing, setRefreshing] = useState(false);
 
   const {
@@ -78,6 +79,11 @@ export default function SearchTabScreen() {
   const isTyping = query.trim() !== debouncedQuery;
   const showInitialSkeleton = canSearch && (isLoading || isTyping) && !data;
 
+  const openFilters = useCallback((paneId?: string) => {
+    setFilterPane(paneId);
+    setFilterOpen(true);
+  }, []);
+
   const onRefresh = useCallback(async () => {
     if (!canSearch) {
       return;
@@ -107,6 +113,14 @@ export default function SearchTabScreen() {
     [router],
   );
 
+  const goBack = useCallback(() => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace('/(tabs)');
+  }, [router]);
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: theme.colors.bg.canvas }}
@@ -119,22 +133,39 @@ export default function SearchTabScreen() {
           paddingBottom: theme.spacing.md,
           borderBottomWidth: 1,
           borderBottomColor: theme.colors.border.default,
+          flexDirection: 'row',
+          alignItems: 'center',
           gap: theme.spacing.sm,
         }}
       >
-        <GText variant="titleMd">Search</GText>
-        <SearchBar
-          value={query}
-          onChangeText={(text) => {
-            setQuery(text);
-            setPage(1);
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          onPress={goBack}
+          hitSlop={8}
+          style={{
+            width: theme.dimensions.touchMin,
+            height: theme.dimensions.touchMin,
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
-          placeholder="Search cakes, cookies & more"
-          onClear={() => {
-            setQuery('');
-            setPage(1);
-          }}
-        />
+        >
+          <GIcon name="chevron-back" />
+        </Pressable>
+        <View style={{ flex: 1 }}>
+          <SearchBar
+            value={query}
+            onChangeText={(text) => {
+              setQuery(text);
+              setPage(1);
+            }}
+            placeholder="Search cakes, cookies & more"
+            onClear={() => {
+              setQuery('');
+              setPage(1);
+            }}
+          />
+        </View>
       </View>
 
       {!canSearch ? (
@@ -152,7 +183,7 @@ export default function SearchTabScreen() {
             filterGroups={filterGroups}
             subcategories={subcategories}
             onOpenSort={() => setSortOpen(true)}
-            onOpenFilter={() => setFilterOpen(true)}
+            onOpenFilter={openFilters}
             onClearFilters={clearFilters}
             onClearSubcategory={() => setSubcategory(undefined)}
             onClearPrice={() => setPriceRange(undefined, undefined)}
@@ -200,11 +231,16 @@ export default function SearchTabScreen() {
 
       <FilterSheet
         visible={filterOpen}
-        onClose={() => setFilterOpen(false)}
+        onClose={() => {
+          setFilterOpen(false);
+          setFilterPane(undefined);
+        }}
         selection={selection}
         filterGroups={filterGroups}
         subcategories={subcategories}
         showSubcategoryFilter
+        resultCount={data?.total}
+        initialPane={filterPane}
         onApply={applySelection}
         onClear={clearFilters}
       />

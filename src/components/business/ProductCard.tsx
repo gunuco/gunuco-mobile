@@ -1,12 +1,10 @@
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useTheme } from '@/src/providers';
 import type { ProductSummary } from '@/src/types';
-import { GCard } from '../ui/GCard';
 import { GImage } from '../ui/GImage';
 import { GText } from '../ui/GText';
 import { GBadge } from '../ui/GBadge';
-import { GButton } from '../ui/GButton';
 import { PriceDisplay } from './PriceDisplay';
 import { RatingView } from './RatingView';
 import { WishlistButton } from './WishlistButton';
@@ -22,7 +20,9 @@ export type ProductCardProps = {
   showWishlist?: boolean;
   onPress?: () => void;
   onAddPress?: () => void;
+  onNotifyPress?: () => void;
   wishlisted?: boolean;
+  width?: number;
 };
 
 function ProductCardComponent({
@@ -34,39 +34,68 @@ function ProductCardComponent({
   showWishlist = true,
   onPress,
   onAddPress,
+  onNotifyPress,
   wishlisted,
+  width,
 }: ProductCardProps) {
   const theme = useTheme();
-  const imageSize =
-    variant === 'list'
-      ? theme.dimensions.productImage.thumb
-      : variant === 'compact'
-        ? 96
-        : theme.dimensions.productImage.card;
+  const [imageWidth, setImageWidth] = useState(width ?? 0);
   const unavailable = product.isAvailable === false;
+  const isList = variant === 'list';
+  const resolvedImageWidth = isList
+    ? theme.dimensions.productImage.thumb
+    : variant === 'compact'
+      ? 96
+      : imageWidth || theme.dimensions.productImage.card;
 
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={product.name}
       onPress={onPress}
-      style={{ flex: variant === 'grid' ? 1 : undefined }}
+      style={{
+        flex: variant === 'grid' && !width ? 1 : undefined,
+        width: width,
+      }}
     >
-      <GCard
-        padded={variant !== 'list'}
-        style={{
-          opacity: unavailable ? 0.55 : 1,
-          flexDirection: variant === 'list' ? 'row' : 'column',
-          gap: theme.spacing.sm,
-        }}
-      >
-        <View>
+      <View style={{ gap: theme.spacing.sm }}>
+        <View
+          onLayout={(event) => {
+            if (!isList && variant !== 'compact') {
+              const next = Math.round(event.nativeEvent.layout.width);
+              if (next > 0 && next !== imageWidth) {
+                setImageWidth(next);
+              }
+            }
+          }}
+          style={{
+            width: isList ? resolvedImageWidth : '100%',
+            aspectRatio: isList ? undefined : 1,
+            borderRadius: theme.radius.xl,
+            overflow: 'hidden',
+            backgroundColor: theme.colors.bg.surfaceMuted,
+          }}
+        >
           <GImage
             uri={product.imageUrl}
-            width={imageSize}
-            height={imageSize}
+            width={resolvedImageWidth}
+            height={isList ? resolvedImageWidth : resolvedImageWidth}
+            borderRadius={theme.radius.xl}
             accessibilityLabel={product.name}
           />
+          {unavailable ? (
+            <View style={{ position: 'absolute', top: theme.spacing.sm, left: theme.spacing.sm }}>
+              <GBadge label="Sold out" />
+            </View>
+          ) : product.badgeLabel ? (
+            <View style={{ position: 'absolute', top: theme.spacing.sm, left: theme.spacing.sm }}>
+              <GBadge label={product.badgeLabel} variant={product.isPremium ? 'premium' : 'info'} />
+            </View>
+          ) : product.isPremium ? (
+            <View style={{ position: 'absolute', top: theme.spacing.sm, left: theme.spacing.sm }}>
+              <GBadge label="Premium" variant="premium" />
+            </View>
+          ) : null}
           {showWishlist ? (
             <WishlistButton
               productId={product.id}
@@ -75,51 +104,67 @@ function ProductCardComponent({
               size="sm"
             />
           ) : null}
+          {showAddButton ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={
+                unavailable ? `Notify when ${product.name} is available` : `Add ${product.name}`
+              }
+              disabled={unavailable ? !onNotifyPress : !onAddPress}
+              onPress={(event) => {
+                event.stopPropagation?.();
+                if (unavailable) {
+                  onNotifyPress?.();
+                  return;
+                }
+                onAddPress?.();
+              }}
+              style={{
+                position: 'absolute',
+                right: theme.spacing.sm,
+                bottom: theme.spacing.sm,
+                minHeight: 32,
+                paddingHorizontal: theme.spacing.md,
+                borderRadius: theme.radius.md,
+                backgroundColor: theme.colors.bg.surface,
+                borderWidth: 1.5,
+                borderColor: theme.colors.brand.primary,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <GText variant="label" color="brand">
+                {unavailable ? 'Notify' : 'ADD'}
+              </GText>
+            </Pressable>
+          ) : null}
         </View>
 
-        <View style={{ flex: 1, gap: theme.spacing.xs }}>
-          {product.isPremium ? <GBadge label="GUNUCO PREMIUM" variant="premium" /> : null}
+        <View style={{ gap: 4 }}>
+          <PriceDisplay
+            pricePaise={product.pricePaise}
+            compareAtPricePaise={product.compareAtPricePaise}
+            size="sm"
+            pill
+          />
+          {showDiscount && product.discountLabel ? (
+            <GText variant="caption" color="success">
+              {product.discountLabel}
+            </GText>
+          ) : null}
           <GText variant="label" numberOfLines={2}>
             {product.name}
           </GText>
-          {showRating && typeof product.ratingAverage === 'number' ? (
-            <RatingView value={product.ratingAverage} count={product.ratingCount} />
-          ) : null}
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: theme.spacing.sm,
-            }}
-          >
-            <View style={{ flex: 1, gap: 2 }}>
-              <PriceDisplay
-                pricePaise={product.pricePaise}
-                compareAtPricePaise={product.compareAtPricePaise}
-                size="sm"
-              />
-              {showDiscount && product.discountLabel ? (
-                <GBadge label={product.discountLabel} variant="discount" />
-              ) : null}
-            </View>
-            {showAddButton ? (
-              <GButton
-                title="Add"
-                size="sm"
-                disabled={unavailable}
-                onPress={onAddPress}
-                accessibilityLabel={`Add ${product.name}`}
-              />
-            ) : null}
-          </View>
-          {unavailable ? (
-            <GText variant="caption" color="danger">
-              Currently unavailable
+          {product.weightLabel ? (
+            <GText variant="caption" color="secondary">
+              {product.weightLabel}
             </GText>
           ) : null}
+          {showRating && typeof product.ratingAverage === 'number' ? (
+            <RatingView value={product.ratingAverage} count={product.ratingCount} compact />
+          ) : null}
         </View>
-      </GCard>
+      </View>
     </Pressable>
   );
 }

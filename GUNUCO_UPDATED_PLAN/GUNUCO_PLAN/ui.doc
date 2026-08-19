@@ -1,0 +1,1436 @@
+# GUNUCO UI Implementation Document
+
+This file is the primary implementation reference for screens, states, fields, and operational flows.
+
+============================================================
+1. CURRENT SYSTEM SCOPE
+============================================================
+
+Product: GUNUCO Multi-Category Ordering and Delivery System
+
+Current operating model:
+- One production house accepts and fulfils every order. `Pickup-at-Store` is the customer-facing label for collection there; it is not a separate store entity.
+- `Owner` is the highest web-admin role with full control and final authority. `Admin` manages menu definitions and operations. `Branch Manager` is restricted to assigned locations and location-level overrides.
+- Delivery Partners collect only local `Doorstep-Delivery` orders from the production house; `Pickup-at-Store` orders remain in the Admin pickup queue and NYC Cookies `Nationwide-Delivery` orders use the courier-shipment workspace.
+- Top-level categories are `Cakes`, `Coffee`, `Pizza`, and `Burgers`. Only `Cakes` is active and implemented at launch; the others are seeded inactive.
+- Cakes launches with `GUNUCO PREMIUM CAKES`, `GUNUCO CHEESE CAKES`, `GUNUCO BROWNIES`, `GUNUCO NYC COOKIES`, `CASUAL CAKES`, `WEDDING OR ANNIVERSARY CAKES`, and `OCCASIONAL CAKES`.
+- `GUNUCO NYC COOKIES` alone can add Nationwide-Delivery. Admin independently controls Regular City and All-India coverage and may enable all or selected Indian states/union territories. Other subcategories cannot use this capability.
+- GUNUCO PREMIUM CAKES contains GUNUCO's special, curated cake catalogue. Custom Cakes remain a dedicated cake request workflow.
+- Admin can add, edit, activate, deactivate, and reorder parent categories and subcategories from the Admin Panel. Coffee, Pizza, and Burgers remain hidden until configured and activated.
+- Category names, hierarchy, product options, and navigation entries are configuration-driven and must not be hard-coded.
+- Branch creation and transfers are feature-disabled at launch, but locations, assignments, orders, POS, fulfilment, quotas, and reporting are location-ready from the first release.
+
+Current panels:
+1. Web Admin Panel
+2. Delivery Partner Panel
+3. Customer Support Panel
+
+Portal entry points:
+- Owner, Admin, and Branch Manager: `https://admin.gunuco.com/login`
+- Customer Support Agent: `https://support.gunuco.com/login`
+
+Customer application identity:
+- Customers browse without signing in but must authenticate before checkout.
+- Login and sign-up use E.164 phone number plus SMS OTP only. Do not show password, email-login, social-login, or guest-checkout controls.
+- OTP screens include phone entry, country code, code entry, resend countdown, attempt/rate-limit state, expiry, and change-number action.
+- Successful first verification creates the customer account; later verification signs into the same unique phone account.
+- Use 15-minute access tokens and rotating 30-day refresh sessions, with at most three active devices and token-family revocation on refresh-token reuse.
+- Saved-address CRUD is account-owned. Require recipient name/phone, address line 1, city, state, postal code, latitude, and longitude; line 2, landmark, and label are optional.
+
+============================================================
+2. GLOBAL COMPONENT RULES
+============================================================
+
+Use these consistently:
+- Left sidebar navigation for Admin.
+- Bottom navigation for Delivery Partner mobile screens.
+- Summary cards on operational dashboards.
+- Filter bar below each page title.
+- Main data table or list area.
+- Right drawer or modal for add/edit/review flows.
+- Status chips for order, production, payment, refund, return, and delivery states.
+- Sticky actions for frequent operational tasks.
+- Submitted admin records remain editable and require an explicit Update action.
+
+Common product configuration summary:
+- Parent Category
+- Subcategory
+- Product
+- Configured Options
+- Add-Ons
+- Quantity
+
+For cake-module products, Configured Options expands only to options enabled by effective configuration: Flavour, Egg Preference, Sweetener Type, Flour Type, and Size/Weight. Resolve state as Product explicit ON/OFF, then Subcategory explicit ON/OFF, then Main Category ON/OFF, otherwise OFF. Quantity remains available for every sellable product. Future category modules show their own configured options without empty cake fields.
+
+Common status labels:
+- Not Accepted
+- Accepted
+- Preparing
+- Packed
+- Ready for Delivery
+- Delivery Partner Assigning
+- Assigned
+- Picked Up
+- Out for Delivery
+- Delivered
+- Cancelled
+- Return Requested
+- Resolved
+
+============================================================
+3. WEB ADMIN PANEL
+============================================================
+
+LEFT SIDEBAR
+
+Dashboard
+Point of Sale
+Orders
+Wedding & Anniversary Orders
+Support Tickets
+Menu Management
+Custom Cakes
+Production Queue
+Delivery Partners
+Delivery & Pickup Settings
+Offers & Discounts
+Customer Feedback
+Testimonials
+Cancel Orders
+Refunds
+Returns
+Access
+Reports
+Settings
+
+Access rule:
+- Owner sees every menu item and controls branches, Global POS, admin-location assignments, global menu rules, and all role permissions.
+- Admin sees operational sections and can manage categories, subcategories, products, descriptions, images, pricing, add-ons, customization, Branch Managers, and delivery partners. Owner-only actions are hidden or read-only.
+- Admin has all operational Support Tickets controls: view, assign/reassign/unassign, prioritize, reply, add internal notes, own escalations, set Open/Pending, Close, and Reopen.
+- Branch Manager sees assigned-location Dashboard, Point of Sale, Orders, Menu Management, Production Queue, Delivery Partners, pickup, and delivery operations. Menu definitions are read-only; location availability, stock state, and authorized location price overrides are editable.
+- Delivery Partner never enters this panel.
+
+------------------------------------------------------------
+3.1 ADMIN DASHBOARD
+------------------------------------------------------------
+
+Purpose:
+Central control for production-house orders, preparation, delivery, payments, and exceptions.
+
+Required cards:
+- Today's Orders
+- Today's Revenue
+- Cakes parent orders with configurable subcategory breakdowns
+- Custom Cakes Orders
+- Wedding & Anniversary Orders
+- Awaiting Acceptance
+- Preparing
+- Ready for Delivery
+- Deliveries Pending
+- Delivering
+- Delivered Today
+
+Top controls:
+- Accept Orders ON/OFF
+- Active parent-category and subcategory availability controls generated from configuration
+- Accept Custom Cakes ON/OFF
+- Acceptance modes generated for each active parent category or subcategory
+- Custom Cakes Acceptance Mode: Automatic / Manual
+- Delivery Assignment Mode: Automatic / Manual
+
+ORDER CONTROLS BOARD
+
+The dashboard must contain a visible Order Controls board:
+
+```text
++--------------------------------------------------------------------------+
+| ORDER CONTROLS                                                           |
+| Accept Orders                         [ON/OFF]                            |
+| Active Category/Subcategory           [Automatic | Manual]                |
+| Custom Cakes Acceptance               [Automatic | Manual]                |
+| Delivery Assignment                   [Automatic | Manual]                |
+|                                                                          |
+| DAILY LIMITS                                                             |
+| All Orders                            [Current / Limit] [Edit Limit]      |
+| Each Active Category/Subcategory      [Current / Limit] [Edit Limit]      |
+| Custom Cakes                          [Current / Limit] [Edit Limit]      |
+|                                                                          |
+| Wedding/Anniversary Window            [72h minimum | 720h maximum]       |
+| Eligible Cakes Subcategories          [ON/OFF] [Cutoff] [Slots]          |
+| Fulfilment Methods       [Pickup-at-Store ON] [Doorstep-Delivery ON]     |
+| Quota Reset                           [Midnight, configured timezone]     |
++--------------------------------------------------------------------------+
+```
+
+Control behavior:
+- Automatic: accept a valid order immediately after availability, payment, requested quantity, delivery time, and every applicable daily limit pass validation.
+- Manual: create the order as Not Accepted and place it in Awaiting Acceptance for Admin action.
+- Admin can manually Accept or Reject an order waiting in Manual mode.
+- Changing mode affects new orders only; it must not silently change existing orders.
+- Global OFF overrides every acceptance mode and category.
+- Daily limits are numeric values greater than zero and remain editable by Admin.
+- Show live accepted quantity, configured limit, percentage used, and remaining capacity.
+- Alert Admin at 80 percent usage and block acceptance when the requested quantity would exceed a limit.
+- Reset daily usage at midnight in the configured production house timezone.
+- `WEDDING OR ANNIVERSARY CAKES` orders require a requested fulfilment time at least 72 hours and at most 720 hours after server order-creation time.
+- Reject this subcategory before payment when the requested time is earlier than 72 hours or later than 720 hours. Exactly 72 and exactly 720 hours are allowed.
+- This fixed 3-to-30-day window applies only to `WEDDING OR ANNIVERSARY CAKES`; no other category or Custom Cake request inherits it.
+
+Delivery controls and visibility:
+- Deliveries Pending counts orders with delivery status `Pending Assignment` or `Assigned`.
+- Delivering counts orders with delivery status `Picked Up` or `Out for Delivery`.
+- Delivered Today counts orders marked `Delivered` today.
+- Dashboard and Orders tables show the assigned delivery partner name beside delivery status.
+- Automatic assignment starts when an accepted order needs delivery; the rider is notified immediately and can view the future pickup time while production continues.
+- Automatic assignment selects an Active and Online rider who accepts deliveries, has no conflicting pickup, serves the delivery area, and has the lowest active workload. Rating and distance break ties.
+- The selected rider must accept within the configured timeout. Rejection or timeout automatically tries the next eligible rider.
+- If no rider accepts, status remains `Pending Assignment` and Admin receives an alert.
+- Manual mode leaves the order Pending Assignment until Admin selects a rider.
+- Admin can override or reassign before pickup. Every attempt and reassignment is recorded.
+- Automatic rider assignment runs only for `Doorstep-Delivery`; `Pickup-at-Store` never creates a rider assignment.
+
+Customer fulfilment options:
+- Before payment, the customer chooses exactly one currently eligible method: `Pickup-at-Store`, local `Doorstep-Delivery`, or NYC Cookies-only `Nationwide-Delivery` when enabled for the verified destination state/UT.
+- `Pickup-at-Store`: customer collects from the production house and delivery fee is always Rs 0.
+- `Doorstep-Delivery`: customer enters an address and the server calculates road distance from the production house.
+- Cakes and eligible Cakes subcategory doorstep fee: up to 5 km inclusive = Rs 0; over 5 km through 8 km = Rs 39; over 8 km through 10 km = Rs 59; over 10 km through 15 km = Rs 159.
+- `Doorstep-Delivery` beyond 15 km is unavailable by default; show `Pickup-at-Store` or ask the customer to choose an address within range.
+- Custom Cakes offer both `Pickup-at-Store` and `Doorstep-Delivery`, and both have Rs 0 delivery fee regardless of distance within the configured service area.
+- Recalculate and display `Subtotal - Discount + Delivery Fee = Payable Total` immediately whenever the customer changes the option or doorstep address.
+- Show the selected option, verified distance, delivery fee, address or store pickup instructions, selected time, and final payable total on the checkout review before enabling payment.
+- Do not book a catalogue order until the customer reviews the recalculated total and completes verified full payment. A Custom Cake request may be saved before payment for clarification, feasibility review, and quoting, but cannot enter production until the quote is approved and full payment is captured.
+- Pickup lifecycle is `Pickup Scheduled -> Ready for Pickup -> Collected`.
+- Customer-facing Order ID format is `YY-N`, with a minimum two-digit sequence: `26-01`, `26-02`, ... `26-888`. The sequence restarts at `01` each calendar year.
+- Admin marks pickup orders Ready for Pickup. Authorized Owner, Admin, Branch Manager, and POS order views may display the Order ID, but the pickup-validation input remains blank. At collection, staff asks the customer to state the Order ID and the server validates an exact match before enabling `Confirm Collection` or `Collected`.
+- At the doorstep, the delivery partner sees order details except all Order ID fields, calls or asks the customer for the Order ID, enters that customer-provided value, and receives only a privacy-safe success or failure before `Delivered` can be enabled.
+- No OTP or separate pickup code is used for either fulfilment option.
+- Record who validated the Order ID, when it was validated, and whether validation occurred at the store or doorstep.
+- Generate the yearly sequence atomically so simultaneous orders cannot receive duplicate IDs.
+- Store collection/delivery completion and successful validation in one server transaction. Store validation is limited to an Owner, Admin, or Branch Manager authorized for the order's location; doorstep validation is limited to the assigned rider.
+- Validate the exact customer-facing Order ID only. OTP, pickup code, phone number, or a client-submitted success value cannot substitute for the server comparison.
+- Rate-limit failed entries and alert Admin about repeated mismatches.
+- Customer receives the Order ID, pickup address, map link, operating hours, and Ready for Pickup notification.
+
+Cashless payment rules:
+- Never offer Cash, Cash on Delivery, or cash payment at the store or doorstep.
+- Capture the complete server-calculated payable total online before booking every catalogue, custom-cake, same-day, application, or POS order.
+- Do not provide advance, deposit, installment, balance-due, pay-later, or partial-booking controls.
+- An unpaid Custom Cake request may remain pending for clarification and quoting but cannot enter production.
+- Reserve quota and any same-day slot only when the gateway-verified captured amount equals the current payable total.
+- If the captured amount differs from the current total, do not partially book the order; reconcile the payment and require a fresh full-payment attempt where applicable.
+- Admin sees payable amount, amount paid, payment status, payment attempts, and gateway-confirmation alerts.
+- Delivery Partners see payment clearance status but never receive or record cash.
+
+Same-day delivery controls:
+- Same-day delivery applies only to eligible Cakes subcategories. `WEDDING OR ANNIVERSARY CAKES` is never same-day eligible because its minimum lead time is 72 hours.
+- Admin controls same-day ON/OFF independently for each eligible Cakes subcategory.
+- Admin sets the order cutoff time, minimum preparation lead time, same-day slot capacity, delivery slots, and service area.
+- Each cake has an Allow Same-Day Delivery ON/OFF override.
+- Same-day is offered only when global/category/product acceptance is ON, the cake supports it, the cutoff has not passed, preparation can finish before the selected slot, daily quotas have capacity, a delivery slot is available, and the address is serviceable.
+- If same-day is unavailable, show the next available date or slot instead of accepting an impossible delivery time.
+
+Quick actions:
+- Add Cake
+- Manage Categories
+- Add Add-On
+- Review Custom Cake
+- Assign Delivery
+- Create Offer
+
+Recent orders columns:
+- Order ID
+- Parent Category
+- Subcategory
+- Customer
+- Requested Delivery
+- Amount
+- Production Status
+- Delivery Status
+- Assigned Delivery Partner
+
+Critical rule:
+- If global Accept Orders is OFF, no new order from any category, subcategory, or Custom Cake workflow can be accepted.
+- Passing validation in Automatic mode changes status directly to Accepted.
+- Passing validation in Manual mode leaves status as Not Accepted until Admin accepts it.
+
+------------------------------------------------------------
+3.1A POINT OF SALE
+------------------------------------------------------------
+
+Purpose:
+Provide assisted, cashless Pickup-at-Store ordering only when a customer at an authorized location cannot reasonably use the application.
+
+Use a Zepto-style category-browsing POS experience optimized for repeated cashier operation; this is an operational POS, not a simplified order form.
+
+Access and controls:
+- Owner, Admin, or Branch Manager may use POS only at an authorized location where Global POS and Location POS are both ON.
+- Resolve location from the authenticated assignment; do not provide an unrestricted location selector.
+- Require an exception reason: No mobile device, Device unavailable, Application unavailable, or Accessibility assistance.
+- Mobile number may be omitted only for No mobile device, which requires a printed receipt.
+
+Workspace:
+- Use a stable three-column desktop layout: dynamic category rail on the left, selected-category product grid in the center, and persistent cart on the right.
+- Keep category rail and cart fixed while the product workspace scrolls. At narrower widths collapse the rail; below 1024px use a category side sheet and full-height cart sheet.
+- Generate top-level categories and expandable subcategories from active location configuration in display order. Show Cakes and its seven active subcategories at launch; hide inactive Coffee, Pizza, and Burgers.
+- Selecting a parent shows products across active descendants. Selecting a subcategory updates the center grid without a full page reload and keeps the selected state visible.
+- Product header contains category name, count, search, Available Only toggle, and Display Order/Name/Price sort.
+- Product cards use stable dimensions and show image, name, starting/current price, availability, same-day state, and remaining quota.
+- A fixed-option product adds its effective Default Quantity immediately. A product with enabled customization or add-ons opens a compact configuration drawer over the product workspace.
+- Render only effective customization controls: flavour, Egg/Eggless, sweetener, flour, size/weight, add-ons, and quantity.
+- Search by product name or code within the selected category, with All Active Categories scope. Scanner/SKU input uses product-code lookup.
+- Persist active and held POS carts server-side. Restore the active cart after refresh or reconnect.
+- Cart lines show product, selected options/add-ons, unit price, quantity stepper, line total, edit, and remove. Merge only identical configurations.
+- Provide Clear, Hold, Resume, and Abandon actions. Held carts remain scoped to operator and location unless transferred by an authorized role.
+- Show Saved, Syncing, Offline, and conflict states. On stale row-version updates retain the latest server cart and require Review Cart.
+- Subscribe to location-scoped category, product, price, customization, add-on, offer, quota, and availability events with polling fallback. Refetch affected records; never trust pushed prices.
+- Requote affected lines and mark Price Changed, Unavailable, Quota Exceeded, or Configuration Changed. Preserve lines for review and disable payment until resolved.
+- Cart summary shows customer details, required pickup time, itemized options/add-ons, offer, subtotal, discount, tax, and full payable total.
+- Fixed Pickup-at-Store fulfilment; POS never creates doorstep delivery.
+- Require verified full payment using Card, UPI, or Net Banking at launch. Keep Wallet and Store Credit hidden and unavailable until a later release. Never show advance, installment, balance, Cash, COD, Record Cash, or manual Mark Paid.
+- Show payment pending, gateway confirmation, success, failure, and retry states. Client-side gateway success never books an order.
+- Receipt preview provides Print Receipt, Share Receipt, New Sale, and View Order.
+
+After verified full payment and all server checks, atomically convert the POS cart into one Accepted order in the shared production queue, consume quota, preserve cart/order linkage, and record channel, location, operator, exception reason, and idempotency key. Reusing a converted cart returns the existing order. Failed or abandoned payments do not consume quota or generate a paid receipt.
+
+------------------------------------------------------------
+3.2 ORDERS
+------------------------------------------------------------
+
+Purpose:
+Track each order from intake through production and delivery.
+
+Required filters:
+- Date range
+- Parent Category and Subcategory generated from active configuration
+- Flavour
+- Egg or Eggless
+- Sugar Type
+- Flour Type
+- Order status
+- Payment status
+- Delivery status
+- Delivery partner
+
+Required columns:
+- Order ID
+- Customer
+- Parent Category
+- Subcategory
+- Product
+- Selected Options and Add-Ons
+- Quantity
+- Amount
+- Payment Status
+- Amount Paid
+- Production Status
+- Delivery Partner
+- Delivery Status
+- Assigned Delivery Partner
+- Fulfilment Method
+- Distance
+- Delivery Fee
+- Actions
+
+Actions:
+- View Details
+- Accept
+- Reject with reason
+- Update Production Status
+- Assign Delivery Partner
+- Cancel when eligible
+
+------------------------------------------------------------
+3.2A WEDDING & ANNIVERSARY ORDERS
+------------------------------------------------------------
+
+Purpose:
+Provide a dedicated Admin queue for every order whose subcategory is `WEDDING OR ANNIVERSARY CAKES`, while retaining the same records in the main Orders page and production queue.
+
+Access:
+- Owner and Admin see all authorized records. Branch Manager sees assigned-location records only.
+- This is a filtered operational view, not a separate order type or lifecycle.
+
+Required summary cards:
+- Scheduled in Next 3 Days
+- Scheduled in Next 7 Days
+- Awaiting Acceptance
+- Preparing
+- Ready for Pickup/Delivery
+- At-Risk Orders
+
+Required filters and columns:
+- Requested fulfilment date range, order date, location, status, fulfilment method, product, customer, payment status, and production status
+- Order ID, order-created time, requested fulfilment time, lead time remaining, customer, product, configured options, quantity, amount, payment, production, fulfilment, assigned rider, and actions
+
+Rules and actions:
+- Default sort is requested fulfilment time ascending, then order-created time ascending.
+- Show `Too Early` when requested time is below 72 hours and `Too Far` when above 720 hours; block quote/payment/order creation for either state.
+- Show a live countdown and At Risk when remaining preparation time is below the configured operational threshold.
+- Provide View, Accept/Reject where permitted, Update Production Status, Assign/Reassign Delivery Partner, and Cancel when eligible.
+- Do not allow changing the requested time outside the original inclusive 72-to-720-hour window measured from the immutable order-created time.
+
+------------------------------------------------------------
+3.3 MENU MANAGEMENT
+------------------------------------------------------------
+
+Purpose:
+Provide one Zomato-style workspace for entering and maintaining the complete menu category-wise and subcategory-wise without moving between separate screens.
+
+Workspace layout:
+- Left category tree: searchable parent categories with expandable subcategories, product counts, status, drag-to-reorder, Add Category, and Add Subcategory.
+- Center product list/grid: products for the selected category or subcategory with image, name, short description, price, discount price, customization summary, add-ons, availability, and display order.
+- Right product editor drawer: create, edit, duplicate, preview, publish, deactivate, or archive a product without leaving the selected category.
+- Sticky top actions: Add Product, Bulk Import, Export, Reorder, Preview Customer Menu, and Save Drafts.
+- Tabs inside Menu Management: Products, Categories, Add-Ons, Customization, Pricing & Weights, and Location Availability.
+- Breadcrumb always shows `Menu > Parent Category > Subcategory`; Add Product preselects the currently selected category and subcategory.
+- Preserve filters, selected category, scroll position, and unsaved drafts when switching tabs or products.
+
+Product entry fields:
+- Product code/SKU, product name, short description, full description, primary image, optional gallery images, parent category, subcategory, food type/tags, base price, discount price, tax class, preparation time, display order, featured state, same-day eligibility, daily quota, and Available ON/OFF.
+- Show category-specific customization, sizes/weights, add-ons, and price rows only when applicable to the selected category module.
+- Product preview displays the exact customer card and detail view before publishing.
+- Save Draft permits incomplete records; Publish requires category, name, description, image, valid price, location availability, and complete pricing for every enabled required option.
+- Duplicate copies product content and options but generates a new product code and starts as Draft/Unavailable.
+
+Permission behavior:
+- Owner and Admin can create and edit categories, subcategories, products, descriptions, images, pricing, options, add-ons, assignments, and display order.
+- Branch Manager can view the complete menu for assigned locations and update only location availability, sold-out state, quota, and authorized location price overrides.
+- Every create, update, publish, reorder, archive, bulk import, and override records actor, role, timestamp, before/after values, and location where applicable.
+
+Table columns:
+- Image
+- Cake Name
+- Parent Category: Cakes
+- Subcategory: one of the seven configured Cakes subcategories
+- Effective customization summary
+- Available values for enabled Flavour, Egg, Sweetener, Flour, and Size/Weight controls
+- Starting Price
+- Orders Today
+- Daily Quota
+- Availability
+- Edit
+
+Add/Edit Cake fields:
+- Cake Name
+- Description
+- Product Image
+- Parent Category: Cakes
+- Configurable Subcategory
+- Per-product Flavour, Egg Preference, Sweetener Type, Flour Type, and Size/Weight control: Inherit / ON / OFF
+- Per-product Quantity control: Inherit / Override; Override requires Minimum, Maximum, and Default Quantity
+- Available values and defaults for each effectively enabled customization
+- Effective Default Quantity, initially inherited as 1 unless Admin overrides it
+- Base Price
+- Option Price Adjustments
+- Discount Price
+- Applicable Add-Ons and assignment preview
+- Preparation Time
+- Allow Same-Day Delivery ON/OFF
+- Daily Quantity Quota
+- Featured ON/OFF
+- Available ON/OFF
+
+Automatic price controls:
+- Admin sets the base price for each cake.
+- Admin manages an Ingredient Pricing Matrix for enabled customization types only.
+- The matrix stores one editable 1kg price contribution for each enabled Flavour, Egg/Eggless, Sweetener, and Flour option.
+- For every weight, calculate the option contribution as `1kg Price Contribution x (Selected Weight in Grams / 1000)`; 500g uses a multiplier of `0.5`.
+- Weight availability and the cake's base price for each sellable weight remain separately configurable.
+- Admin can set a positive, zero, or negative ingredient price contribution for every selectable value.
+- The customer sees the price and ingredient breakdown update immediately after every ingredient or quantity change; no Submit button is required to preview the new price.
+- Formula: `Unit Price = Weight Base Price + sum of each enabled selected option's 1kg contribution x weight in kg`, where `weight in kg = selected grams / 1000`.
+- `Items Total = Unit Price x Quantity`.
+- `Order Total = Items Total - Discount + Delivery Fee + Tax`, where configured.
+- The server recalculates the final price from current admin rules before payment; client-submitted totals are never trusted.
+- The order stores the selected ingredient names, IDs, individual price contributions, pricing rule version, calculation time, and final price so later admin changes do not alter an existing order.
+
+Default menu configuration:
+- When a customer opens a customizable cake, preselect configured defaults for enabled controls and the effective Default Quantity.
+- The cake's own flavour remains selected by default; if a cake supports multiple flavours, Admin chooses its default flavour.
+- The catalogue `Starting Price` is the live server-calculated price for the default combination.
+- Starting Price is the base plus enabled default-option contributions. Admin may change defaults, but publishing is blocked if an enabled group lacks an active default or complete pricing.
+- Customer can change only enabled options and quantity. Every change recalculates the price immediately.
+- A `Reset to Default` action restores the cake's configured default combination.
+
+Customer price breakdown example:
+
+```text
+Chocolate Cake 500g Base                    Rs 500
+Chocolate Flavour (500g)                    + Rs 40
+Eggless (500g)                              + Rs 150
+Mishri (500g)                               + Rs 40
+Wheat Flour (500g)                          + Rs 150
+---------------------------------------------------
+Unit Price                                  Rs 880
+Quantity: 2
+Items Total                               Rs 1,760
+```
+
+Ingredient Pricing Matrix fields:
+- Cake
+- Ingredient Group: Flavour / Egg Preference / Sweetener Type / Flour Type
+- Ingredient Option
+- Editable 1kg Price Contribution
+- Read-only calculated previews: 500g / 2kg / 3kg / selected Custom Cake weight
+- Available ON/OFF
+- Effective From
+- Updated By
+- Updated At
+
+Pricing behavior:
+- Selecting, deselecting, or replacing any ingredient triggers a fresh quote.
+- Changing quantity multiplies the newly calculated unit price.
+- Unavailable ingredient combinations cannot be selected or quoted.
+- Checkout requests a final server quote and rejects stale or tampered pricing.
+- Existing paid or accepted orders retain their stored pricing snapshot.
+
+------------------------------------------------------------
+3.3B MENU MANAGEMENT: CATEGORIES TAB
+------------------------------------------------------------
+
+Purpose:
+Allow Owner and Admin to manage the customer menu hierarchy inside Menu Management without code or navigation changes. Branch Manager has read-only definition access.
+
+Hierarchy table columns:
+- Expand/collapse
+- Category Code
+- Display Name
+- Parent Category
+- Module/Type
+- Status
+- Display Order
+- Active Locations
+- Product Count
+- Updated By and Updated At
+- Actions
+
+Actions:
+- Add Parent Category
+- Add Subcategory
+- Edit
+- Activate or Deactivate
+- Reorder
+- View Products
+- Configure Customization
+- Configure Locations
+
+Create/edit fields:
+- Unique code
+- Display name
+- Optional parent
+- Description and image
+- Category module/type
+- Display order
+- Acceptance mode
+- Daily quota
+- Same-day eligibility
+- Active/Inactive status
+
+Rules:
+- Seed Cakes active with GUNUCO PREMIUM CAKES, GUNUCO CHEESE CAKES, GUNUCO BROWNIES, GUNUCO NYC COOKIES, CASUAL CAKES, WEDDING OR ANNIVERSARY CAKES, and OCCASIONAL CAKES.
+- Seed Coffee, Pizza, and Burgers inactive. They appear only after their catalogue and operating rules are configured and activated.
+- Configure Customization is available only in the web Admin Panel to Owner and Admin. Branch Manager sees configured/effective values read-only.
+- Main-category rows provide explicit ON/OFF switches for Flavour Type, Egg or Eggless, Sweetener Type, Flour Type, and Size or Weight.
+- Subcategory rows provide Inherit, ON, or OFF for every customization type. Inherit resolves from the parent main category.
+- Product controls provide Inherit, ON, or OFF. Inherit resolves from the effective subcategory, or directly from the main category for a direct child product.
+- Effective state is Product explicit ON/OFF, then Subcategory explicit ON/OFF, then Main Category ON/OFF, otherwise OFF.
+- Resolve each option independently. A product configured with only Sweetener Type ON and Flavour, Egg/Eggless, Flour Type, and Size/Weight OFF renders only Sweetener Type and Quantity in customer and POS forms.
+- Do not provide a blanket customization switch. Admin enables only the groups needed at each category, subcategory, or product. ON means applicable and requires a valid selection, OFF means hidden and server-rejected when submitted, and Inherit uses the nearest explicit parent setting.
+- Quantity uses separate hierarchy controls: main-category Override and subcategory/product Inherit or Override. Override requires Minimum Quantity, Maximum Quantity, and Default Quantity.
+- Resolve quantity as Product → Subcategory → Main Category → minimum 1, maximum 99, default 1. Quantity is mandatory and cannot be turned OFF.
+- Require minimum greater than zero, maximum at least minimum, and default inside the range. Enforce boundaries in customer/POS steppers and on the server.
+- Show Configured State, Effective State, and Source (`Product`, `Subcategory`, or `Main Category`) for every control.
+- Launch defaults are OFF for GUNUCO PREMIUM CAKES, GUNUCO CHEESE CAKES, GUNUCO BROWNIES, and GUNUCO NYC COOKIES.
+- Launch defaults are ON for CASUAL CAKES, WEDDING OR ANNIVERSARY CAKES, and OCCASIONAL CAKES.
+- Before enabling Flavour, Egg/Eggless, Sweetener, or Flour, require at least one active value, a default, and one 1kg price contribution for every active value. Before enabling Size/Weight, require at least one active weight with its separate weight base price. Disabled controls are hidden and rejected by the server.
+- Before saving a main-category or subcategory change, show affected inherited descendants; explicit child overrides remain unchanged.
+- Saving emits a catalogue-change event and requotes affected customer and POS carts. Completed order snapshots remain unchanged.
+- Prevent selecting the current category or a descendant as its parent.
+- Block destructive deletion when products or child categories depend on the record; use deactivation to preserve history.
+- Deactivating a parent blocks new activity for descendants but preserves products and historical orders.
+- Global activation does not automatically enable a category at every location.
+
+------------------------------------------------------------
+3.3C MENU MANAGEMENT: ADD-ONS TAB
+------------------------------------------------------------
+
+Purpose:
+Allow Admin to configure additional selectable or required items and pricing from the Admin Panel. Owner has full authority; Branch Manager can only view and sell available add-ons at assigned locations.
+
+List columns:
+- Add-On
+- Description
+- Price
+- Required/Optional
+- Minimum and Maximum Quantity
+- Category/Subcategory/Product Assignments
+- Active Locations
+- Status
+- Actions
+
+Add/edit fields:
+- Unique code
+- Name
+- Description
+- Price
+- Required or Optional
+- Minimum quantity
+- Maximum quantity
+- Display order
+- Available ON/OFF
+- Parent-category assignments
+- Subcategory assignments
+- Product assignments
+- Location availability
+- Optional location price override
+
+Rules:
+- Require at least one category, subcategory, or product assignment.
+- Required add-ons have a minimum quantity of at least 1.
+- Maximum quantity cannot be below minimum quantity; price cannot be negative.
+- Customer and POS product forms show applicable add-ons after product options.
+- Changing an add-on requests a fresh server quote and updates its itemized unit price, quantity, and total.
+- Disable unavailable add-ons with a reason and remove stale selections after re-quote.
+- Save add-on name, description, unit price, quantity, required status, and total as immutable order-time snapshots.
+
+------------------------------------------------------------
+3.3D MENU MANAGEMENT: PRICING & WEIGHTS TAB
+------------------------------------------------------------
+
+Purpose:
+Provide one Admin section for entering every ingredient and weight price used by dynamic quotes.
+
+Tabs:
+- Flavour Pricing
+- Egg/Eggless Pricing
+- Flour Type Pricing
+- Sweetener Type Pricing
+- Weight Pricing
+- Price Preview
+
+Common pricing-table columns:
+- Cake or Apply-to-All Cakes
+- Category/Subcategory generated from active configuration, plus Custom Cakes
+- Option Name
+- Calculated 500g Preview
+- Editable 1kg Price Contribution
+- Calculated 2kg Preview
+- Calculated 3kg Preview
+- Available ON/OFF
+- Effective From
+- Updated By
+- Updated At
+
+Default controls:
+- Default option radio button for each ingredient group
+- Default Weight, initially 500g
+- Default Quantity, initially 1
+- Starting Price preview
+- Lowest-default validation result
+
+Initial defaults for catalogue cakes:
+- Sugar Type: Mishri
+- Egg Preference: Egg
+- Flour Type: Maida
+- Weight: 500g
+- Quantity: 1
+
+Admin can later change a cake's default selections. Before saving, the system verifies every default is active for that cake and weight and that the default combination is the lowest available starting-price combination.
+
+Weight Pricing tab:
+
+```text
+| Weight | Catalogue Cakes | Custom Cakes | Weight Base Price | Available |
+| 500 g  | Yes             | Yes          | [amount]          | [ON/OFF]  |
+| 1 kg   | Yes             | Yes          | [amount]          | [ON/OFF]  |
+| 2 kg   | Yes             | Yes          | [amount]          | [ON/OFF]  |
+| 3 kg   | Yes             | Yes          | [amount]          | [ON/OFF]  |
+| 4-10kg | No              | Yes          | [amount]          | [ON/OFF]  |
+| >10 kg | No              | Request Only | Manual Quote      | [ON/OFF]  |
+```
+
+Weight rules:
+- Customizable catalogue cakes use configured weights from 500g through 3kg; fixed-size products hide the weight selector.
+- Custom Cakes use configured weights from 500g through 10kg.
+- Admin may enable or disable each supported weight and set its weight base price separately from 1kg customization-option contributions.
+- For a Custom Cake above 10kg, customer selects `Above 10kg`, enters the required weight, and submits a quote request.
+- Above-10kg requests cannot receive an automatic final price or automatic acceptance.
+- Admin reviews production feasibility, delivery handling, lead time, and price, then sends a manual quote.
+- Customer must approve the quote before payment and production.
+- Quantity means the number of cakes; weight means the weight of each cake. Keep these as separate fields.
+
+Catalogue ingredient pricing example. Only the 1kg column is editable; other values are calculated previews:
+
+```text
+| Ingredient Group | Option      | 500g Preview | 1kg Editable | 2kg Preview | 3kg Preview |
+| Sugar Type       | Mishri      | +40  | +80 | +160| +240|
+| Sugar Type       | Stevia      | +60  | +120| +240| +360|
+| Flour Type       | Maida       | +100 | +200| +400| +600|
+| Flour Type       | Wheat Flour | +150 | +300| +600| +900|
+| Egg Preference   | Egg         | +100 | +200| +400| +600|
+| Egg Preference   | Eggless     | +150 | +300| +600| +900|
+```
+
+Custom Cake 1kg pricing basis:
+- Admin enters the base and all enabled customization contributions for 1kg only.
+- For 500g through 10kg, calculate each contribution as `1kg Price Contribution x (Requested Weight in Grams / 1000)`.
+- Example: a 1kg Wheat Flour contribution of Rs 300 becomes Rs 1,500 for a 5kg Custom Cake because the multiplier is 5.
+- Admin can override the calculated quote for design complexity, structure, decoration, or special handling and must enter an override reason.
+- Above 10kg always remains a manual quote.
+- The customer sees both the calculated 1kg-based amount and any approved manual adjustment.
+- For unpaid requests use Approve Quote, Request Clarification, or Reject. Approve Quote never marks the order Accepted; only customer quote approval plus verified full payment accepts it for production.
+
+Price Preview:
+- Admin selects a cake, flavour, Egg/Eggless, flour type, sugar type, weight, and quantity.
+- Show the same itemized dynamic price breakdown that the customer will see.
+- Prevent publishing a cake if no active price exists for a required option or allowed weight.
+- For catalogue cakes, preview uses the selected weight's base price plus each enabled option's 1kg contribution multiplied by the selected weight in kg.
+- For Custom Cakes, preview shows the 1kg basis, weight multiplier, and manual adjustment separately.
+
+Quota rules:
+- Stop accepting the cake when its daily quantity quota is reached.
+- Show an alert at 80 percent utilization.
+- Reset usage at midnight in the production house timezone.
+
+GUNUCO PREMIUM CAKES rules:
+- Owner and Admin can add a cake to or remove a cake from GUNUCO PREMIUM CAKES; Branch Manager cannot.
+- Launch customization defaults are OFF. Admin may enable controls for the subcategory or override individual products later.
+- Display a visible GUNUCO PREMIUM badge in the customer catalogue, admin tables, production queue, and orders.
+- Premium availability and daily limits are controlled independently from other Cakes subcategories and Custom Cakes.
+
+------------------------------------------------------------
+3.4 CUSTOM CAKES
+------------------------------------------------------------
+
+Purpose:
+Review, price, accept, and produce customer-configured cakes.
+
+Request fields:
+- Customer Name
+- Mobile Number
+- Email
+- Fulfilment Method: Pickup-at-Store, Doorstep-Delivery, or NYC Cookies-only Nationwide-Delivery
+- Delivery Address (required for Doorstep-Delivery and Nationwide-Delivery)
+- Destination State/UT, Coverage Mode, Shipping Fee, and Delivery-Day Range snapshots for Nationwide-Delivery
+- Flavour (required)
+- Egg Preference: Egg or Eggless (required)
+- Sugar Type (required)
+- Flour Type: Maida or Wheat Flour (required)
+- Size/Weight (required)
+- Requested Custom Weight in kg (shown only for Above 10kg)
+- Quantity stepper (required, minimum 1)
+- Occasion or Theme
+- Reference Image
+- Cake Message
+- Special Instructions
+- Requested Delivery Date and Time
+- Quoted Price
+- Payment Method (selected when a payable final quote is available)
+- Payment Status (pre-payment requests remain Pending)
+
+Admin actions:
+- Accept
+- Request Clarification
+- Reject with Reason
+- Confirm Price
+- Move to Production
+- Assign Delivery Partner when ready
+
+Validation rules:
+- Block submission when flavour, egg preference, sugar type, flour type, size, or quantity is missing.
+- Custom Cake scheduling uses separately configured availability and feasibility rules; it does not inherit the Wedding or Anniversary Cakes 72-to-720-hour window.
+- Standard Custom Cake weights up to 10kg can use automatic ingredient pricing.
+- Above-10kg requests require Admin feasibility review and manual quote approval before acceptance.
+- Enforce the daily Custom Cakes quota.
+- Show the customer a clear reason when a request cannot be submitted.
+
+Custom cake statuses:
+- Not Accepted
+- Clarification Requested
+- Rejected
+- Accepted
+- Preparing
+- Packed
+- Ready for Delivery
+- Assigned
+- Picked Up
+- Out for Delivery
+- Delivered
+- Cancelled
+
+------------------------------------------------------------
+3.5 PRODUCTION QUEUE
+------------------------------------------------------------
+
+Purpose:
+Manage preparation for all production-enabled categories and subcategories in one queue.
+
+Required columns:
+- Order ID
+- Parent Category
+- Subcategory
+- Product or Theme
+- Configured Options and Add-Ons
+- Quantity
+- Required By
+- Status
+- Actions
+
+Actions:
+- Start Preparing
+- Mark Packed
+- Mark Ready for Pickup for Pickup-at-Store
+- Mark Ready for Delivery for Doorstep-Delivery
+
+Sort priority:
+1. Requested delivery time
+2. Custom cake lead-time risk
+3. Accepted time
+
+------------------------------------------------------------
+3.6 DELIVERY PARTNERS
+------------------------------------------------------------
+
+Purpose:
+Manage rider availability and production-house delivery assignments.
+
+Required columns:
+- Partner Name
+- Mobile Number
+- Vehicle Number
+- Online Status
+- Active Order
+- Completed Today
+- Rating
+- Damage Incidents
+- Actions
+
+Assignment rule:
+- Pickup location is always the production house.
+
+Automatic assignment rules:
+- Admin chooses Automatic or Manual assignment in the dashboard/settings.
+- Automatic assignment runs after order acceptance and reserves the rider for the requested pickup window.
+- Only Active, Online, Accept Deliveries ON riders are eligible.
+- Prefer the lowest active workload, then shortest production-house distance, then highest rating.
+- Send the assignment to one rider at a time.
+- On rejection or timeout, offer it to the next eligible rider.
+- After all eligible riders fail, alert Admin and keep the delivery Pending Assignment.
+- Admin can manually assign or reassign any order before Picked Up.
+- Once Picked Up, reassignment requires an exception reason.
+
+------------------------------------------------------------
+3.6A DELIVERY & PICKUP SETTINGS
+------------------------------------------------------------
+
+Purpose:
+Give Admin full control over customer fulfilment methods, distance bands, fees, and pickup instructions.
+
+Controls:
+- Pickup-at-Store ON/OFF
+- Doorstep-Delivery ON/OFF
+- Pickup Address, map pin, operating hours, instructions, and contact number
+- Distance Provider and Route Calculation status
+- Maximum Doorstep Distance
+- Custom Cakes Delivery Fee Exempt ON/OFF (default ON)
+- Distance-band table with Add/Edit/Disable actions
+
+Default distance bands for the Cakes parent and eligible Cakes subcategories:
+
+```text
+| From Distance | To Distance | Boundary Rule | Fee    | Status |
+| 0 km          | 5 km        | <= 5 km       | Rs 0   | Active |
+| 5 km          | 8 km        | >5 to <=8 km  | Rs 39  | Active |
+| 8 km          | 10 km       | >8 to <=10 km | Rs 59  | Active |
+| 10 km         | 15 km       | >10 to <=15km | Rs 159 | Active |
+```
+
+Rules:
+- Use server-side road-route distance, not customer-entered distance or straight-line distance.
+- Round only for display; select the fee band using the unrounded provider distance.
+- Save distance, origin/destination coordinates, fee rule, fee amount, and calculation time on the order.
+- If route calculation fails, do not guess a fee; ask customer to retry or choose pickup.
+- Admin can change future fee rules, but existing orders retain their saved fee snapshot.
+- `Pickup-at-Store` orders require no customer delivery address, distance calculation, delivery partner, or delivery fee.
+- `Doorstep-Delivery` orders require a validated address and coordinates.
+- Custom Cake doorstep delivery remains free, but serviceability and scheduling checks still apply.
+- Pickup queue columns: Order ID, Customer, Phone, Category, Pickup Time, Pickup Status, Collected By, Validation Status, and Actions.
+
+NYC Cookies-only delivery coverage:
+- Render this card only when the selected subcategory code is `GUNUCO_NYC_COOKIES`.
+- Owner and Admin edit; Branch Manager sees effective values read-only.
+- Regular City Delivery ON/OFF uses existing road-distance serviceability, fees, slots, and local delivery partners.
+- All-India Delivery ON/OFF exposes All States & UTs or Selected States & UTs.
+- Selected mode has searchable state/UT multi-select, Select All, Clear All, enabled count, per-row ON/OFF, and changed-state summary before Save.
+- Require Nationwide Shipping Fee, Minimum Delivery Days, and Maximum Delivery Days when All India is ON.
+- Require at least one delivery toggle ON; require at least one state/UT in Selected mode.
+- Defaults: Regular City ON; All India OFF.
+- Saving requotes affected unpaid carts. Paid orders retain state, coverage mode, shipping fee, and delivery-window snapshots.
+- Nationwide orders create courier shipments and never enter local delivery-partner assignment.
+- POS remains Pickup-at-Store only.
+- Delivery coverage does not alter customization. NYC Cookies continues to use independent category/subcategory/product Inherit/ON/OFF controls, and Admin enables only the customization groups required for each product.
+
+Nationwide shipment workspace:
+- Filter to NYC Cookies Nationwide-Delivery orders only.
+- Columns: Order ID, Customer, State/UT, Items, Quantity, Shipping Fee, Delivery Window, Carrier, Tracking Number, Estimated Delivery Date, Status, Updated At, Actions.
+- Statuses: Pending Dispatch, Booked, Dispatched, In Transit, Out for Delivery, Delivered, Delivery Failed, Returned, Cancelled.
+- Require carrier and tracking number from Booked onward; require dispatch time from Dispatched onward; require delivered time before Delivered.
+- Marking the shipment Delivered is required before the order can become Delivered.
+- Local delivery partners never receive nationwide assignments.
+
+------------------------------------------------------------
+3.7 OFFERS AND DISCOUNTS
+------------------------------------------------------------
+
+Offer fields:
+- Offer Name
+- Discount Type
+- Discount Value
+- Scope: Parent Category, Subcategory, or Selected Products; add-on scope is deferred
+- Start Date and Time
+- End Date and Time
+- Maximum Usage Count
+- Available ON/OFF
+- Server-calculated preview
+- No stacking control. Automatically apply the single best eligible offer and show why it won.
+- Add-on offer scope is deferred at launch.
+
+------------------------------------------------------------
+3.7A CUSTOMER FEEDBACK
+------------------------------------------------------------
+
+Customer experience:
+- After an authenticated customer's order reaches Collected or Delivered, create one feedback request for that order.
+- Launch defaults: send the initial request after 24 hours, disable the optional single reminder until configured, and expire the request after 168 hours. Always expose the same request in the application notification center.
+- Opening the request shows order ID, completion date, one text-only message field, consent checkbox, Submit, and Not Now. Do not show image or file upload.
+- Do not show stars, numeric scores, reactions, per-product comments, or public posting controls.
+- Permit one submission per completed order. The customer may edit or withdraw it while moderation status is Pending.
+- No separate public-use consent is required to submit private service feedback. A separate optional testimonial-consent checkbox controls public display in the application and static website.
+
+Admin table:
+- Feedback ID, Order ID, Customer, Message excerpt, Submitted At, Consent, Moderation Status, Moderator, and Actions
+- Filter by Pending, Approved, Rejected, or Withdrawn; search by order ID or customer phone.
+- Actions: View, Approve, Reject, Withdraw, and Create Testimonial when approved with active consent.
+
+Rules:
+- Only completed orders owned by the authenticated customer are eligible.
+- Store push/in-app delivery and open timestamps independently from the feedback submission.
+- Moderate feedback text before any public use. Rejection requires an internal reason and never deletes the audit record.
+- Customer feedback is order-level message feedback only and is never converted into product ratings or aggregate stars.
+
+------------------------------------------------------------
+3.7B TESTIMONIALS
+------------------------------------------------------------
+
+Admin creates a testimonial only from approved feedback that has explicit public testimonial consent.
+
+Fields:
+- Source Feedback and Order ID, read-only
+- Customer Display Name
+- Approved Quote
+- Approved Image
+- Placement: Customer App, Static Website, or Both
+- Display Order
+- Active From and Active To
+- Active ON/OFF
+
+Rules:
+- The approved quote may shorten the source message without changing its meaning. Keep the source feedback immutable.
+- Require an approved image before publishing. Do not synthesize a rating or display stars.
+- Customer consent withdrawal immediately deactivates all linked testimonials.
+- Application and static website render the same API-backed ordered image carousel, excluding inactive, expired, withdrawn, or unapproved records.
+- Carousel includes previous/next controls, position indicators, swipe support, pause on hover/focus, keyboard operation, alt text, and no automatic motion when reduced motion is requested.
+
+------------------------------------------------------------
+3.8 CANCEL ORDERS
+------------------------------------------------------------
+
+Cancellation fields:
+- Order ID
+- Current Status
+- Cancellation Reason
+- Internal Notes
+- Original Amount
+- Deduction Amount and Reason
+- Refund Amount
+- Notify by SMS
+- Notify by Email
+
+Rules:
+- Customer cancellation uses elapsed server time from confirmed booking payment, not production status.
+- Default 0 through 30 minutes: cancellation allowed with 100 percent refund of captured amount.
+- Default after 30 through 60 minutes: cancellation allowed with 50 percent refund of captured amount.
+- After 60 minutes: customer cancellation unavailable; show Raise Support Ticket.
+- `Preparing` remains an internal production status and does not change cancellation eligibility.
+- `Out for Delivery` and `Delivered` are never customer-cancellable.
+- Refund base is the verified full payment captured. Refund delivery fee when delivery has not started.
+- Authorized Admin cancellation for GUNUCO fulfilment failure uses Admin Exception with a required reason.
+- Delivered: use the Returns workflow.
+- Record the actor, reason, amounts, timestamp, and notifications.
+
+Admin cancellation policy controls:
+- Policy Name
+- Scope: Global, Location, Parent Category, or Subcategory
+- Full Refund Window Minutes, default 30
+- Final Partial Refund Deadline Minutes, default 60
+- Partial Refund Percentage, default 50
+- Effective From and Effective To
+- Active ON/OFF
+- Policy preview with example booking time, deadlines, captured refund base, refund, and non-refundable amount
+
+Owner has full authority. Admin can create and schedule policies. Branch Manager sees the effective policy read-only. Saving creates a new policy version for future bookings; existing orders retain their booking-time snapshots.
+
+------------------------------------------------------------
+3.9 REFUNDS
+------------------------------------------------------------
+
+Required columns:
+- Refund ID
+- Order ID
+- Customer
+- Payment Method
+- Refund Amount
+- Status
+- Retry Attempts
+- Initiated At
+- Completed At
+- Actions
+
+Statuses:
+- Pending
+- Processing
+- Completed
+- Failed
+- Manual Review
+
+Rules:
+- Refund to the original payment method where possible.
+- Never refund more than the captured payment.
+- Retry failed gateway refunds up to three times.
+- Payment detail includes every full-payment attempt plus gateway callbacks and immutable status history.
+- Cancellation detail includes Customer/Admin/System actor, policy snapshot, elapsed minutes, tier, percentage, deduction, refund amount, and correlation ID.
+- Refund detail includes source cancellation or return, payment, method, idempotency key, attempts, gateway reference, failures, actor, and immutable status history.
+- Move to Manual Review after the final failed retry.
+
+------------------------------------------------------------
+3.10 RETURNS
+------------------------------------------------------------
+
+Required fields:
+- Order ID
+- Return Reason
+- Issue Description
+- Photo Evidence
+- Severity: Low, Medium, or High
+- Proposed Resolution
+- Resolution Amount
+- Customer Response
+- Admin Notes
+
+Resolution options:
+- Full Refund
+- Partial Refund
+- Replacement
+- Store Credit
+- Reject Return
+
+Rules:
+- Validate the configured return window.
+- High-severity cases require escalation.
+- Replacement creates a priority production-house order.
+- Returned food products must never become sellable again.
+- Returned item quantities enter Pending Disposal and require disposal method, responsible Admin, and timestamp before closure.
+
+------------------------------------------------------------
+3.11 ACCESS
+------------------------------------------------------------
+
+Web Admin Panel roles:
+- Owner
+- Admin
+- Branch Manager
+
+Separate application identities:
+- Customer Support Agent
+- Delivery Partner
+
+Rules:
+- Owner is highest and manages Admins, Branch Managers, delivery partners, branches, role permissions, and admin-location assignments.
+- Admin may manage Branch Managers and delivery partners within authorized operations.
+- Branch Manager requires one or more location assignments and explicit POS permission.
+- Customer Support Agent signs in only to the support portal and sees ticket data plus the minimum linked-order summary read-only.
+- Customer Support Agent cannot change orders, cancellation eligibility, payments, production, fulfilment, refunds, catalogue, users, or settings.
+- No lower role can create, modify, suspend, or remove a higher role.
+- Mobile Number is the login identifier.
+- Passwords must be stored as secure hashes.
+- Disabled or suspended accounts cannot log in.
+
+Role access matrix:
+
+```text
+Area                           Owner         Admin         Branch Manager
+All global controls            Full          Read-only     Read-only
+Branches and admin assignment  Full          No access     No access
+Menu definitions               Full          Manage        Read-only
+Location menu overrides        Full          Manage        Assigned locations only
+Orders and production          Full          Manage        Assigned locations only
+Support Tickets                Full          All operations Assigned locations limited
+POS                            Full          Authorized    Assigned locations when enabled
+Pickup Order ID validation     All locations Authorized   Assigned locations only
+Reports                        Full          Authorized    Assigned-location reports
+```
+
+------------------------------------------------------------
+3.12 REPORTS
+------------------------------------------------------------
+
+Report groups:
+- Orders by parent category, subcategory, product, and Custom Cake workflow
+- Add-on quantity, revenue, discounts, and location performance
+- Revenue and refunds
+- Product performance
+- Flavour trends
+- Egg versus Eggless trends
+- Sugar type trends
+- Flour type trends
+- Quantity and size trends
+- Custom cake trends
+- Cancellation and return reasons
+- Delivery partner performance
+- Payment reconciliation
+
+------------------------------------------------------------
+3.13 SETTINGS
+------------------------------------------------------------
+
+Sections:
+- Production House Profile and Pickup Address
+- Operating Hours
+- Service Area
+- Timezone
+- Global Accept Orders
+- Configurable parent-category and subcategory acceptance modes
+- Custom Cakes Acceptance
+- Global Daily Quota
+- Category Daily Quotas
+- Cake Daily Quantity Quotas
+- Custom Cake Daily Quota
+- Custom Cake Minimum Lead Time
+- Wedding or Anniversary Cakes minimum lead time: fixed 72 hours
+- Wedding or Anniversary Cakes maximum advance window: fixed 720 hours
+- Eligible Cakes-subcategory Same-Day Delivery ON/OFF, cutoff, preparation lead time, slots, capacity, and service area
+- Flavour Master
+- Egg Preference Master: Egg and Eggless
+- Sugar Type Master
+- Flour Type Master: Maida and Wheat Flour
+- Option Price Adjustments by Cake
+- Ingredient Pricing Matrix and price-breakdown preview
+- Size/Weight Master
+- Standard catalogue weights fixed to 500g, 1kg, 2kg, and 3kg maximum
+- Custom Cake weights through 10kg plus an Above-10kg manual quote path
+- Payment Settings
+- Cashless Full Payment only; no advance, installment, balance, or pay-later controls
+- Full-payment verification and payment-failure alerts
+- Notification Settings
+- Return Window
+- Category and Subcategory Master
+- Add-On Master, required/optional rules, quantity ranges, assignments, location availability, and price overrides
+- Global POS and Location POS controls
+- Branch feature flag, location configuration, location-category availability, and admin-location assignments
+
+------------------------------------------------------------
+3.14 GUIDED SUPPORT AND SUPPORT PANEL
+------------------------------------------------------------
+
+Guided customer support:
+- Use a predefined topic menu and stored rules for Cancel Order, Payment, Pickup, Delivery, Refund, Return, Custom Cake, and Something Else.
+- This feature uses normal application code and SQL only. Do not use an LLM, AI service, generated reply, or autonomous agent.
+- From a signed-in order, populate Order ID, name, and phone from verified order data.
+- For cancellation, evaluate booking-time policy snapshots and current server time. Show the full-refund, partial-refund, or unavailable result; do not use `Preparing` to decide eligibility.
+- Guided Support cannot modify orders, mark payments, approve refunds, or override business rules.
+- When guidance does not resolve the issue, show Raise Support Ticket.
+
+Main web Admin Support Tickets:
+- Add `Support Tickets` to `https://admin.gunuco.com` navigation.
+- Owner and Admin see all authorized tickets. Admin has every ticket-operational control; Owner retains final authority and support-account/global-setting governance.
+- Branch Manager sees tickets linked to assigned-location orders and may View, Reply, Add Internal Note, Set Open, and Set Pending only.
+- Cards: Total, New, Open, Pending, Closed, Urgent, Unassigned, and Escalated.
+- Filters: Ticket ID, Order ID, customer name/phone, status, priority, assigned agent, escalation owner, source, location, and date range.
+- Columns: Ticket ID, Order ID, Customer, Message Preview, Priority, Status, Assigned Agent, Escalation Owner, Created At, Updated At, and Actions.
+- Actions: View, Assign/Reassign/Unassign, Set Priority, Reply, Add Internal Note, Set Open, Set Pending, Escalate/Take Escalation, Close, and Reopen.
+- Close requires a resolution note. Reopen requires a reason. Record the Admin actor and timestamp in immutable ticket history.
+- Ticket detail includes conversation, authorized private photos, linked order snapshot, email events, assignment, escalation, notes, and complete history.
+- Use authorized order/payment/refund/production/delivery screens for domain changes and store their reference in ticket history; ticket actions cannot bypass those rules.
+
+Customer input:
+- Message
+- Up to 3 optional photos
+
+Photo rules:
+- Three fixed upload slots with preview and remove
+- JPEG, PNG, or WebP only
+- Maximum 5 MB per photo
+- Validate file content, scan uploads, store privately, and authorize viewing
+
+Ticket submission rules:
+- Available from Guided Support and Application Support Form only.
+- Submit from the application and email `support@gunuco.com` from the application service; never require the customer to open an email client.
+- Validate that the Order ID exists and Phone Number matches the order using privacy-safe errors.
+- Use an idempotency key so retrying cannot create duplicate tickets.
+- Generate Ticket ID atomically in `YYMM-NN` format with a monthly sequence, for example `2608-01` and `2608-125`.
+- Generate subject `Ticket {Ticket ID} | Order {Order ID}` for both mailbox and dashboard.
+- On success show Ticket ID, New status, creation time, and View Ticket.
+
+Support login:
+- URL: `https://support.gunuco.com/login`
+- Email, Password, Sign In, Forgot Password, and MFA when enabled
+- Invalid credentials, suspended account, rate limit, session expired, and service unavailable states
+- Support accounts cannot authenticate into owner or admin portals
+- Admin creates one account per freelancer, sets access expiry, activates/suspends access, limits active users and concurrent sessions, and revokes access. Shared credentials are not allowed.
+
+Support dashboard cards:
+- Total Tickets
+- New
+- Open
+- Pending
+- Closed
+
+Filters:
+- Ticket ID
+- Order ID
+- Status
+- Priority
+- Assigned Agent
+- Source Channel
+- Date Range
+
+Columns:
+- Ticket ID
+- Order ID
+- Subject
+- Message Preview
+- Photos
+- Status
+- Assigned Agent
+- Created At
+- Last Updated At
+- Actions
+
+Ticket statuses:
+- New
+- Open
+- Pending
+- Closed
+
+Ticket detail shows:
+- Ticket ID and status
+- Generated subject, customer message, and up to three photos
+- Read-only minimum order summary and order-status snapshot
+- Matched predefined rule and version
+- Conversation timeline and internal notes
+- Assigned agent and email-delivery timestamps
+- Complete ticket history
+
+Actions:
+- Assign to Me
+- Reassign
+- Reply
+- Add Internal Note
+- Set Open
+- Set Pending
+- Escalate to Admin
+- Close
+
+Assignment rules:
+- Assign new tickets transactionally to the available active agent with the fewest non-closed tickets.
+- Break ties using the agent who was assigned least recently, producing an equal split for two, three, or more working agents.
+- Skip suspended, expired, unavailable, or logged-out agents. Admin can reassign.
+
+Mailbox behavior:
+- Support staff can see Ticket ID, Order ID, subject, message, and permitted photos in email and the dashboard.
+- Inbound email replies append to the same ticket conversation.
+- Show email Pending, Sent, Received, Failed, and Bounced events. Deduplicate inbound messages by provider message ID.
+- The dashboard database is the source of truth for ownership and status.
+
+Every assignment, reply, note, status change, email, and closure is audited. Support staff cannot bypass cancellation or refund rules.
+
+============================================================
+4. DELIVERY PARTNER PANEL
+============================================================
+
+BOTTOM NAVIGATION
+
+Orders
+Earnings
+Profile
+
+This panel is mobile-first.
+
+------------------------------------------------------------
+4.1 DELIVERY ORDERS
+------------------------------------------------------------
+
+Active order fields:
+- Opaque Assignment Reference; never show internal OrderID or customer-facing Order ID
+- Parent Category
+- Subcategory
+- Product and selected Add-Ons
+- Quantity
+- Fragile or Custom Cake indicator
+- Pickup-at-Store Address
+- Customer Address and Map
+- Customer Phone
+- Delivery Notes
+- Requested Pickup Time
+- Assignment Accept-By Time
+
+Actions:
+- Accept Assignment
+- Reject Assignment with Reason
+- Call Customer
+- Open Navigation
+- Mark Picked Up
+- Mark Out for Delivery
+- Enter and Validate Order ID
+- Mark Delivered (enabled only after a successful Order ID match)
+- Report Delivery Problem
+
+Delivery statuses:
+- Pending Assignment
+- Assigned
+- Accepted
+- Picked Up
+- Out for Delivery
+- Delivered
+- Failed
+
+Application behavior:
+- New automatic assignments generate an in-app notification.
+- Rider sees pickup time, production-house location, customer area, distance, and estimated earnings before accepting.
+- Accepting reserves the assignment and updates Admin in real time.
+- Rejecting requires a reason and sends the assignment back for automatic fallback.
+- Rider can only update status for an assignment they accepted.
+- Load rider assignments through assignment-scoped endpoints and the rider-safe projection only. Do not expose internal `OrderID` or public `PublicOrderID` in lists, details, notifications, deep links, device-visible logs, analytics payloads, validation responses, or success messages.
+- The rider uses Call Customer at the destination, asks for the Order ID, enters it into a blank field, and sees only `Order confirmed` or a generic failure. Never echo the submitted, matched, or expected Order ID.
+
+------------------------------------------------------------
+4.2 EARNINGS
+------------------------------------------------------------
+
+Required items:
+- Deliveries Completed Today
+- Earnings Today
+- Earnings This Week
+- Incentives
+- Payout History
+
+------------------------------------------------------------
+4.3 PROFILE
+------------------------------------------------------------
+
+Required items:
+- Name
+- Mobile Number
+- Vehicle Number
+- Rating
+- Availability ON/OFF
+- Accept Deliveries ON/OFF
+- Support Contact
+
+============================================================
+5. ORDER STATUS MATRIX
+============================================================
+
+| Stage | Owner | Meaning |
+|---|---|---|
+| Not Accepted | Admin/System | Captured but not approved |
+| Accepted | Owner/Admin/Authorized Branch Manager/System | Approved for production |
+| Preparing | Production House | Cake preparation started |
+| Packed | Production House | Packed for handoff |
+| Ready for Delivery | Production House | Awaiting rider assignment or pickup |
+| Delivery Partner Assigning | Admin/System | Assignment in progress |
+| Assigned | Delivery Partner | Rider assigned |
+| Picked Up | Delivery Partner | Collected from production house |
+| Out for Delivery | Delivery Partner | Travelling to customer |
+| Delivered | Delivery Partner | Successfully delivered |
+| Cancelled | Authorized Admin/System | Cancelled before completion |
+| Return Requested | Customer/Admin | Post-delivery issue raised |
+| Resolved | Authorized Admin | Return or exception closed |
+
+For `Pickup-at-Store`, the primary production status remains `Packed` while the separate pickup status moves through `Pickup Scheduled`, `Ready for Pickup`, and `Collected`. `Ready for Delivery` and all rider statuses apply only to `Doorstep-Delivery`.
+
+============================================================
+6. CURRENT IMPLEMENTATION RULES
+============================================================
+
+- Use the GUNUCO brand in every screen and notification.
+- Support configurable parent categories and subcategories. Launch with Cakes and its seven approved subcategories, plus the Custom Cake workflow; keep Coffee, Pizza, and Burgers inactive.
+- Treat GUNUCO PREMIUM CAKES as the curated Cakes subcategory managed by Owner or Admin.
+- Admin can create future Coffee, Pizza, Burgers, and other parent categories or subcategories from Menu Management.
+- Owner has full control and final authority. Admin manages definitions and operations. Branch Manager controls only authorized-location operations and menu overrides.
+- The production house prepares and packs all orders.
+- Every delivery starts at the production house.
+- Flavour, Egg or Eggless, sugar type, flour type, size/weight, and quantity are explicit selections.
+- Each eligible Cakes subcategory and product can use same-day delivery when all admin-configured capacity and timing checks pass.
+- Option pricing is recalculated by the server and snapshotted on the order.
+- Keep one primary order lifecycle visible in reporting.
+- Returned food never becomes sellable again.
+- Store reasons for rejection, cancellation, refund adjustment, return, and delivery failure.
+
+============================================================
+6A. PRODUCTION HARDENING (NO FUNCTIONALITY CHANGE)
+============================================================
+
+These controls supplement the existing screens and processes. They must not change approved roles, categories, add-ons, prices, delivery fees, quotas, statuses, fulfilment methods, or customer-visible behavior.
+
+Server integrity:
+- Use explicit server-side commands for every order, production, pickup, delivery, cancellation, refund, and return transition.
+- Validate current state, role, active account, assigned location, POS permission, fulfilment method, and completed payment for every command. Validate rider assignment for local Doorstep-Delivery commands and courier shipment ownership/state for Nationwide-Delivery commands.
+- Commit Order ID allocation, quote snapshots, quota/slot reservation, payment confirmation, order creation, audit history, and outbox events in one atomic booking transaction.
+- Use concurrency-safe quota and slot reservations and optimistic concurrency for editable admin records.
+- Record previous/new order, pickup, and delivery states with actor, reason, correlation ID, and timestamp.
+
+Payment integrity:
+- Attach an idempotency key to checkout, full-payment, and refund requests. Retrying the same request returns the original result.
+- Treat gateway return screens as Processing until a signature-verified webhook or authoritative gateway lookup confirms payment.
+- Ignore duplicate provider event IDs safely and reconcile captured, refunded, and order amounts.
+- Use INR fixed-decimal calculations and documented two-decimal rounding; never use floating point for money.
+
+UI states:
+- Disable repeated submission while a command is pending and reuse the original idempotency key for retry.
+- Provide loading, empty, permission-denied, stale-data conflict, external-service failure, retry, and offline states.
+- Preserve form data after recoverable failures.
+- For stale updates, show `Record changed by another user` and `Review Latest`; never silently overwrite.
+- Confirm destructive and financial actions and show a correlation/reference ID in the result.
+
+Security and operations:
+- Require MFA for Owner and support session expiration, revocation, secure reset, and rate limiting.
+- Rate-limit login, password reset, Order ID validation, quote, route, payment, and upload endpoints.
+- Validate and malware-scan uploads; use private storage and short-lived signed URLs.
+- Process notifications, rider assignment, gateway follow-up, refunds, and integration events through a transactional outbox and retryable workers.
+- Monitor payment-without-order, quota conflicts, stuck orders, assignment exhaustion, repeated validation failures, refund failures, route failures, webhook failures, and outbox backlog.
+- Use versioned migrations, encrypted point-in-time backups, restore drills, and documented recovery objectives.
+
+Release verification:
+- Test every role/location boundary, state transition, full-payment path, fulfilment method, category module, add-on rule, cancellation, refund, and return.
+- Test concurrent final-quota checkout, duplicate callbacks, simultaneous edits, annual sequence allocation, and rider reassignment.
+- Complete security, accessibility, load, reconciliation, provider-failure, and backup-restore testing before launch.
+
+============================================================
+7. LOCATION AND FUTURE CATEGORY READINESS
+============================================================
+
+Branches remain feature-disabled at launch, but the implementation includes the location contract from the first release:
+- Owner-only branch creation and activation behind a feature flag
+- Branch Manager role and location-scoped authorization
+- Category, subcategory, product, add-on, quota, POS, order, fulfilment, and reporting records tied to location
+- Server-selected order location; never trust an unrestricted client location value
+- Disabling a location or its POS blocks new activity while preserving history
+
+Admin can add future categories and subcategories without a migration. Coffee, Pizza, Burgers, and other names are examples only and must not be hard-coded. Their product modules use configurable schemas and do not require cake-only fields.
+
+============================================================
+8. FINAL DELIVERY NOTE
+============================================================
+
+Use this document with `END_TO_END_WORKFLOW.md`, `UI_WIREFRAME_REFERENCE.md`, and `tables.sql` as the implementation handoff. All four files describe the same current production-house-only model.

@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/src/providers';
 import { useAuth } from '@/src/hooks';
@@ -12,10 +12,12 @@ import type { ProductSummary } from '@/src/types';
 import {
   EmptyState,
   ErrorState,
+  GIcon,
   GText,
   Header,
   ProductGridList,
   ProductListSkeleton,
+  WishlistEmptyVisual,
 } from '@/src/components';
 
 export default function WishlistScreen() {
@@ -93,13 +95,36 @@ export default function WishlistScreen() {
   );
 
   const products = wishlistQuery.data?.items ?? [];
+  const searchSlot = (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Search"
+      onPress={() => router.push('/(tabs)/search')}
+      hitSlop={8}
+      style={{
+        width: theme.dimensions.touchMin,
+        height: theme.dimensions.touchMin,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <GIcon name="search-outline" />
+    </Pressable>
+  );
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.bg.canvas }}>
-      <Header title="Wishlist" showBack onBackPress={goBack} />
+      <Header
+        title={products.length ? 'Wishlist' : 'My Wishlist'}
+        showBack
+        onBackPress={goBack}
+        titleAlign="center"
+        bordered={false}
+        rightSlot={searchSlot}
+      />
 
       {actionMessage ? (
-        <View style={{ paddingHorizontal: theme.spacing.lg, paddingTop: theme.spacing.sm }}>
+        <View style={{ paddingHorizontal: theme.spacing.lg, paddingBottom: theme.spacing.sm }}>
           <GText variant="bodySm" color={actionMessage.tone === 'success' ? 'success' : 'danger'}>
             {actionMessage.text}
           </GText>
@@ -109,7 +134,8 @@ export default function WishlistScreen() {
       {!isAuthenticated ? (
         <EmptyState
           title="Sign in to see your wishlist"
-          description="Save products here to find them easily later."
+          description="Save your favourite cakes and treats here for later."
+          illustration={<WishlistEmptyVisual />}
           actionLabel="Sign in with phone"
           onAction={onSignIn}
         />
@@ -124,10 +150,10 @@ export default function WishlistScreen() {
         />
       ) : products.length === 0 ? (
         <EmptyState
-          title="Your wishlist is empty"
-          description="Save products here to find them easily later."
-          iconName="heart-outline"
-          actionLabel="Continue shopping"
+          title="Found something you love?"
+          description="Save your favourite cakes and treats here for later."
+          illustration={<WishlistEmptyVisual />}
+          actionLabel="Continue Shopping"
           onAction={() => router.replace('/(tabs)')}
         />
       ) : (
@@ -135,8 +161,8 @@ export default function WishlistScreen() {
           products={products}
           refreshing={refreshing}
           errorMessage={null}
-          emptyTitle="Your wishlist is empty"
-          emptyDescription="Save products here to find them easily later."
+          emptyTitle="Found something you love?"
+          emptyDescription="Save your favourite cakes and treats here for later."
           showWishlist
           showAddButton
           onRefresh={() => {
@@ -146,6 +172,35 @@ export default function WishlistScreen() {
           onAddPress={(product) => {
             void onAddPress(product);
           }}
+          onNotifyPress={() => {
+            setActionMessage({
+              tone: 'success',
+              text: 'We will notify you when this is back in stock.',
+            });
+          }}
+          ListHeaderComponent={
+            <View
+              style={{
+                marginHorizontal: theme.spacing.sm,
+                marginBottom: theme.spacing.md,
+                backgroundColor: theme.colors.bg.surfaceMuted,
+                borderRadius: theme.radius.xl,
+                padding: theme.spacing.lg,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: theme.spacing.md,
+              }}
+            >
+              <GIcon name="heart" color={theme.colors.brand.primary} />
+              <View style={{ flex: 1 }}>
+                <GText variant="label">Saved for later</GText>
+                <GText variant="bodySm" color="secondary">
+                  {products.length} {products.length === 1 ? 'treat' : 'treats'} waiting in your
+                  GUNUCO wishlist.
+                </GText>
+              </View>
+            </View>
+          }
         />
       )}
     </View>

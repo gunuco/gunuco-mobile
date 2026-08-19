@@ -1,8 +1,8 @@
+import { useTheme } from '@/src/providers';
 import React from 'react';
 import { Pressable, View } from 'react-native';
-import { useTheme } from '@/src/providers';
+import { GIcon, type GIconName } from './GIcon';
 import { GText } from './GText';
-import { GIcon } from './GIcon';
 
 export type ListRowProps = {
   title: string;
@@ -10,6 +10,7 @@ export type ListRowProps = {
   onPress?: () => void;
   showChevron?: boolean;
   right?: React.ReactNode;
+  iconName?: GIconName;
   accessibilityLabel?: string;
   accessibilityHint?: string;
   disabled?: boolean;
@@ -21,6 +22,7 @@ export function ListRow({
   onPress,
   showChevron = true,
   right,
+  iconName,
   accessibilityLabel,
   accessibilityHint,
   disabled,
@@ -44,6 +46,7 @@ export function ListRow({
         opacity: disabled ? 0.5 : pressed ? 0.7 : 1,
       })}
     >
+      {iconName ? <GIcon name={iconName} color={theme.colors.text.primary} /> : null}
       <View style={{ flex: 1, gap: 2 }}>
         <GText variant="bodyMd">{title}</GText>
         {subtitle ? (

@@ -25,6 +25,7 @@ export default function CategoryProductsScreen() {
 
   const [sortOpen, setSortOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [filterPane, setFilterPane] = useState<string | undefined>();
   const [refreshing, setRefreshing] = useState(false);
 
   const {
@@ -95,6 +96,11 @@ export default function CategoryProductsScreen() {
   const title = data?.category?.name ?? category?.name ?? 'Products';
   const showInitialSkeleton = isLoading && !data;
 
+  const openFilters = useCallback((paneId?: string) => {
+    setFilterPane(paneId);
+    setFilterOpen(true);
+  }, []);
+
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.bg.canvas }}>
       <Header
@@ -116,7 +122,7 @@ export default function CategoryProductsScreen() {
           sortOptions={sortOptions}
           filterGroups={filterGroups}
           onOpenSort={() => setSortOpen(true)}
-          onOpenFilter={() => setFilterOpen(true)}
+          onOpenFilter={openFilters}
           onClearFilters={clearFilters}
           onClearPrice={() => setPriceRange(undefined, undefined)}
           onClearFilterKey={(key) => setFilterValue(key, undefined)}
@@ -162,9 +168,14 @@ export default function CategoryProductsScreen() {
 
       <FilterSheet
         visible={filterOpen}
-        onClose={() => setFilterOpen(false)}
+        onClose={() => {
+          setFilterOpen(false);
+          setFilterPane(undefined);
+        }}
         selection={selection}
         filterGroups={filterGroups}
+        resultCount={data?.total}
+        initialPane={filterPane}
         onApply={applySelection}
         onClear={clearFilters}
       />

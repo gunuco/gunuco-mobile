@@ -18,6 +18,11 @@ export type ProductInfoSection = {
   body: string;
 };
 
+export type ProductHighlight = {
+  label: string;
+  value: string;
+};
+
 export type ProductOptionValue = {
   id: string;
   label: string;
@@ -62,6 +67,7 @@ export type ProductDetail = ProductSummary & {
   quantityMin?: number;
   quantityMax?: number;
   infoSections?: ProductInfoSection[];
+  highlights?: ProductHighlight[];
   optionGroups?: ProductOptionGroup[];
   category?: CategorySummary | null;
   isWishlisted?: boolean;

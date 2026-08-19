@@ -9,6 +9,7 @@ export type EmptyStateProps = {
   title: string;
   description?: string;
   iconName?: GIconName;
+  illustration?: React.ReactNode;
   actionLabel?: string;
   onAction?: () => void;
 };
@@ -17,6 +18,7 @@ export function EmptyState({
   title,
   description,
   iconName = 'file-tray-outline',
+  illustration,
   actionLabel,
   onAction,
 }: EmptyStateProps) {
@@ -27,11 +29,16 @@ export function EmptyState({
       style={{
         alignItems: 'center',
         justifyContent: 'center',
-        padding: theme.spacing['2xl'],
+        paddingHorizontal: theme.spacing['2xl'],
+        paddingVertical: theme.spacing['3xl'],
+        maxWidth: 420,
+        alignSelf: 'center',
+        width: '100%',
         gap: theme.spacing.sm,
+        flexGrow: 1,
       }}
     >
-      <GIcon name={iconName} size="lg" color={theme.colors.text.disabled} />
+      {illustration ?? <GIcon name={iconName} size="lg" color={theme.colors.text.disabled} />}
       <GText variant="titleSm" align="center">
         {title}
       </GText>
@@ -41,7 +48,12 @@ export function EmptyState({
         </GText>
       ) : null}
       {actionLabel && onAction ? (
-        <GButton title={actionLabel} onPress={onAction} style={{ marginTop: theme.spacing.sm }} />
+        <GButton
+          title={actionLabel}
+          onPress={onAction}
+          fullWidth
+          style={{ marginTop: theme.spacing.sm, borderRadius: theme.radius.pill }}
+        />
       ) : null}
     </View>
   );

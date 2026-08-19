@@ -40,6 +40,7 @@ export {
   changePhoneHref,
   changePhoneOtpHref,
   settingsHref,
+  uiTestHref,
   legalHref,
   legalDocumentHref,
   storeCreditHref,
