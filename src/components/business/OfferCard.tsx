@@ -1,11 +1,11 @@
-import React, { memo } from 'react';
-import { Pressable, View } from 'react-native';
 import { useTheme } from '@/src/providers';
 import type { HomeOffer } from '@/src/types';
+import { memo } from 'react';
+import { Pressable, View } from 'react-native';
+import { GBadge } from '../ui/GBadge';
 import { GCard } from '../ui/GCard';
 import { GImage } from '../ui/GImage';
 import { GText } from '../ui/GText';
-import { GBadge } from '../ui/GBadge';
 
 export type OfferCardProps = {
   offer: HomeOffer;
@@ -37,7 +37,7 @@ function OfferCardComponent({ offer, onPress }: OfferCardProps) {
             style={{
               height: theme.dimensions.offerCard.imageHeight,
               borderRadius: theme.radius.md,
-              backgroundColor: theme.colors.bg.surfaceMuted,
+              // backgroundColor: theme.colors.bg.surfaceMuted,
               alignItems: 'center',
               justifyContent: 'center',
             }}

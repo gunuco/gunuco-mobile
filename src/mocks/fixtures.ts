@@ -1243,19 +1243,25 @@ export function homePayload(
       deliveryContext: { label: 'HITEC City, Hyderabad', isServiceable: true },
       banners: [],
       mainCategories: [],
+      cakeCategories: [],
       subcategories: [],
       featuredProducts: [],
       bestSellers: [],
       offers: [],
       recommendedProducts: [],
+      productSections: [],
       unreadNotificationCount: 0,
     };
   }
-  const featured = RAW_PRODUCTS.filter((item) =>
-    [CATEGORY_PREMIUM, CATEGORY_CHEESECAKE].includes(item.categoryId),
-  )
-    .slice(0, 8)
-    .map((item) => productSummary(item, wishlisted(item.id)));
+  const toSummaries = (categoryId: string, limit = 6) =>
+    productsForCategory(categoryId)
+      .slice(0, limit)
+      .map((item) => productSummary(item, wishlisted(item.id)));
+
+  const featured = toSummaries(CATEGORY_PREMIUM, 8);
+  const coolCakes = toSummaries(CATEGORY_CASUAL, 6);
+  const cheeseCakes = toSummaries(CATEGORY_CHEESECAKE, 6);
+  const decorators = toSummaries(CATEGORY_DECORATIONS, 12);
   const best = RAW_PRODUCTS.filter((item) => item.badgeLabel === 'Bestseller').map((item) =>
     productSummary(item, wishlisted(item.id)),
   );
@@ -1264,6 +1270,28 @@ export function homePayload(
   )
     .slice(0, 8)
     .map((item) => productSummary(item, wishlisted(item.id)));
+  const cakesRoot = findCategoryNode(CATEGORY_CAKES);
+  const cakeCategories =
+    cakesRoot?.children
+      ?.filter((item) => item.isActive !== false)
+      .map((category) => ({
+        id: category.id,
+        name: category.name,
+        imageUrl: category.imageUrl,
+        productCount: category.productCount,
+      })) ?? [];
+  const flavourCategories = [
+    ...(findCategoryNode(CATEGORY_BROWNIES_COOKIES)?.children ?? []),
+    ...(findCategoryNode(CATEGORY_DECORATIONS)?.children ?? []),
+  ]
+    .filter((item) => item.isActive !== false)
+    .slice(0, 8)
+    .map((category) => ({
+      id: category.id,
+      name: category.name,
+      imageUrl: category.imageUrl,
+      productCount: category.productCount,
+    }));
   const banners: HomeBanner[] = [
     {
       id: 'ban-1',
@@ -1302,9 +1330,16 @@ export function homePayload(
       badgeLabel: 'Offer',
       imageUrl: UI_TEST_IMAGES.chocoChipCookie,
     },
+    {
+      id: 'off-3',
+      title: 'Decorator specials',
+      subtitle: 'Balloons & toppers starting ₹48',
+      badgeLabel: 'Offer',
+      imageUrl: UI_TEST_IMAGES.partyDecor,
+    },
   ];
   return {
-    deliveryContext: { label: 'HITEC City, Hyderabad', isServiceable: true },
+    deliveryContext: { label: '54-2, Bharathinagar, Vijayawada, 520008', isServiceable: true },
     banners,
     mainCategories: CATEGORIES.map((category) => ({
       id: category.id,
@@ -1312,18 +1347,47 @@ export function homePayload(
       imageUrl: category.imageUrl,
       productCount: category.productCount,
     })),
-    subcategories: [
-      { id: CATEGORY_PREMIUM, name: 'Premium Cakes', imageUrl: UI_TEST_IMAGES.catPremium },
-      { id: CATEGORY_CHEESECAKE, name: 'Cheesecakes', imageUrl: UI_TEST_IMAGES.catCheesecake },
-      { id: CATEGORY_BROWNIES, name: 'Brownies', imageUrl: UI_TEST_IMAGES.catBrownies },
-      { id: CATEGORY_COOKIES, name: 'NYC Cookies', imageUrl: UI_TEST_IMAGES.catCookies },
-      { id: CATEGORY_WEDDING, name: 'Wedding', imageUrl: UI_TEST_IMAGES.catWedding },
-      { id: CATEGORY_OCCASION, name: 'Occasion', imageUrl: UI_TEST_IMAGES.catOccasion },
-    ],
+    cakeCategories,
+    subcategories: flavourCategories.length
+      ? flavourCategories
+      : [
+          { id: CATEGORY_PREMIUM, name: 'Premium Cakes', imageUrl: UI_TEST_IMAGES.catPremium },
+          { id: CATEGORY_CHEESECAKE, name: 'Cheesecakes', imageUrl: UI_TEST_IMAGES.catCheesecake },
+          { id: CATEGORY_BROWNIES, name: 'Brownies', imageUrl: UI_TEST_IMAGES.catBrownies },
+          { id: CATEGORY_COOKIES, name: 'NYC Cookies', imageUrl: UI_TEST_IMAGES.catCookies },
+          { id: CATEGORY_WEDDING, name: 'Wedding', imageUrl: UI_TEST_IMAGES.catWedding },
+          { id: CATEGORY_OCCASION, name: 'Occasion', imageUrl: UI_TEST_IMAGES.catOccasion },
+        ],
     featuredProducts: featured,
     bestSellers: best.length ? best : featured,
     offers,
     recommendedProducts: recommended,
+    productSections: [
+      {
+        id: 'sec-premium',
+        title: 'Premium Cakes',
+        categoryId: CATEGORY_PREMIUM,
+        products: featured.slice(0, 6),
+      },
+      {
+        id: 'sec-cool',
+        title: 'Cool Cakes',
+        categoryId: CATEGORY_CASUAL,
+        products: coolCakes,
+      },
+      {
+        id: 'sec-cheese',
+        title: 'Cheese Cakes',
+        categoryId: CATEGORY_CHEESECAKE,
+        products: cheeseCakes,
+      },
+      {
+        id: 'sec-decorators',
+        title: 'Decorators',
+        categoryId: CATEGORY_DECORATIONS,
+        products: decorators,
+      },
+    ],
     unreadNotificationCount: unread,
   };
 }

@@ -19,7 +19,13 @@ export type {
   ApiErrorBody,
 } from './auth';
 
-export type { HomeBanner, HomeOffer, HomeDeliveryContext, HomeResponse } from './home';
+export type {
+  HomeBanner,
+  HomeOffer,
+  HomeDeliveryContext,
+  HomeProductSection,
+  HomeResponse,
+} from './home';
 
 export type {
   ProductSort,

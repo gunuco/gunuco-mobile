@@ -12,16 +12,16 @@ import type { StoreCredit } from '@/src/types/storeCredit';
 import type { SupportTicketDetail, SupportTicketSummary } from '@/src/types/support';
 import type { OrderRider, OrderTracking } from '@/src/types/tracking';
 import {
-  COUPON_CODE,
-  DEFAULT_ADDRESS_A,
-  DEFAULT_ADDRESS_B,
-  OTHER_ADDRESS_A,
-  DELIVERY_FEE_PAISE,
-  OFFICE_ADDRESS_A,
-  TAX_BPS,
-  allProducts,
-  findProduct,
-  seedReviews,
+    COUPON_CODE,
+    DEFAULT_ADDRESS_A,
+    DEFAULT_ADDRESS_B,
+    DELIVERY_FEE_PAISE,
+    OFFICE_ADDRESS_A,
+    OTHER_ADDRESS_A,
+    TAX_BPS,
+    allProducts,
+    findProduct,
+    seedReviews,
 } from './fixtures';
 import { UI_TEST_CUSTOMERS, type UiTestCustomerId, customerIdFromToken } from './scenarios';
 
@@ -217,6 +217,7 @@ function seedOrders(id: UiTestCustomerId): OrderDetail[] {
         canReorder: true,
         invoiceAvailable: true,
         complaintAllowed: true,
+        chatAvailable: true,
       },
     ];
   }
@@ -334,7 +335,13 @@ function seedOrders(id: UiTestCustomerId): OrderDetail[] {
       fulfilment: 'DELIVERY',
       locationLabel: 'HITEC City',
       items: [{ ...lineFromProduct('prd-butterscotch', 'oi-a-butter'), reviewEligible: true }],
-      totals: { subtotalPaise: 59900, totalPaise: 67795 },
+      totals: {
+        subtotalPaise: 59900,
+        taxPaise: 1200,
+        deliveryFeePaise: 4900,
+        storeCreditPaise: 2500,
+        totalPaise: 63400,
+      },
       timeline: [
         {
           status: 'DELIVERED',
@@ -346,6 +353,9 @@ function seedOrders(id: UiTestCustomerId): OrderDetail[] {
       canReorder: true,
       invoiceAvailable: true,
       complaintAllowed: true,
+      chatAvailable: true,
+      refundPaise: 26400,
+      refundStatus: 'processed',
     },
     {
       id: 'ord-a-cancelled',
@@ -371,6 +381,7 @@ function seedOrders(id: UiTestCustomerId): OrderDetail[] {
       refundPaise: 59800,
       refundStatus: 'processed',
       canReorder: true,
+      chatAvailable: true,
     },
   ];
 }

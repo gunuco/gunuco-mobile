@@ -1,7 +1,7 @@
-import React, { memo } from 'react';
-import { Pressable, View } from 'react-native';
 import { useTheme } from '@/src/providers';
 import type { CategorySummary } from '@/src/types';
+import { memo } from 'react';
+import { Pressable, View } from 'react-native';
 import { GImage } from '../ui/GImage';
 import { GText } from '../ui/GText';
 
@@ -26,7 +26,7 @@ function CategoryCardComponent({ category, onPress, width, featured = false }: C
     >
       <View
         style={{
-          backgroundColor: theme.colors.bg.surfaceMuted,
+          // backgroundColor: theme.colors.bg.surfaceMuted,
           borderRadius: theme.radius.xl,
           overflow: 'hidden',
           padding: theme.spacing.xs,

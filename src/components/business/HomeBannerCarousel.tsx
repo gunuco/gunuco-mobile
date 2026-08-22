@@ -1,8 +1,8 @@
-import React, { memo } from 'react';
-import { Pressable, useWindowDimensions, View } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
 import { useTheme } from '@/src/providers';
 import type { HomeBanner } from '@/src/types';
+import { FlashList } from '@shopify/flash-list';
+import { memo } from 'react';
+import { Pressable, useWindowDimensions, View } from 'react-native';
 import { GImage } from '../ui/GImage';
 import { GText } from '../ui/GText';
 import { Skeleton } from '../ui/Skeleton';
@@ -16,8 +16,8 @@ export type HomeBannerCarouselProps = {
 function HomeBannerCarouselComponent({ banners, loading, onBannerPress }: HomeBannerCarouselProps) {
   const theme = useTheme();
   const { width: screenWidth } = useWindowDimensions();
-  const bannerWidth = screenWidth - theme.spacing.lg * 2;
-  const bannerHeight = Math.round(bannerWidth * 0.42);
+  const bannerWidth = Math.round(screenWidth * 0.72);
+  const bannerHeight = Math.round(bannerWidth * 1.5);
 
   if (loading) {
     return (

@@ -22,14 +22,23 @@ export type HomeDeliveryContext = {
   isServiceable?: boolean;
 };
 
+export type HomeProductSection = {
+  id: string;
+  title: string;
+  categoryId?: string;
+  products: ProductSummary[];
+};
+
 export type HomeResponse = {
   deliveryContext?: HomeDeliveryContext | null;
   banners?: HomeBanner[];
   mainCategories?: CategorySummary[];
+  cakeCategories?: CategorySummary[];
   subcategories?: CategorySummary[];
   featuredProducts?: ProductSummary[];
   bestSellers?: ProductSummary[];
   offers?: HomeOffer[];
   recommendedProducts?: ProductSummary[];
+  productSections?: HomeProductSection[];
   unreadNotificationCount?: number;
 };

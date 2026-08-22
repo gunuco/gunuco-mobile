@@ -1,12 +1,11 @@
-import React from 'react';
-import { View } from 'react-native';
 import { useTheme } from '@/src/providers';
 import type { OrderItem } from '@/src/types/order';
 import { formatOrderOptionSummary } from '@/src/utils/orders';
+import { View } from 'react-native';
+import { GButton } from '../ui/GButton';
 import { GCard } from '../ui/GCard';
 import { GImage } from '../ui/GImage';
 import { GText } from '../ui/GText';
-import { GButton } from '../ui/GButton';
 import { PriceDisplay } from './PriceDisplay';
 
 export type OrderItemCardProps = {

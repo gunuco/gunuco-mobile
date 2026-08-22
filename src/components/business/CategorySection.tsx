@@ -1,10 +1,11 @@
 import React, { memo } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useTheme } from '@/src/providers';
 import type { CategorySummary } from '@/src/types';
 import { Section } from '../layout/Section';
 import { Skeleton } from '../ui/Skeleton';
+import { GText } from '../ui/GText';
 import { CategoryCard } from './CategoryCard';
 
 export type CategorySectionProps = {
@@ -12,6 +13,8 @@ export type CategorySectionProps = {
   subtitle?: string;
   categories: CategorySummary[];
   loading?: boolean;
+  compact?: boolean;
+  seeAllPosition?: 'header' | 'below';
   onCategoryPress?: (category: CategorySummary) => void;
   onSeeAllPress?: () => void;
 };
@@ -21,10 +24,15 @@ function CategorySectionComponent({
   subtitle,
   categories,
   loading,
+  compact = false,
+  seeAllPosition = 'header',
   onCategoryPress,
   onSeeAllPress,
 }: CategorySectionProps) {
   const theme = useTheme();
+  const cardWidth = compact
+    ? Math.round(theme.dimensions.categoryCard.width * 0.72)
+    : theme.dimensions.categoryCard.width;
 
   if (!loading && categories.length === 0) {
     return null;
@@ -34,8 +42,8 @@ function CategorySectionComponent({
     <Section
       title={title}
       subtitle={subtitle}
-      actionLabel={onSeeAllPress ? 'See all' : undefined}
-      onActionPress={onSeeAllPress}
+      actionLabel={seeAllPosition === 'header' && onSeeAllPress ? 'See all' : undefined}
+      onActionPress={seeAllPosition === 'header' ? onSeeAllPress : undefined}
     >
       {loading ? (
         <View
@@ -46,23 +54,23 @@ function CategorySectionComponent({
           }}
         >
           <Skeleton
-            width={theme.dimensions.categoryCard.width}
+            width={cardWidth}
             height={theme.dimensions.categoryCard.skeletonHeight}
             borderRadius={theme.radius.lg}
           />
           <Skeleton
-            width={theme.dimensions.categoryCard.width}
+            width={cardWidth}
             height={theme.dimensions.categoryCard.skeletonHeight}
             borderRadius={theme.radius.lg}
           />
           <Skeleton
-            width={theme.dimensions.categoryCard.width}
+            width={cardWidth}
             height={theme.dimensions.categoryCard.skeletonHeight}
             borderRadius={theme.radius.lg}
           />
         </View>
       ) : (
-        <View style={{ height: theme.dimensions.catalogRowHeight }}>
+        <View style={{ height: compact ? cardWidth + 56 : theme.dimensions.catalogRowHeight }}>
           <FlashList
             data={categories}
             horizontal
@@ -71,11 +79,28 @@ function CategorySectionComponent({
             contentContainerStyle={{ paddingHorizontal: theme.spacing.lg }}
             ItemSeparatorComponent={() => <View style={{ width: theme.spacing.md }} />}
             renderItem={({ item }) => (
-              <CategoryCard category={item} onPress={() => onCategoryPress?.(item)} />
+              <CategoryCard
+                category={item}
+                width={cardWidth}
+                onPress={() => onCategoryPress?.(item)}
+              />
             )}
           />
         </View>
       )}
+      {seeAllPosition === 'below' && onSeeAllPress ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`See all ${title}`}
+          onPress={onSeeAllPress}
+          hitSlop={8}
+          style={{ alignItems: 'center', paddingTop: theme.spacing.xs }}
+        >
+          <GText variant="label" color="brand">
+            See all
+          </GText>
+        </Pressable>
+      ) : null}
     </Section>
   );
 }

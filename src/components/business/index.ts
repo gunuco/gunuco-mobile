@@ -8,7 +8,7 @@ export { QuantitySelector } from './QuantitySelector';
 export type { QuantitySelectorProps } from './QuantitySelector';
 
 export { ProductCard } from './ProductCard';
-export type { ProductCardProps, ProductCardVariant } from './ProductCard';
+export type { ProductCardProps, ProductCardVariant, ProductCardLayout } from './ProductCard';
 
 export { CategoryCard } from './CategoryCard';
 export type { CategoryCardProps } from './CategoryCard';
@@ -83,6 +83,9 @@ export type { CancellationReasonSelectorProps } from './CancellationReasonSelect
 
 export { HomeBannerCarousel } from './HomeBannerCarousel';
 export type { HomeBannerCarouselProps } from './HomeBannerCarousel';
+
+export { HomeProductGridSection } from './HomeProductGridSection';
+export type { HomeProductGridSectionProps } from './HomeProductGridSection';
 
 export { OfferCard } from './OfferCard';
 export type { OfferCardProps } from './OfferCard';

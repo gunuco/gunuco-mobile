@@ -4,7 +4,7 @@ import { useTheme } from '@/src/providers';
 import { GText } from '../ui/GText';
 
 export type SectionProps = {
-  title: string;
+  title?: string;
   subtitle?: string;
   actionLabel?: string;
   onActionPress?: () => void;
@@ -21,34 +21,37 @@ export function Section({
   style,
 }: SectionProps) {
   const theme = useTheme();
+  const hasHeader = Boolean(title || (actionLabel && onActionPress));
 
   return (
     <View style={[{ gap: theme.spacing.md }, style]}>
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
-          gap: theme.spacing.md,
-          paddingHorizontal: theme.spacing.lg,
-        }}
-      >
-        <View style={{ flex: 1, gap: theme.spacing.xxs }}>
-          <GText variant="titleSm">{title}</GText>
-          {subtitle ? (
-            <GText variant="bodySm" color="secondary">
-              {subtitle}
-            </GText>
+      {hasHeader ? (
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            gap: theme.spacing.md,
+            paddingHorizontal: theme.spacing.lg,
+          }}
+        >
+          <View style={{ flex: 1, gap: theme.spacing.xxs }}>
+            {title ? <GText variant="titleSm">{title}</GText> : null}
+            {subtitle ? (
+              <GText variant="bodySm" color="secondary">
+                {subtitle}
+              </GText>
+            ) : null}
+          </View>
+          {actionLabel && onActionPress ? (
+            <Pressable accessibilityRole="button" onPress={onActionPress} hitSlop={8}>
+              <GText variant="label" color="brand">
+                {actionLabel}
+              </GText>
+            </Pressable>
           ) : null}
         </View>
-        {actionLabel && onActionPress ? (
-          <Pressable accessibilityRole="button" onPress={onActionPress} hitSlop={8}>
-            <GText variant="label" color="brand">
-              {actionLabel}
-            </GText>
-          </Pressable>
-        ) : null}
-      </View>
+      ) : null}
       {children}
     </View>
   );

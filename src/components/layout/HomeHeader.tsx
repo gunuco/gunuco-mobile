@@ -1,12 +1,12 @@
-import React, { memo } from 'react';
+import { APP_NAME } from '@/src/constants';
+import { useTheme } from '@/src/providers';
+import { memo } from 'react';
 import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '@/src/providers';
-import { GText } from '../ui/GText';
 import { GIcon } from '../ui/GIcon';
+import { GText } from '../ui/GText';
 import { SearchBar } from '../ui/SearchBar';
 import { HeaderActions } from './HeaderActions';
-import { APP_NAME } from '@/src/constants';
 
 export type HomeHeaderProps = {
   locationLabel: string;
@@ -25,36 +25,49 @@ function HomeHeaderComponent({ locationLabel, onLocationPress, onSearchPress }: 
         paddingBottom: theme.spacing.md,
         paddingHorizontal: theme.spacing.lg,
         backgroundColor: theme.colors.bg.canvas,
-        borderBottomWidth: 0,
         gap: theme.spacing.md,
       }}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm }}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`Delivery location ${locationLabel}`}
-          onPress={onLocationPress}
-          style={{ flex: 1, gap: 2 }}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <GText
+          variant="titleMd"
+          color="brand"
+          style={{ letterSpacing: 0.4, fontWeight: 'bold', fontSize: 30 }}
         >
-          <GText variant="caption" color="secondary">
-            {APP_NAME}
-          </GText>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs }}>
-            <GIcon name="location-outline" size="sm" color={theme.colors.brand.primary} />
-            <GText variant="label" numberOfLines={1} style={{ flex: 1 }}>
-              {locationLabel}
-            </GText>
-            <GIcon name="chevron-down" size="sm" color={theme.colors.text.secondary} />
-          </View>
-        </Pressable>
-
+          {APP_NAME}
+        </GText>
         <HeaderActions showProfile showNotifications showCart />
       </View>
+
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Delivery location ${locationLabel}`}
+        onPress={onLocationPress}
+        style={{
+          width: '50%',
+          minHeight: theme.dimensions.inputHeight,
+          borderRadius: theme.radius.lg,
+          borderWidth: 1,
+          borderColor: theme.colors.border.default,
+          backgroundColor: theme.colors.bg.surface,
+          paddingHorizontal: theme.spacing.md,
+          paddingVertical: theme.spacing.sm,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: theme.spacing.sm,
+        }}
+      >
+        <GIcon name="location-outline" size="sm" color={theme.colors.brand.primary} />
+        <GText variant="bodyMd" numberOfLines={2} style={{ flex: 1 }}>
+          {locationLabel}
+        </GText>
+        <GIcon name="chevron-down" size="sm" color={theme.colors.text.secondary} />
+      </Pressable>
 
       <SearchBar
         value=""
         onChangeText={() => undefined}
-        placeholder="Search cakes, cookies & more"
+        placeholder="Search"
         onPress={onSearchPress}
       />
     </View>

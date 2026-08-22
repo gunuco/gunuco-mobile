@@ -16,7 +16,7 @@ export type OfferSectionProps = {
 };
 
 function OfferSectionComponent({
-  title = 'Offers for you',
+  title,
   offers,
   loading,
   onOfferPress,

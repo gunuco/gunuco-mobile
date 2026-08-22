@@ -1,28 +1,32 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, useWindowDimensions, View } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useTheme } from '@/src/providers';
-import { useGetCategoriesQuery } from '@/src/store';
-import { getErrorMessage } from '@/src/utils/errors';
-import { categoryHref, categoryProductsHref } from '@/src/utils/navigation';
-import { isCustomerVisibleCategory } from '@/src/utils/categoryTree';
-import type { CategoryNode } from '@/src/types';
 import {
-  CategoryCard,
   EmptyState,
   ErrorState,
+  GButton,
   GIcon,
+  GImage,
+  GLoader,
   GText,
   Header,
   HeaderActions,
+  PriceDisplay,
   Skeleton,
+  WishlistButton,
 } from '@/src/components';
+import { useTheme } from '@/src/providers';
+import { useGetCategoriesQuery, useGetCategoryProductsQuery } from '@/src/store';
+import type { CategoryNode, ProductSummary } from '@/src/types';
+import { isCustomerVisibleCategory } from '@/src/utils/categoryTree';
+import { getErrorMessage } from '@/src/utils/errors';
+import { categoryHref, categoryProductsHref } from '@/src/utils/navigation';
+import { useRouter } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
+import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 
 export default function CategoriesTabScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const { width } = useWindowDimensions();
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
   const { data, error, isLoading, isError, isFetching, refetch } = useGetCategoriesQuery();
 
@@ -31,20 +35,35 @@ export default function CategoriesTabScreen() {
     [data?.categories],
   );
 
-  const columns = width >= 400 ? 4 : 3;
-  const horizontalPad = theme.spacing.lg * 2;
-  const gap = theme.spacing.sm;
-  const tileWidth = Math.floor((width - horizontalPad - gap * (columns - 1)) / columns);
-  const featuredWidth = tileWidth * 2 + gap;
+  const selectedCategory = useMemo(() => {
+    if (!mainCategories.length) {
+      return null;
+    }
+    const selected =
+      mainCategories.find((item) => item.id === selectedCategoryId) ?? mainCategories[0];
+    return selected;
+  }, [mainCategories, selectedCategoryId]);
+
+  const selectedQuery = useGetCategoryProductsQuery(
+    {
+      categoryId: selectedCategory?.id ?? '',
+      page: 1,
+      sort: undefined,
+      priceMin: undefined,
+      priceMax: undefined,
+      filters: {},
+    },
+    { skip: !selectedCategory?.id },
+  );
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await refetch();
+      await Promise.all([refetch(), selectedQuery.refetch()]);
     } finally {
       setRefreshing(false);
     }
-  }, [refetch]);
+  }, [refetch, selectedQuery]);
 
   const openCategory = useCallback(
     (category: CategoryNode) => {
@@ -61,6 +80,8 @@ export default function CategoriesTabScreen() {
   const showSkeleton = isLoading && !data;
   const showError = isError && !data;
   const showEmpty = Boolean(data) && mainCategories.length === 0 && !isFetching;
+  const productLoading = selectedQuery.isLoading && !selectedQuery.data;
+  const products = selectedQuery.data?.items ?? [];
 
   const headerRight = (
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -84,20 +105,35 @@ export default function CategoriesTabScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.bg.canvas }}>
-      <Header title="All Categories" titleAlign="center" bordered={false} rightSlot={headerRight} />
+      <Header title="All Categories" titleAlign="left" bordered={false} rightSlot={headerRight} />
 
       {showSkeleton ? (
-        <View
-          style={{
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            padding: theme.spacing.lg,
-            gap: theme.spacing.md,
-          }}
-        >
-          <Skeleton width={featuredWidth} height={140} borderRadius={theme.radius.xl} />
-          <Skeleton width={tileWidth} height={140} borderRadius={theme.radius.xl} />
-          <Skeleton width={tileWidth} height={140} borderRadius={theme.radius.xl} />
+        <View style={{ flex: 1, flexDirection: 'row' }}>
+          <View
+            style={{
+              flex: 1,
+              gap: theme.spacing.sm,
+              paddingVertical: theme.spacing.sm,
+              paddingHorizontal: theme.spacing.xs,
+              borderRightWidth: 1,
+              borderRightColor: theme.colors.border.default,
+            }}
+          >
+            <Skeleton width="100%" height={72} borderRadius={theme.radius.lg} />
+            <Skeleton width="100%" height={72} borderRadius={theme.radius.lg} />
+            <Skeleton width="100%" height={72} borderRadius={theme.radius.lg} />
+          </View>
+          <View
+            style={{
+              flex: 4,
+              gap: theme.spacing.md,
+              paddingHorizontal: theme.spacing.md,
+              paddingTop: theme.spacing.sm,
+            }}
+          >
+            <Skeleton width="100%" height={180} borderRadius={theme.radius.xl} />
+            <Skeleton width="100%" height={180} borderRadius={theme.radius.xl} />
+          </View>
         </View>
       ) : null}
 
@@ -112,24 +148,7 @@ export default function CategoriesTabScreen() {
       ) : null}
 
       {!showSkeleton && !showError ? (
-        <ScrollView
-          contentContainerStyle={{
-            paddingVertical: theme.spacing.md,
-            paddingBottom: theme.spacing['3xl'],
-            gap: theme.spacing['2xl'],
-            flexGrow: 1,
-          }}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={() => {
-                void onRefresh();
-              }}
-              tintColor={theme.colors.brand.primary}
-              colors={[theme.colors.brand.primary]}
-            />
-          }
-        >
+        <View style={{ flex: 1 }}>
           {showEmpty ? (
             <EmptyState
               title="No categories yet"
@@ -141,40 +160,200 @@ export default function CategoriesTabScreen() {
               }}
             />
           ) : (
-            mainCategories.map((category) => {
-              const children = (category.children ?? []).filter(isCustomerVisibleCategory);
-              const tiles = children.length ? children : [category];
-              return (
-                <View key={category.id} style={{ gap: theme.spacing.md }}>
-                  <GText variant="titleSm" style={{ paddingHorizontal: theme.spacing.lg }}>
-                    {category.name}
-                  </GText>
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      flexWrap: 'wrap',
-                      paddingHorizontal: theme.spacing.lg,
-                      gap,
+            <View style={{ width: '100%', flexDirection: 'row' }}>
+              <ScrollView
+                style={{
+                  width: '25%',
+                  // flex: 0.5,
+                  borderRightWidth: 1,
+                  borderRightColor: theme.colors.border.default,
+                }}
+                contentContainerStyle={{
+                  paddingVertical: theme.spacing.sm,
+                  paddingHorizontal: theme.spacing.sm,
+                  gap: theme.spacing.sm,
+                }}
+                refreshControl={
+                  <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={() => {
+                      void onRefresh();
+                    }}
+                    tintColor={theme.colors.brand.primary}
+                    colors={[theme.colors.brand.primary]}
+                  />
+                }
+              >
+                {mainCategories.map((category) => {
+                  const selected = category.id === selectedCategory?.id;
+                  return (
+                    <Pressable
+                      key={category.id}
+                      accessibilityRole="button"
+                      accessibilityLabel={category.name}
+                      onPress={() => setSelectedCategoryId(category.id)}
+                      style={{
+                        borderRadius: theme.radius['2xl'],
+                        padding: theme.spacing.md,
+                        alignItems: 'center',
+                        backgroundColor: selected
+                          ? theme.colors.bg.surfaceMuted
+                          : theme.colors.bg.surface,
+                        borderWidth: selected ? 1 : 0,
+                        borderColor: theme.colors.brand.primary,
+                        gap: theme.spacing.xs,
+                      }}
+                    >
+                      <GImage
+                        uri={category.imageUrl}
+                        width={56}
+                        height={56}
+                        borderRadius={theme.radius['2xl']}
+                        accessibilityLabel={category.name}
+                      />
+                      <GText variant="caption" numberOfLines={2} align="center">
+                        {category.name}
+                      </GText>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+
+              <ScrollView
+                style={{ width: '75%' }}
+                contentContainerStyle={{
+                  paddingHorizontal: theme.spacing.md,
+                  paddingTop: theme.spacing.sm,
+                  paddingBottom: theme.spacing['3xl'],
+                  gap: theme.spacing.md,
+                }}
+              >
+                <View style={{ gap: theme.spacing.xs }}>
+                  <GText variant="titleSm">{selectedCategory?.name ?? 'Products'}</GText>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Open selected category page"
+                    onPress={() => {
+                      if (selectedCategory) {
+                        openCategory(selectedCategory);
+                      }
                     }}
                   >
-                    {tiles.map((tile, index) => {
-                      const featured = index === 0 && tiles.length > 3;
-                      return (
-                        <CategoryCard
-                          key={tile.id}
-                          category={tile}
-                          featured={featured}
-                          width={featured ? featuredWidth : tileWidth}
-                          onPress={() => openCategory(tile)}
-                        />
-                      );
-                    })}
-                  </View>
+                    <GText variant="caption" color="brand">
+                      View all
+                    </GText>
+                  </Pressable>
                 </View>
-              );
-            })
+
+                {productLoading ? (
+                  <View style={{ paddingVertical: theme.spacing.xl }}>
+                    <GLoader />
+                  </View>
+                ) : selectedQuery.isError ? (
+                  <ErrorState
+                    title="Could not load products"
+                    message={getErrorMessage(
+                      selectedQuery.error,
+                      'Products are unavailable right now.',
+                    )}
+                    onRetry={() => {
+                      void selectedQuery.refetch();
+                    }}
+                  />
+                ) : products.length === 0 ? (
+                  <EmptyState
+                    title="No products in this category"
+                    description="Try another category from the left panel."
+                    iconName="storefront-outline"
+                  />
+                ) : (
+                  products.map((product: ProductSummary) => (
+                    <Pressable
+                      key={product.id}
+                      accessibilityRole="button"
+                      accessibilityLabel={product.name}
+                      onPress={() => router.push(`/product/${product.id}`)}
+                      style={{
+                        // borderWidth: 1,
+                        // borderColor: theme.colors.border.default,
+                        // borderRadius: theme.radius.lg,
+                        padding: theme.spacing.sm,
+                        gap: theme.spacing.sm,
+                        // backgroundColor: theme.colors.bg.surface,
+                      }}
+                    >
+                      <View
+                        style={{
+                          width: '100%',
+                          aspectRatio: 1.45,
+                          borderRadius: theme.radius.lg,
+                          overflow: 'hidden',
+                          backgroundColor: theme.colors.bg.surfaceMuted,
+                        }}
+                      >
+                        <GImage
+                          uri={product.imageUrl}
+                          width={300}
+                          height={220}
+                          borderRadius={theme.radius.lg}
+                          accessibilityLabel={product.name}
+                        />
+                        <WishlistButton
+                          productId={product.id}
+                          initialWishlisted={product.isWishlisted}
+                          overlay
+                          size="sm"
+                        />
+                        <View
+                          style={{
+                            position: 'absolute',
+                            right: theme.spacing.sm,
+                            bottom: theme.spacing.sm,
+                          }}
+                        >
+                          <GButton
+                            title="Add"
+                            size="sm"
+                            onPress={() => router.push(`/product/${product.id}`)}
+                            accessibilityLabel={`Add ${product.name}`}
+                          />
+                        </View>
+                      </View>
+                      <View style={{ gap: 2 }}>
+                        <GText variant="label" numberOfLines={2}>
+                          {product.name}
+                        </GText>
+                        {product.weightLabel ? (
+                          <GText variant="caption" color="secondary">
+                            {product.weightLabel}
+                          </GText>
+                        ) : null}
+                        <View
+                          style={{
+                            flexDirection: 'row',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <PriceDisplay
+                            pricePaise={product.pricePaise}
+                            compareAtPricePaise={product.compareAtPricePaise}
+                            size="sm"
+                          />
+                          {typeof product.ratingAverage === 'number' ? (
+                            <GText variant="caption" color="secondary">
+                              {product.ratingAverage.toFixed(1)} ★
+                            </GText>
+                          ) : null}
+                        </View>
+                      </View>
+                    </Pressable>
+                  ))
+                )}
+              </ScrollView>
+            </View>
           )}
-        </ScrollView>
+        </View>
       ) : null}
     </View>
   );

@@ -10,10 +10,12 @@ import { RatingView } from './RatingView';
 import { WishlistButton } from './WishlistButton';
 
 export type ProductCardVariant = 'grid' | 'list' | 'compact';
+export type ProductCardLayout = 'default' | 'home';
 
 export type ProductCardProps = {
   product: ProductSummary;
   variant?: ProductCardVariant;
+  layout?: ProductCardLayout;
   showRating?: boolean;
   showDiscount?: boolean;
   showAddButton?: boolean;
@@ -28,6 +30,7 @@ export type ProductCardProps = {
 function ProductCardComponent({
   product,
   variant = 'grid',
+  layout = 'default',
   showRating = true,
   showDiscount = true,
   showAddButton = true,
@@ -42,6 +45,7 @@ function ProductCardComponent({
   const [imageWidth, setImageWidth] = useState(width ?? 0);
   const unavailable = product.isAvailable === false;
   const isList = variant === 'list';
+  const isHome = layout === 'home';
   const resolvedImageWidth = isList
     ? theme.dimensions.productImage.thumb
     : variant === 'compact'
@@ -70,7 +74,7 @@ function ProductCardComponent({
           }}
           style={{
             width: isList ? resolvedImageWidth : '100%',
-            aspectRatio: isList ? undefined : 1,
+            aspectRatio: isList ? undefined : isHome ? 0.92 : 1,
             borderRadius: theme.radius.xl,
             overflow: 'hidden',
             backgroundColor: theme.colors.bg.surfaceMuted,
@@ -83,15 +87,15 @@ function ProductCardComponent({
             borderRadius={theme.radius.xl}
             accessibilityLabel={product.name}
           />
-          {unavailable ? (
+          {!isHome && unavailable ? (
             <View style={{ position: 'absolute', top: theme.spacing.sm, left: theme.spacing.sm }}>
               <GBadge label="Sold out" />
             </View>
-          ) : product.badgeLabel ? (
+          ) : !isHome && product.badgeLabel ? (
             <View style={{ position: 'absolute', top: theme.spacing.sm, left: theme.spacing.sm }}>
               <GBadge label={product.badgeLabel} variant={product.isPremium ? 'premium' : 'info'} />
             </View>
-          ) : product.isPremium ? (
+          ) : !isHome && product.isPremium ? (
             <View style={{ position: 'absolute', top: theme.spacing.sm, left: theme.spacing.sm }}>
               <GBadge label="Premium" variant="premium" />
             </View>
@@ -121,10 +125,11 @@ function ProductCardComponent({
               }}
               style={{
                 position: 'absolute',
-                right: theme.spacing.sm,
+                right: isHome ? undefined : theme.spacing.sm,
+                left: isHome ? theme.spacing.sm : undefined,
                 bottom: theme.spacing.sm,
-                minHeight: 32,
-                paddingHorizontal: theme.spacing.md,
+                minHeight: isHome ? 28 : 32,
+                paddingHorizontal: isHome ? theme.spacing.sm : theme.spacing.md,
                 borderRadius: theme.radius.md,
                 backgroundColor: theme.colors.bg.surface,
                 borderWidth: 1.5,
@@ -134,36 +139,77 @@ function ProductCardComponent({
               }}
             >
               <GText variant="label" color="brand">
-                {unavailable ? 'Notify' : 'ADD'}
+                {unavailable ? 'Notify' : isHome ? 'Add' : 'ADD'}
               </GText>
             </Pressable>
           ) : null}
         </View>
 
-        <View style={{ gap: 4 }}>
-          <PriceDisplay
-            pricePaise={product.pricePaise}
-            compareAtPricePaise={product.compareAtPricePaise}
-            size="sm"
-            pill
-          />
-          {showDiscount && product.discountLabel ? (
-            <GText variant="caption" color="success">
-              {product.discountLabel}
+        {isHome ? (
+          <View style={{ gap: 2 }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'flex-start',
+                justifyContent: 'space-between',
+                gap: theme.spacing.xs,
+              }}
+            >
+              <GText variant="caption" numberOfLines={2} style={{ flex: 1, fontWeight: '600' }}>
+                {product.name}
+              </GText>
+              {showRating && typeof product.ratingAverage === 'number' ? (
+                <GText variant="caption" color="secondary">
+                  {product.ratingAverage.toFixed(1)} ★
+                </GText>
+              ) : null}
+            </View>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: theme.spacing.xs,
+              }}
+            >
+              <PriceDisplay
+                pricePaise={product.pricePaise}
+                compareAtPricePaise={product.compareAtPricePaise}
+                size="sm"
+              />
+              {product.weightLabel ? (
+                <GText variant="caption" color="secondary" numberOfLines={1}>
+                  {product.weightLabel}
+                </GText>
+              ) : null}
+            </View>
+          </View>
+        ) : (
+          <View style={{ gap: 4 }}>
+            <PriceDisplay
+              pricePaise={product.pricePaise}
+              compareAtPricePaise={product.compareAtPricePaise}
+              size="sm"
+              pill
+            />
+            {showDiscount && product.discountLabel ? (
+              <GText variant="caption" color="success">
+                {product.discountLabel}
+              </GText>
+            ) : null}
+            <GText variant="label" numberOfLines={2}>
+              {product.name}
             </GText>
-          ) : null}
-          <GText variant="label" numberOfLines={2}>
-            {product.name}
-          </GText>
-          {product.weightLabel ? (
-            <GText variant="caption" color="secondary">
-              {product.weightLabel}
-            </GText>
-          ) : null}
-          {showRating && typeof product.ratingAverage === 'number' ? (
-            <RatingView value={product.ratingAverage} count={product.ratingCount} compact />
-          ) : null}
-        </View>
+            {product.weightLabel ? (
+              <GText variant="caption" color="secondary">
+                {product.weightLabel}
+              </GText>
+            ) : null}
+            {showRating && typeof product.ratingAverage === 'number' ? (
+              <RatingView value={product.ratingAverage} count={product.ratingCount} compact />
+            ) : null}
+          </View>
+        )}
       </View>
     </Pressable>
   );

@@ -1,5 +1,5 @@
-import type { MoneyPaise } from './commerce';
 import type { CartChange, CartSelectedOption, CartTotals } from './cart';
+import type { MoneyPaise } from './commerce';
 import type { FulfilmentType } from './fulfilment';
 
 /** Minimal confirmation payload from Phase 9. */

@@ -1,12 +1,11 @@
-import React from 'react';
-import { Pressable, View } from 'react-native';
 import { useTheme } from '@/src/providers';
 import type { OrderListItem, OrderStatusGroup } from '@/src/types/order';
-import { formatPaise } from '@/src/utils/money';
-import { GCard } from '../ui/GCard';
-import { GText } from '../ui/GText';
+import { Pressable, View } from 'react-native';
 import { GBadge, type GBadgeVariant } from '../ui/GBadge';
 import { GButton } from '../ui/GButton';
+import { GCard } from '../ui/GCard';
+import { GIcon } from '../ui/GIcon';
+import { GText } from '../ui/GText';
 import { PriceDisplay } from './PriceDisplay';
 
 export type OrderCardProps = {
@@ -44,81 +43,89 @@ export function OrderCard({
   const showTrack = group === 'active' && order.trackingAvailable === true && onTrack;
   const showReorder = order.canReorder === true && onReorder && group !== 'active';
 
+  const presentation = order.presentationStatus;
+  const heroTone = presentation === 'CANCELLED' ? 'danger' : presentation === 'DELIVERED' ? 'success' : undefined;
+  const heroIconName =
+    presentation === 'CANCELLED'
+      ? ('close-circle' as const)
+      : presentation === 'DELIVERED'
+        ? ('checkmark-circle' as const)
+        : undefined;
+  const heroBg =
+    heroTone === 'success'
+      ? theme.colors.semantic.success
+      : heroTone === 'danger'
+        ? theme.colors.semantic.danger
+        : theme.colors.border.default;
+
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${numberLabel}. ${order.statusLabel}. View Order`}
       onPress={onPress}
     >
-      <GCard style={{ gap: theme.spacing.sm }}>
-        <View
-          style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
-        >
-          <GText variant="label">
-            {order.orderNumber ? `Order #${order.orderNumber}` : 'Order'}
-          </GText>
-          <GBadge label={order.statusLabel} variant={badgeVariant(order)} />
-        </View>
-        <View
-          style={{ flexDirection: 'row', justifyContent: 'space-between', gap: theme.spacing.md }}
-        >
-          <View style={{ flex: 1, gap: 2 }}>
-            {order.fulfilmentLabel ? (
-              <GText variant="bodySm" color="secondary">
-                {order.fulfilmentLabel}
+      <GCard style={{ gap: theme.spacing.md, padding: theme.spacing.md }}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: theme.spacing.md }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md, flex: 1 }}>
+            <View
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: theme.radius.lg,
+                backgroundColor: heroBg,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {heroIconName ? (
+                <GIcon
+                  name={heroIconName}
+                  size="md"
+                  color={theme.colors.text.inverse}
+                  accessibilityLabel="Order status icon"
+                />
+              ) : (
+                <GBadge label={order.statusLabel} variant={badgeVariant(order)} />
+              )}
+            </View>
+            <View style={{ flex: 1, gap: 3 }}>
+              <GText variant="label">
+                {order.presentationStatus === 'CANCELLED' ? 'Order cancelled' : 'Order delivered'}
               </GText>
-            ) : null}
-            {group === 'active' && order.scheduleLabel ? (
-              <GText variant="caption" color="secondary">
-                {order.scheduleLabel}
-              </GText>
-            ) : null}
-            {order.placedAtLabel ? (
-              <GText variant="caption" color="secondary">
-                {order.placedAtLabel}
-              </GText>
-            ) : null}
-            {order.itemSummary ? (
-              <GText variant="caption" color="secondary" numberOfLines={2}>
-                {order.itemSummary}
-              </GText>
-            ) : typeof order.itemCount === 'number' ? (
-              <GText variant="caption" color="secondary">
-                {order.itemCount} item{order.itemCount === 1 ? '' : 's'}
-              </GText>
-            ) : null}
-            {group === 'cancelled' && typeof order.refundPaise === 'number' ? (
-              <GText variant="caption" color="secondary">
-                Refund {order.refundStatus ? `${order.refundStatus} · ` : ''}
-                {formatPaise(order.refundPaise)}
-              </GText>
-            ) : null}
+              {order.placedAtLabel ? (
+                <GText variant="caption" color="secondary" numberOfLines={1}>
+                  Placed at {order.placedAtLabel}
+                </GText>
+              ) : null}
+            </View>
           </View>
-          {typeof order.totalPaise === 'number' ? (
-            <PriceDisplay pricePaise={order.totalPaise} size="md" />
-          ) : null}
-        </View>
-        {showTrack || showReorder ? (
-          <View style={{ flexDirection: 'row', gap: theme.spacing.sm }}>
-            {showTrack ? (
-              <GButton
-                title="Track Order"
-                size="sm"
-                variant="secondary"
-                onPress={onTrack}
-                accessibilityLabel="Track Order"
-              />
+
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm }}>
+            {typeof order.totalPaise === 'number' ? (
+              <PriceDisplay pricePaise={order.totalPaise} size="md" />
             ) : null}
-            {showReorder ? (
-              <GButton
-                title="Reorder"
-                size="sm"
-                loading={reorderLoading}
-                onPress={onReorder}
-                accessibilityLabel="Reorder"
-              />
-            ) : null}
+            <GIcon name="chevron-forward" size="sm" color={theme.colors.text.secondary} />
           </View>
+        </View>
+
+        {showTrack ? (
+          <GButton
+            title="Track Order"
+            size="sm"
+            variant="secondary"
+            onPress={onTrack}
+            accessibilityLabel="Track Order"
+          />
+        ) : null}
+
+        {showReorder ? (
+          <GButton
+            title={reorderLoading ? 'Adding...' : 'Order Again'}
+            fullWidth
+            loading={reorderLoading}
+            onPress={onReorder}
+            accessibilityLabel="Order Again"
+          />
         ) : null}
       </GCard>
     </Pressable>
