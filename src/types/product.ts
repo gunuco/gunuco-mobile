@@ -29,10 +29,18 @@ export type ProductOptionValue = {
   available?: boolean;
   unavailableLabel?: string | null;
   unavailableReason?: string | null;
+  /** Absolute unit price or fixed add-on amount in paise. */
   pricePaise?: MoneyPaise | null;
+  /**
+   * KG-based customization charge (admin stores ₹/KG). Customer UI scales by
+   * selected quantity KG — see cake pricing model.
+   */
+  pricePerKgPaise?: MoneyPaise | null;
   compareAtPricePaise?: MoneyPaise | null;
   discountLabel?: string | null;
   isDefault?: boolean;
+  /** Optional Ionicons name for ingredient tiles. */
+  iconName?: string | null;
 };
 
 export type ProductOptionGroup = {

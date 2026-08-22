@@ -11,6 +11,7 @@ import type { RiderChatMessage } from '@/src/types/riderChat';
 import type { StoreCredit } from '@/src/types/storeCredit';
 import type { SupportTicketDetail, SupportTicketSummary } from '@/src/types/support';
 import type { OrderRider, OrderTracking } from '@/src/types/tracking';
+import { resolveDisplayedPrice } from '@/src/utils/productDetail';
 import {
     COUPON_CODE,
     DEFAULT_ADDRESS_A,
@@ -621,15 +622,26 @@ export function addCartItem(payload: AddCartItemPayload): { itemId: string; cart
     })
     .filter((label): label is string => Boolean(label))
     .join(' · ');
-  const extra = payload.options.reduce((sum, group) => {
-    const optionGroup = product.optionGroups?.find((item) => item.id === group.groupId);
-    const prices = group.valueIds.map((valueId) => {
-      const option = optionGroup?.options.find((item) => item.id === valueId);
-      return option?.pricePaise ?? 0;
-    });
-    return sum + prices.reduce((a, b) => a + b, 0);
-  }, 0);
-  const unitPricePaise = product.pricePaise + extra;
+  const selection = Object.fromEntries(
+    payload.options.map((group) => [group.groupId, group.valueIds]),
+  );
+  const groups = product.optionGroups ?? [];
+  const displayed = resolveDisplayedPrice(
+    {
+      id: product.id,
+      name: product.name,
+      imageUrl: product.imageUrl ?? null,
+      pricePaise: product.pricePaise,
+      compareAtPricePaise: product.compareAtPricePaise ?? null,
+      isAvailable: product.isAvailable ?? true,
+      discountLabel: product.discountLabel ?? null,
+      optionGroups: groups,
+    },
+    groups,
+    selection,
+    undefined,
+  );
+  const unitPricePaise = displayed.pricePaise;
   const lineId = `line-${Date.now()}`;
   const line: CartLine = {
     id: lineId,

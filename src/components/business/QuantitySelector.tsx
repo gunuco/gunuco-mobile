@@ -1,8 +1,7 @@
-import React from 'react';
-import { Pressable, View } from 'react-native';
 import { useTheme } from '@/src/providers';
-import { GText } from '../ui/GText';
+import { Pressable, View } from 'react-native';
 import { GIcon } from '../ui/GIcon';
+import { GText } from '../ui/GText';
 
 export type QuantitySelectorProps = {
   value: number;
@@ -36,6 +35,7 @@ export function QuantitySelector({
         borderColor: theme.colors.border.default,
         overflow: 'hidden',
         opacity: isDisabled ? 0.5 : 1,
+        width: 120,
       }}
       accessibilityLabel="Quantity"
       accessibilityValue={{ min, max, now: value }}

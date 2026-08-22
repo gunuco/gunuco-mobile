@@ -156,87 +156,209 @@ export const CATEGORIES: CategoryNode[] = [
   },
 ];
 
-const CAKE_CUSTOMIZATION: ProductOptionGroup[] = [
-  {
-    id: 'opt-flavour',
-    label: 'Flavour Type',
-    required: true,
-    type: 'single',
-    minSelect: 1,
-    maxSelect: 1,
-    defaultValueId: 'fl-chocolate',
-    options: [
-      { id: 'fl-chocolate', label: 'Chocolate', isDefault: true, available: true },
-      { id: 'fl-redvelvet', label: 'Red Velvet', available: true },
-      { id: 'fl-butterscotch', label: 'Butterscotch', available: true },
-      { id: 'fl-vanilla', label: 'Vanilla', available: true },
-      { id: 'fl-strawberry', label: 'Strawberry', available: true },
-      { id: 'fl-pineapple', label: 'Pineapple', available: true },
-      { id: 'fl-blueberry', label: 'Blueberry', available: true },
-      { id: 'fl-mango', label: 'Mango', available: true },
-      { id: 'fl-blackforest', label: 'Black Forest', available: true },
-      { id: 'fl-chocochip', label: 'Chocolate Chip', available: true },
-    ],
-  },
-  {
-    id: 'opt-flour',
-    label: 'Flour Type',
-    required: true,
-    type: 'single',
-    minSelect: 1,
-    maxSelect: 1,
-    defaultValueId: 'flour-maida',
-    options: [
-      { id: 'flour-maida', label: 'Maida', isDefault: true, available: true },
-      { id: 'flour-wheat', label: 'Wheat', pricePaise: 4000, available: true },
-    ],
-  },
-  {
-    id: 'opt-egg',
-    label: 'Egg / Eggless',
-    required: true,
-    type: 'single',
-    minSelect: 1,
-    maxSelect: 1,
-    defaultValueId: 'egg-eggless',
-    options: [
-      { id: 'egg-egg', label: 'Egg', available: true },
-      { id: 'egg-eggless', label: 'Eggless', isDefault: true, available: true },
-    ],
-  },
-  {
-    id: 'opt-sweetener',
-    label: 'Sweetener',
-    required: true,
-    type: 'single',
-    minSelect: 1,
-    maxSelect: 1,
-    defaultValueId: 'sw-mishri',
-    options: [
-      { id: 'sw-mishri', label: 'Mishri', isDefault: true, available: true },
-      { id: 'sw-stevia', label: 'Sugar Free Stevia', pricePaise: 6000, available: true },
-      { id: 'sw-dates', label: 'Dates Sugar', pricePaise: 5000, available: true },
-      { id: 'sw-jaggery', label: 'Jaggery', pricePaise: 4000, available: true },
-    ],
-  },
-  {
-    id: 'opt-size',
-    label: 'Quantity',
-    required: true,
-    type: 'single',
-    minSelect: 1,
-    maxSelect: 1,
-    defaultValueId: 'size-500',
-    options: [
-      { id: 'size-500', label: '500 g', pricePaise: 0, isDefault: true, available: true },
-      { id: 'size-1kg', label: '1 kg', pricePaise: 45000, available: true },
-      { id: 'size-1-5kg', label: '1.5 kg', pricePaise: 70000, available: true },
-      { id: 'size-2kg', label: '2 kg', pricePaise: 95000, available: true },
-      { id: 'size-2-5kg', label: '2.5 kg', pricePaise: 120000, available: true },
-      { id: 'size-3kg', label: '3 kg', pricePaise: 145000, available: true },
-    ],
-  },
-];
+/** GUNUCO cake pricing model — base prices by quantity (absolute, not proportional). */
+const CAKE_BASE_PRICES = {
+  g500: 39900,
+  kg1: 69900,
+  kg2: 129900,
+  kg3: 189900,
+} as const;
+
+function buildCakeCustomization(bases: {
+  g500: number;
+  kg1: number;
+  kg2: number;
+  kg3: number;
+} = CAKE_BASE_PRICES): ProductOptionGroup[] {
+  return [
+    {
+      id: 'opt-flour',
+      label: 'Flour Type',
+      required: true,
+      type: 'single',
+      minSelect: 1,
+      maxSelect: 1,
+      defaultValueId: 'flour-maida',
+      options: [
+        {
+          id: 'flour-maida',
+          label: 'Maida',
+          isDefault: true,
+          available: true,
+          pricePerKgPaise: 0,
+          iconName: 'ellipse-outline',
+        },
+        {
+          id: 'flour-wheat',
+          label: 'Wheat',
+          available: true,
+          pricePerKgPaise: 6000,
+          iconName: 'leaf-outline',
+        },
+      ],
+    },
+    {
+      id: 'opt-egg',
+      label: 'Egg / Eggless',
+      required: true,
+      type: 'single',
+      minSelect: 1,
+      maxSelect: 1,
+      defaultValueId: 'egg-egg',
+      options: [
+        {
+          id: 'egg-egg',
+          label: 'Egg',
+          isDefault: true,
+          available: true,
+          pricePerKgPaise: 0,
+          iconName: 'ellipse-outline',
+        },
+        {
+          id: 'egg-eggless',
+          label: 'Eggless',
+          available: true,
+          pricePerKgPaise: 8000,
+          iconName: 'close-circle-outline',
+        },
+      ],
+    },
+    {
+      id: 'opt-sweetener',
+      label: 'Sweetener Type',
+      required: true,
+      type: 'single',
+      minSelect: 1,
+      maxSelect: 1,
+      defaultValueId: 'sw-mishri',
+      options: [
+        {
+          id: 'sw-mishri',
+          label: 'Mishri',
+          isDefault: true,
+          available: true,
+          pricePerKgPaise: 0,
+          iconName: 'snow-outline',
+        },
+        {
+          id: 'sw-stevia',
+          label: 'Sugar Free Stevia',
+          available: true,
+          pricePerKgPaise: 10000,
+          iconName: 'leaf-outline',
+        },
+        {
+          id: 'sw-dates',
+          label: 'Dates Sugar',
+          available: true,
+          pricePerKgPaise: 8000,
+          iconName: 'nutrition-outline',
+        },
+        {
+          id: 'sw-jaggery',
+          label: 'Jaggery',
+          available: true,
+          pricePerKgPaise: 4000,
+          iconName: 'cube-outline',
+        },
+      ],
+    },
+    {
+      id: 'opt-flavour',
+      label: 'Flavour Type',
+      required: true,
+      type: 'single',
+      minSelect: 1,
+      maxSelect: 1,
+      defaultValueId: 'fl-vanilla',
+      options: [
+        { id: 'fl-vanilla', label: 'Vanilla', isDefault: true, available: true, pricePerKgPaise: 0 },
+        {
+          id: 'fl-chocolate',
+          label: 'Chocolate',
+          available: true,
+          pricePerKgPaise: 6000,
+        },
+        {
+          id: 'fl-butterscotch',
+          label: 'Butterscotch',
+          available: true,
+          pricePerKgPaise: 6000,
+        },
+        {
+          id: 'fl-strawberry',
+          label: 'Strawberry',
+          available: true,
+          pricePerKgPaise: 6000,
+        },
+        { id: 'fl-mango', label: 'Mango', available: true, pricePerKgPaise: 6000 },
+        {
+          id: 'fl-redvelvet',
+          label: 'Red Velvet',
+          available: true,
+          pricePerKgPaise: 10000,
+        },
+        {
+          id: 'fl-pineapple',
+          label: 'Pineapple',
+          available: true,
+          pricePerKgPaise: 6000,
+        },
+        {
+          id: 'fl-blueberry',
+          label: 'Blueberry',
+          available: true,
+          pricePerKgPaise: 6000,
+        },
+        {
+          id: 'fl-blackforest',
+          label: 'Black Forest',
+          available: true,
+          pricePerKgPaise: 6000,
+        },
+        {
+          id: 'fl-chocochip',
+          label: 'Chocolate Chip',
+          available: true,
+          pricePerKgPaise: 6000,
+        },
+      ],
+    },
+    {
+      id: 'opt-size',
+      label: 'Quantity',
+      required: true,
+      type: 'single',
+      minSelect: 1,
+      maxSelect: 1,
+      defaultValueId: 'size-500',
+      options: [
+        {
+          id: 'size-500',
+          label: '500 gm',
+          pricePaise: bases.g500,
+          isDefault: true,
+          available: true,
+        },
+        { id: 'size-1kg', label: '1 Kg', pricePaise: bases.kg1, available: true },
+        { id: 'size-2kg', label: '2 kg', pricePaise: bases.kg2, available: true },
+        { id: 'size-3kg', label: '3 kg', pricePaise: bases.kg3, available: true },
+      ],
+    },
+  ];
+}
+
+const CAKE_CUSTOMIZATION: ProductOptionGroup[] = buildCakeCustomization();
+
+/** Scale wedding/occasion catalogue bases using pricing-model quantity ratios. */
+function scaledCakeBases(g500Paise: number) {
+  return {
+    g500: g500Paise,
+    kg1: Math.round((g500Paise * CAKE_BASE_PRICES.kg1) / CAKE_BASE_PRICES.g500),
+    kg2: Math.round((g500Paise * CAKE_BASE_PRICES.kg2) / CAKE_BASE_PRICES.g500),
+    kg3: Math.round((g500Paise * CAKE_BASE_PRICES.kg3) / CAKE_BASE_PRICES.g500),
+  };
+}
 
 const TREAT_SIZE: ProductOptionGroup[] = [
   {
@@ -279,12 +401,35 @@ function cakeProduct(
     badgeLabel?: string;
   },
 ): FixtureProduct {
+  // Wedding / high-ticket cakes keep catalogue bases; everyday cakes use the
+  // GUNUCO cake pricing model starting at ₹399 / 500g.
+  const highTicket = item.pricePaise >= 150000;
+  const optionGroups =
+    item.optionGroups ??
+    (highTicket
+      ? buildCakeCustomization(scaledCakeBases(item.pricePaise))
+      : CAKE_CUSTOMIZATION);
+  const pricePaise = item.optionGroups
+    ? item.pricePaise
+    : highTicket
+      ? item.pricePaise
+      : CAKE_BASE_PRICES.g500;
+  const compareAtPricePaise = item.optionGroups
+    ? item.compareAtPricePaise
+    : highTicket
+      ? item.compareAtPricePaise
+      : item.compareAtPricePaise
+        ? Math.round(CAKE_BASE_PRICES.g500 * 1.2)
+        : undefined;
+
   return {
     ...item,
-    weightLabel: '500 g',
+    pricePaise,
+    compareAtPricePaise,
+    weightLabel: '500 gm',
     hasRequiredOptions: true,
-    discountLabel: discountLabel(item.pricePaise, item.compareAtPricePaise),
-    optionGroups: item.optionGroups ?? CAKE_CUSTOMIZATION,
+    discountLabel: discountLabel(pricePaise, compareAtPricePaise),
+    optionGroups,
     isAvailable: item.isAvailable !== false,
   };
 }

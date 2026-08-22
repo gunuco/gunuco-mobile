@@ -12,10 +12,13 @@ import {
 } from '@/src/store';
 import { APP_NAME } from '@/src/constants';
 import { getErrorMessage, isNotFoundError } from '@/src/utils/errors';
+import { formatPaise } from '@/src/utils/money';
 import {
   getAvailabilityMessage,
   getProductImages,
   getProductOffer,
+  hasCustomizeIngredients,
+  isCakeQuantityGroup,
   toCartOptions,
 } from '@/src/utils/productDetail';
 import { productHref, productReviewsHref } from '@/src/utils/navigation';
@@ -42,8 +45,6 @@ import {
   WishlistButton,
 } from '@/src/components';
 
-const DESCRIPTION_COLLAPSE_LENGTH = 220;
-
 export default function ProductDetailScreen() {
   const theme = useTheme();
   const router = useRouter();
@@ -54,7 +55,6 @@ export default function ProductDetailScreen() {
 
   const scrollRef = useRef<ScrollView>(null);
   const optionsOffsetY = useRef(0);
-  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const [compactHeader, setCompactHeader] = useState(false);
   const [cartMessage, setCartMessage] = useState<{
     tone: 'success' | 'danger';
@@ -80,6 +80,8 @@ export default function ProductDetailScreen() {
 
   const configuration = useProductConfiguration(productId, product, optionsResponse);
   const optionsPending = optionsQuery.isLoading && !configuration.groups.length;
+  const showCustomizeIngredients = hasCustomizeIngredients(configuration.groups);
+  const hasWeightQuantity = configuration.groups.some(isCakeQuantityGroup);
 
   const relatedProducts = useMemo(
     () => (relatedQuery.data?.items ?? []).filter((item) => item.id !== productId).slice(0, 8),
@@ -250,11 +252,6 @@ export default function ProductDetailScreen() {
   const purchasable =
     configuration.displayedPrice.isAvailable && product.isAvailable !== false && !optionsFailed;
   const description = product.description?.trim() ?? '';
-  const descriptionCollapsible = description.length > DESCRIPTION_COLLAPSE_LENGTH;
-  const descriptionText =
-    descriptionCollapsible && !descriptionExpanded
-      ? `${description.slice(0, DESCRIPTION_COLLAPSE_LENGTH).trim()}…`
-      : description;
   const infoSections =
     product.infoSections?.filter((section) => section.title && section.body) ?? [];
   const showRating = typeof product.ratingAverage === 'number';
@@ -265,6 +262,13 @@ export default function ProductDetailScreen() {
   const showOptionsSection = optionsPending || optionsFailed || configuration.groups.length > 0;
   const statusMessage = wishlistError ?? cartMessage?.text ?? null;
   const statusTone = wishlistError ? 'danger' : (cartMessage?.tone ?? 'danger');
+  const informationBody = [
+    description,
+    ...(product.highlights?.map((row) => `${row.label}: ${row.value}`) ?? []),
+    ...infoSections.map((section) => `${section.title}\n${section.body}`),
+  ]
+    .filter(Boolean)
+    .join('\n\n');
 
   const overlayControls = (
     <View
@@ -279,32 +283,18 @@ export default function ProductDetailScreen() {
       }}
     >
       <IconCircleButton iconName="chevron-back" accessibilityLabel="Go back" onPress={goBack} />
-      <View style={{ flexDirection: 'row', gap: theme.spacing.sm }}>
-        <IconCircleButton
-          iconName="search-outline"
-          accessibilityLabel="Search"
-          onPress={() => router.push('/(tabs)/search')}
+      <View
+        style={{
+          backgroundColor: theme.colors.bg.surface,
+          borderRadius: theme.radius.pill,
+          ...theme.shadows.sm,
+        }}
+      >
+        <WishlistButton
+          productId={product.id}
+          initialWishlisted={product.isWishlisted}
+          onError={setWishlistError}
         />
-        <IconCircleButton
-          iconName="share-outline"
-          accessibilityLabel="Share product"
-          onPress={() => {
-            void onShare();
-          }}
-        />
-        <View
-          style={{
-            backgroundColor: theme.colors.bg.surface,
-            borderRadius: theme.radius.pill,
-            ...theme.shadows.sm,
-          }}
-        >
-          <WishlistButton
-            productId={product.id}
-            initialWishlisted={product.isWishlisted}
-            onError={setWishlistError}
-          />
-        </View>
       </View>
     </View>
   );
@@ -353,12 +343,6 @@ export default function ProductDetailScreen() {
             />
           </View>
           <IconCircleButton
-            iconName="search-outline"
-            accessibilityLabel="Search"
-            onPress={() => router.push('/(tabs)/search')}
-            overlay={false}
-          />
-          <IconCircleButton
             iconName="share-outline"
             accessibilityLabel="Share product"
             onPress={() => {
@@ -386,51 +370,13 @@ export default function ProductDetailScreen() {
 
         <View
           style={{
-            marginTop: -theme.spacing.lg,
             backgroundColor: theme.colors.bg.canvas,
-            borderTopLeftRadius: theme.radius['2xl'],
-            borderTopRightRadius: theme.radius['2xl'],
             paddingHorizontal: theme.spacing.lg,
-            paddingTop: theme.spacing.xl,
-            gap: theme.spacing.sm,
+            paddingTop: theme.spacing.lg,
+            gap: theme.spacing.md,
           }}
         >
-          {product.availabilityLabel ? (
-            <GText variant="caption" color="secondary">
-              {product.availabilityLabel}
-            </GText>
-          ) : null}
-          {product.category?.name ? (
-            <GText variant="caption" color="secondary">
-              {product.category.name}
-            </GText>
-          ) : null}
           <GText variant="titleMd">{product.name}</GText>
-          {product.weightLabel ? (
-            <GText variant="bodySm" color="secondary">
-              Net quantity: {product.weightLabel}
-            </GText>
-          ) : null}
-
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="See product reviews"
-            onPress={() => router.push(productReviewsHref(product.id))}
-            hitSlop={8}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm }}
-          >
-            {showRating ? (
-              <RatingView
-                value={product.ratingAverage ?? 0}
-                count={product.ratingCount}
-                size="md"
-                compact
-              />
-            ) : null}
-            <GText variant="label" color="brand">
-              {showRating ? 'See reviews' : 'Reviews'}
-            </GText>
-          </Pressable>
 
           <View
             style={{
@@ -444,13 +390,32 @@ export default function ProductDetailScreen() {
               pricePaise={configuration.displayedPrice.pricePaise}
               compareAtPricePaise={configuration.displayedPrice.compareAtPricePaise}
               size="lg"
-              pill
             />
             {configuration.displayedPrice.discountLabel ? (
               <GBadge label={configuration.displayedPrice.discountLabel} variant="discount" />
             ) : null}
             {product.isPremium ? <GBadge label="GUNUCO PREMIUM" variant="premium" /> : null}
           </View>
+
+          {showRating ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="See product reviews"
+              onPress={() => router.push(productReviewsHref(product.id))}
+              hitSlop={8}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm }}
+            >
+              <RatingView
+                value={product.ratingAverage ?? 0}
+                count={product.ratingCount}
+                size="md"
+                compact
+              />
+              <GText variant="label" color="brand">
+                See reviews
+              </GText>
+            </Pressable>
+          ) : null}
 
           {offer ? (
             <View
@@ -478,38 +443,18 @@ export default function ProductDetailScreen() {
             </GText>
           ) : null}
 
-          <View
-            style={{ flexDirection: 'row', gap: theme.spacing.sm, marginTop: theme.spacing.sm }}
-          >
+          {informationBody ? (
             <View
               style={{
-                flex: 1,
-                backgroundColor: theme.colors.bg.surface,
-                borderRadius: theme.radius.xl,
-                padding: theme.spacing.md,
-                gap: theme.spacing.xs,
+                borderWidth: 1,
+                borderColor: theme.colors.border.default,
+                borderRadius: theme.radius.md,
+                overflow: 'hidden',
               }}
             >
-              <GText variant="label">Made to order</GText>
-              <GText variant="caption" color="secondary">
-                Fresh bake with your customisation.
-              </GText>
+              <AccordionSection title="Information" body={informationBody} />
             </View>
-            <View
-              style={{
-                flex: 1,
-                backgroundColor: theme.colors.bg.surface,
-                borderRadius: theme.radius.xl,
-                padding: theme.spacing.md,
-                gap: theme.spacing.xs,
-              }}
-            >
-              <GText variant="label">GUNUCO bakery</GText>
-              <GText variant="caption" color="secondary">
-                HITEC City, Hyderabad
-              </GText>
-            </View>
-          </View>
+          ) : null}
         </View>
 
         {showOptionsSection ? (
@@ -521,7 +466,7 @@ export default function ProductDetailScreen() {
           >
             {optionsPending ? (
               <View style={{ paddingHorizontal: theme.spacing.lg, gap: theme.spacing.sm }}>
-                <Skeleton height={16} width="28%" />
+                <Skeleton height={16} width="40%" />
                 <View style={{ flexDirection: 'row', gap: theme.spacing.sm }}>
                   <Skeleton
                     height={theme.dimensions.touchMin}
@@ -560,79 +505,53 @@ export default function ProductDetailScreen() {
           </View>
         ) : null}
 
-        <View
-          style={{
-            marginHorizontal: theme.spacing.lg,
-            marginTop: theme.spacing.xl,
-            backgroundColor: theme.colors.bg.surface,
-            borderRadius: theme.radius.xl,
-            padding: theme.spacing.lg,
-            gap: theme.spacing.sm,
-          }}
-        >
-          <GText variant="titleSm">HOW MANY</GText>
-          <QuantitySelector
-            value={configuration.quantity}
-            onChange={configuration.setQuantity}
-            min={configuration.minQuantity}
-            max={configuration.maxQuantity}
-            disabled={!purchasable}
-            loading={adding}
-          />
-          {atMaxQuantity ? (
-            <GText variant="caption" color="secondary">
-              Maximum quantity reached.
-            </GText>
-          ) : null}
-        </View>
-
-        {description ? (
+        {!hasWeightQuantity ? (
           <View
             style={{
-              paddingHorizontal: theme.spacing.lg,
+              marginHorizontal: theme.spacing.lg,
               marginTop: theme.spacing.xl,
+              backgroundColor: theme.colors.bg.surface,
+              borderRadius: theme.radius.xl,
+              padding: theme.spacing.lg,
               gap: theme.spacing.sm,
             }}
           >
-            <GText variant="titleSm">Description</GText>
-            <GText variant="bodyMd" color="secondary">
-              {descriptionText}
-            </GText>
-            {descriptionCollapsible ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={
-                  descriptionExpanded ? 'Show less description' : 'Read more description'
-                }
-                onPress={() => setDescriptionExpanded((current) => !current)}
-                hitSlop={8}
-              >
-                <GText variant="label" color="brand">
-                  {descriptionExpanded ? 'Show less' : 'Read more'}
-                </GText>
-              </Pressable>
+            <GText variant="titleSm">HOW MANY</GText>
+            <QuantitySelector
+              value={configuration.quantity}
+              onChange={configuration.setQuantity}
+              min={configuration.minQuantity}
+              max={configuration.maxQuantity}
+              disabled={!purchasable}
+              loading={adding}
+            />
+            {atMaxQuantity ? (
+              <GText variant="caption" color="secondary">
+                Maximum quantity reached.
+              </GText>
             ) : null}
           </View>
-        ) : null}
-
-        <View
-          style={{
-            paddingHorizontal: theme.spacing.lg,
-            marginTop: theme.spacing.xl,
-            gap: theme.spacing.md,
-          }}
-        >
-          {product.highlights?.length ? (
-            <AccordionSection title="Highlights" rows={product.highlights} defaultOpen />
-          ) : null}
-          {infoSections.map((section) => (
-            <AccordionSection
-              key={section.id ?? section.title}
-              title={section.title}
-              body={section.body}
+        ) : showCustomizeIngredients ? (
+          <View
+            style={{
+              marginHorizontal: theme.spacing.lg,
+              marginTop: theme.spacing.lg,
+              gap: theme.spacing.sm,
+            }}
+          >
+            <GText variant="label" color="secondary">
+              Number of cakes
+            </GText>
+            <QuantitySelector
+              value={configuration.quantity}
+              onChange={configuration.setQuantity}
+              min={configuration.minQuantity}
+              max={configuration.maxQuantity}
+              disabled={!purchasable}
+              loading={adding}
             />
-          ))}
-        </View>
+          </View>
+        ) : null}
 
         {relatedProducts.length ? (
           <View style={{ marginTop: theme.spacing['2xl'] }}>
@@ -659,7 +578,7 @@ export default function ProductDetailScreen() {
       </ScrollView>
 
       <StickyCartBar
-        title="Add to Cart"
+        title={`Add to Cart · ${formatPaise(configuration.displayedPrice.pricePaise)}`}
         loading={adding}
         disabled={ctaDisabled}
         onAddPress={() => {
@@ -668,7 +587,7 @@ export default function ProductDetailScreen() {
         onCartPress={() => router.push('/(tabs)/cart')}
         message={statusMessage}
         messageTone={statusTone}
-        accessibilityLabel={`Add ${product.name} to cart`}
+        accessibilityLabel={`Add ${product.name} to cart for ${formatPaise(configuration.displayedPrice.pricePaise)}`}
         accessibilityHint={
           !purchasable
             ? 'This product cannot be purchased right now'

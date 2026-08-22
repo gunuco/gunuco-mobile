@@ -194,9 +194,11 @@ function normalizeOptionValue(raw: unknown): ProductOptionValue | null {
     unavailableLabel: asString(rec.unavailableLabel) ?? null,
     unavailableReason: asString(rec.unavailableReason) ?? asString(rec.reason) ?? null,
     pricePaise: asNumber(rec.pricePaise) ?? null,
+    pricePerKgPaise: asNumber(rec.pricePerKgPaise) ?? null,
     compareAtPricePaise: asNumber(rec.compareAtPricePaise) ?? null,
     discountLabel: asString(rec.discountLabel) ?? null,
     isDefault: asBoolean(rec.isDefault),
+    iconName: asString(rec.iconName) ?? null,
   };
 }
 
@@ -380,6 +382,146 @@ export function isMultiSelectGroup(group: ProductOptionGroup): boolean {
   return type === 'multi' || type === 'multi-select' || type === 'multiple';
 }
 
+function groupKey(group: ProductOptionGroup): string {
+  return `${group.id} ${group.label}`.toLowerCase();
+}
+
+/** Weight / quantity option group (500g, 1KG, …) — not pack size for treats. */
+export function isCakeQuantityGroup(group: ProductOptionGroup): boolean {
+  const key = groupKey(group);
+  if (/pack|box|piece|pc\b/.test(key)) {
+    return false;
+  }
+  return /quantity|weight|size|kg|\bg\b/.test(key);
+}
+
+/** Flour / egg / sweetener / flavour ingredient groups for cake customisation. */
+export function isCakeIngredientGroup(group: ProductOptionGroup): boolean {
+  const key = groupKey(group);
+  return /flour|egg|sweet|sugar|flavour|flavor/.test(key);
+}
+
+/**
+ * CUSTOMIZE INGREDIENTS is shown only when the product schema includes cake
+ * ingredient groups (flour/egg/sweetener/flavour). Cookies, brownies, and
+ * other treats with pack/size options alone do not get this section.
+ */
+export function hasCustomizeIngredients(groups: ProductOptionGroup[]): boolean {
+  return groups.filter(isCakeIngredientGroup).length >= 2;
+}
+
+export function parseQuantityKg(option: ProductOptionValue): number | null {
+  const text = `${option.id} ${option.label}`.toLowerCase().replace(/,/g, '');
+  const kgMatch = text.match(/(\d+(?:\.\d+)?)\s*kg/);
+  if (kgMatch) {
+    return Number(kgMatch[1]);
+  }
+  const gramMatch = text.match(/(\d+(?:\.\d+)?)\s*(?:g|gm|gram)/);
+  if (gramMatch) {
+    return Number(gramMatch[1]) / 1000;
+  }
+  if (/size[-_]?500|500/.test(text)) {
+    return 0.5;
+  }
+  if (/1[-_.]?5|1\.5/.test(text)) {
+    return 1.5;
+  }
+  if (/2[-_.]?5|2\.5/.test(text)) {
+    return 2.5;
+  }
+  if (/(?:^|[^\d])3(?:kg|[-_]kg)?(?:$|[^\d])/.test(text) || /size[-_]?3/.test(text)) {
+    return 3;
+  }
+  if (/(?:^|[^\d])2(?:kg|[-_]kg)?(?:$|[^\d])/.test(text) || /size[-_]?2/.test(text)) {
+    return 2;
+  }
+  if (/(?:^|[^\d])1(?:kg|[-_]kg)?(?:$|[^\d])/.test(text) || /size[-_]?1(?:kg)?$/.test(text)) {
+    return 1;
+  }
+  return null;
+}
+
+export function getSelectedQuantityKg(
+  groups: ProductOptionGroup[],
+  selection: ProductOptionSelection,
+): number {
+  const quantityGroup = groups.find(isCakeQuantityGroup);
+  if (!quantityGroup) {
+    return 1;
+  }
+  const selectedId = selection[quantityGroup.id]?.[0];
+  const option = quantityGroup.options.find((item) => item.id === selectedId);
+  if (!option) {
+    return 1;
+  }
+  return parseQuantityKg(option) ?? 1;
+}
+
+/** Customer-facing extra for an option at the selected weight (₹ scaled from /KG). */
+export function getOptionExtraPaise(
+  value: ProductOptionValue,
+  quantityKg: number,
+): number {
+  if (typeof value.pricePerKgPaise === 'number') {
+    return Math.round(value.pricePerKgPaise * quantityKg);
+  }
+  if (typeof value.pricePaise === 'number') {
+    return value.pricePaise;
+  }
+  return 0;
+}
+
+function resolveCakeConfiguredPrice(
+  product: ProductDetail,
+  groups: ProductOptionGroup[],
+  selection: ProductOptionSelection,
+): DisplayedProductPrice | null {
+  if (!hasCustomizeIngredients(groups)) {
+    return null;
+  }
+  const quantityGroup = groups.find(isCakeQuantityGroup);
+  if (!quantityGroup) {
+    return null;
+  }
+  const selectedQtyId = selection[quantityGroup.id]?.[0];
+  const qtyOption = quantityGroup.options.find((item) => item.id === selectedQtyId);
+  if (!qtyOption || typeof qtyOption.pricePaise !== 'number') {
+    return null;
+  }
+
+  const kg = parseQuantityKg(qtyOption) ?? 0.5;
+  let pricePaise = qtyOption.pricePaise;
+  let available = qtyOption.available !== false && product.isAvailable !== false;
+
+  for (const group of groups) {
+    if (group.id === quantityGroup.id) {
+      continue;
+    }
+    const selectedIds = selection[group.id] ?? [];
+    for (const valueId of selectedIds) {
+      const option = group.options.find((item) => item.id === valueId);
+      if (!option) {
+        continue;
+      }
+      if (option.available === false) {
+        available = false;
+      }
+      if (typeof option.pricePerKgPaise === 'number') {
+        pricePaise += Math.round(option.pricePerKgPaise * kg);
+      } else if (typeof option.pricePaise === 'number' && !isCakeQuantityGroup(group)) {
+        pricePaise += option.pricePaise;
+      }
+    }
+  }
+
+  return {
+    pricePaise,
+    compareAtPricePaise: qtyOption.compareAtPricePaise ?? product.compareAtPricePaise,
+    discountLabel: qtyOption.discountLabel ?? product.discountLabel,
+    isAvailable: available,
+  };
+}
+
 export function buildDefaultSelection(groups: ProductOptionGroup[]): ProductOptionSelection {
   const selection: ProductOptionSelection = {};
   for (const group of groups) {
@@ -465,16 +607,33 @@ export function resolveDisplayedPrice(
     };
   }
 
+  const cakePrice = resolveCakeConfiguredPrice(product, groups, selection);
+  if (cakePrice) {
+    return cakePrice;
+  }
+
   const pricedValues = collectSelectedValues(groups, selection).filter(
     (value) => typeof value.pricePaise === 'number',
   );
-  const pricedValue = pricedValues.length === 1 ? pricedValues[0] : undefined;
-  if (pricedValue && typeof pricedValue.pricePaise === 'number') {
+  if (pricedValues.length > 0) {
+    const additive = pricedValues.reduce((sum, value) => sum + (value.pricePaise ?? 0), 0);
+    const onlyAbsolute =
+      pricedValues.length === 1 &&
+      !groups.some((group) => isCakeIngredientGroup(group) || isCakeQuantityGroup(group));
+    if (onlyAbsolute) {
+      const pricedValue = pricedValues[0]!;
+      return {
+        pricePaise: pricedValue.pricePaise ?? product.pricePaise,
+        compareAtPricePaise: pricedValue.compareAtPricePaise ?? product.compareAtPricePaise,
+        discountLabel: pricedValue.discountLabel ?? product.discountLabel,
+        isAvailable: pricedValue.available !== false && product.isAvailable !== false,
+      };
+    }
     return {
-      pricePaise: pricedValue.pricePaise,
-      compareAtPricePaise: pricedValue.compareAtPricePaise ?? product.compareAtPricePaise,
-      discountLabel: pricedValue.discountLabel ?? product.discountLabel,
-      isAvailable: pricedValue.available !== false && product.isAvailable !== false,
+      pricePaise: product.pricePaise + additive,
+      compareAtPricePaise: product.compareAtPricePaise,
+      discountLabel: product.discountLabel,
+      isAvailable: product.isAvailable !== false,
     };
   }
 

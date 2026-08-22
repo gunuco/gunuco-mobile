@@ -2,6 +2,7 @@
 
 export const dimensions = {
   touchMin: 44,
+  touchMax: 24,
   icon: {
     sm: 16,
     md: 24,
